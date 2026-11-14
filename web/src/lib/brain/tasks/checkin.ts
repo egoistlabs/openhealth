@@ -1,4 +1,4 @@
-import { loadPromptFile } from "../loader.ts";
+import { loadStage } from "../loader.ts";
 import { generateJson } from "../../ollama/client.ts";
 
 /**
@@ -118,7 +118,7 @@ function clarificationQuestion(unclear: string[], impossible: string[]): string 
 export async function parseCheckinAnswer(
   text: string,
 ): Promise<CheckinParseResult> {
-  const instructions = await loadPromptFile("checkin-parse");
+  const instructions = (await loadStage("checkin-parse")).context.join("\n\n");
   const { data } = await generateJson({
     messages: [
       { role: "system", content: instructions },

@@ -4,6 +4,11 @@
 //
 // The intent says why the version was made, and decides the number:
 //   fix    1.0.0 -> 1.0.1   add    1.0.0 -> 1.1.0   change 1.0.0 -> 2.0.0
+// A brain that has never been released (no version.json) is released as v1.0.0
+// with the word "first": npm run brain:release first "what this brain is"
+//
+// The version covers the routing file (CONTEXT.md), the stage contracts and
+// prompts (stages/), identity, the knowledge folders and safety.
 
 import { appendFile, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
@@ -62,6 +67,9 @@ function intentProblem(intent: Intent, changes: BrainChanges): string | null {
   if (intent === "fix" && changes.added.some(isContent)) {
     return 'A knowledge file was added, so this is not a fix. Use "add", or "change" if it replaces older guidance.';
   }
+  if (intent === "fix" && changes.added.some((file) => file.startsWith("stages/"))) {
+    return 'A file was added under stages/, so this is not a fix. Use "add" for a new stage, or "change" if an existing stage is now given different files.';
+  }
   if (intent !== "change" && changes.removed.length > 0) {
     return 'A file was deleted. Brain files should be marked "status: replaced", not deleted. If the deletion is intended, use "change".';
   }
@@ -82,15 +90,31 @@ async function main() {
     if (current.modified) {
       console.log("\nChanged since the last release:");
       printChanges(current.changes);
-      console.log('\nTo release: npm run brain:release <intent> "what changed"');
-      printIntents();
+      if (released) {
+        console.log('\nTo release: npm run brain:release <intent> "what changed"');
+        printIntents();
+      } else {
+        console.log('\nThis brain has never been released. To release it as v1.0.0: npm run brain:release first "what this brain is"');
+      }
     }
     return;
   }
 
-  const intent = rest[0] as Intent;
   const note = rest.slice(1).join(" ").trim();
-  if (!(intent in INTENTS) || !note) {
+  const first = (await readVersionFile(brainDirectory)) === null;
+  if (first && (rest[0] !== "first" || !note)) {
+    console.error('This brain has never been released. Release it as v1.0.0 with: npm run brain:release first "what this brain is"');
+    process.exitCode = 1;
+    return;
+  }
+  if (!first && rest[0] === "first") {
+    console.error('This brain already has a version, so "first" cannot be used. Pick an intent:');
+    printIntents();
+    process.exitCode = 1;
+    return;
+  }
+  const intent = rest[0] as Intent;
+  if (!first && (!(intent in INTENTS) || !note)) {
     console.error('Give an intent and say what changed: npm run brain:release <intent> "what changed"');
     printIntents();
     process.exitCode = 1;
@@ -103,7 +127,7 @@ async function main() {
     return;
   }
 
-  const problem = intentProblem(intent, current.changes);
+  const problem = first ? null : intentProblem(intent, current.changes);
   if (problem) {
     console.error(problem);
     process.exitCode = 1;
@@ -118,14 +142,14 @@ async function main() {
     return;
   }
 
-  const version = nextVersion(current.version, intent);
+  const version = first ? "1.0.0" : nextVersion(current.version, intent);
   const released = new Date().toISOString().slice(0, 10);
   const score = (await scoreFor(current.fingerprint)) ?? "not run";
   const files = await hashBrainFiles(brainDirectory);
 
   await writeFile(
     path.join(brainDirectory, "version.json"),
-    `${JSON.stringify({ version, intent, released, note, score, fingerprint: current.fingerprint, files }, null, 2)}\n`,
+    `${JSON.stringify({ version, intent: first ? "first" : intent, released, note, score, fingerprint: current.fingerprint, files }, null, 2)}\n`,
   );
   const changed = [
     ...current.changes.added.map((file) => `added ${file}`),
@@ -134,9 +158,11 @@ async function main() {
   ];
   await appendFile(
     path.join(brainDirectory, "changelog.md"),
-    `\n## v${version} (${intent}), ${released}\n\n- ${note}\n- Files: ${changed.join(", ")}\n- Evals: ${score}\n- Fingerprint: ${current.fingerprint}\n`,
+    first
+      ? `\n## v${version} (first), ${released}\n\n- ${note}\n- Files: ${Object.keys(files).length} files\n- Evals: ${score}\n- Fingerprint: ${current.fingerprint}\n`
+      : `\n## v${version} (${intent}), ${released}\n\n- ${note}\n- Files: ${changed.join(", ")}\n- Evals: ${score}\n- Fingerprint: ${current.fingerprint}\n`,
   );
-  console.log(`Released brain v${version} (${intent}). Evals: ${score}.`);
+  console.log(`Released brain v${version} (${first ? "first" : intent}). Evals: ${score}.`);
 }
 
 main().catch((error) => {

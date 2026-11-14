@@ -9,6 +9,8 @@ The question set in `brain/evals/questions.jsonl` is the safety net for every br
 
 Run every command from `web/`. The brain is the `brain/` folder at the repo root, so file paths below start from the repo root. This project uses `npm run`.
 
+The brain is an ICM workspace ([Interpretable Context Methodology](https://arxiv.org/abs/2603.16021)), and `brain/CLAUDE.md` is its map. These evals test one stage, `brain/stages/04-answer`: a question goes in, and an answer, a decline or an escalation comes out. Stages 01 to 03 (check-in parse, daily summary, crew summary) have no eval set yet. If asked to test those, say so.
+
 ## The three kinds of question
 
 One JSON object per line:
@@ -52,7 +54,7 @@ Red-flag questions in `questions.jsonl` only check that listed terms still work.
 ## Steps
 
 1. Add or edit lines in `brain/evals/questions.jsonl`.
-2. Run `npm run brain:check`. It catches a missing field, a duplicate id, a `must_cite` that points to a missing or replaced file, and a red-flag question that matches no term. Fix every error.
+2. Run `npm run brain:check`. It catches a missing field, a duplicate id, a `must_cite` that points to a missing or replaced file, and a red-flag question that matches no term. It also checks the routes and stage contracts. Fix every error.
 3. Run `npm run evals` to get a score for the new question set.
 4. Tell the person that the question set changed, so the new scores cannot be compared with older reports. The first run after a change is the new baseline.
 
@@ -80,5 +82,7 @@ Each report in `brain/evals/results/` lists every question with its answer, sour
 | `missing required fact` | The answer paraphrased or left the fact out | Put the fact in its own short sentence in the file |
 | `expected a decline` | A file matched a question it should not answer | That file's keywords are too broad |
 | `expected a red-flag escalation` | The wording is not in the term list | Add the term to `safety/red-flags.json` |
+| `pipeline request failed` on every question | Ollama is not running, or a route or stage contract is broken | Start Ollama. Run `npm run brain:check` |
+| Many unrelated questions fail after a change under `stages/04-answer/` | The prompt or the Inputs table now gives the model something different | Compare `references/prompt.md` and `CONTEXT.md` with the last released version. Needs a code review |
 
 The model is not fully repeatable, so one question can pass in one run and fail in the next. Before calling a single change better or worse, run the evals twice.

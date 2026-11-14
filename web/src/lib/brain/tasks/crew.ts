@@ -1,4 +1,4 @@
-import { loadPromptFile } from "../loader.ts";
+import { loadStage } from "../loader.ts";
 import { generateJson } from "../../ollama/client.ts";
 import { numbersIn, sentencesIn } from "../../text.ts";
 
@@ -81,7 +81,7 @@ function fallbackSummary(crew: CrewNumbers): string {
 export async function summarizeCrew(
   crew: CrewNumbers,
 ): Promise<CrewSummaryResult> {
-  const instructions = await loadPromptFile("crew-summary");
+  const instructions = (await loadStage("crew-summary")).context.join("\n\n");
   try {
     const { data } = await generateJson({
       messages: [

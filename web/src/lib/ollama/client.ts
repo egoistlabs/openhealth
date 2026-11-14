@@ -107,8 +107,8 @@ export async function generateJson<Result>(input: {
 }
 
 export async function generateGroundedAnswer(input: {
-  identity?: string;
-  instructions?: string;
+  /* the stage's "Full file" inputs; only needed when messages is not supplied */
+  context?: string[];
   sources: ScoredDocument[];
   numbers?: Record<string, unknown>;
   question: string;
@@ -121,8 +121,7 @@ export async function generateGroundedAnswer(input: {
     messages:
       input.messages ??
       buildAnswerMessages({
-        identity: input.identity ?? "",
-        instructions: input.instructions ?? "",
+        context: input.context ?? [],
         sources: input.sources,
         numbers: input.numbers,
         question: input.question,

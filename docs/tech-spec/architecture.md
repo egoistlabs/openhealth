@@ -8,11 +8,38 @@ Last updated: 14 Nov 2026. Status: design agreed, nothing built or tested yet.
 
 The model is [medgemma:4b](https://ollama.com/library/medgemma:4b), run locally with Ollama. It is small, so we do not rely on what it remembers from training. Its knowledge lives in a folder of plain files called the **brain**. Code decides what the model reads, checks what it writes, and enforces the safety rules. The model only turns the material it is given into a spoken or written answer.
 
-This is what we mean by an ICM-based architecture: the folder is the source of knowledge, a person can read and edit it, and changing the folder changes what the companion knows without retraining anything.
+This is an ICM-based architecture. ICM is the [Interpretable Context Methodology](https://arxiv.org/abs/2603.16021) (Van Clief and McDermott, 2026). Its core idea is that folder structure does the work an agent framework would otherwise do in code: plain files carry the prompts and the context, and scripts do the mechanical work that needs no model. The folder is the source of knowledge, a person can read and edit it, and changing the folder changes what the companion knows without retraining anything.
+
+The brain is laid out as an ICM workspace, using the file names from the [ICM reference repository](https://github.com/RinDig/Interpretable-Context-Methodology). ICM loads context in five layers, each answering one question:
+
+| ICM layer | Question it answers | In this project | Who reads it |
+| --- | --- | --- | --- |
+| 0. Map | Where am I? | `brain/CLAUDE.md` | People and coding agents who maintain the brain |
+| 1. Routing | Where do I go? | `brain/CONTEXT.md`, a table that sends each task to its stage | Code |
+| 2. Stage contract | What do I do? | `brain/stages/NN-name/CONTEXT.md`, with Inputs, Process, Audit and Outputs | Code. The Inputs table decides which files the model is given |
+| 3. Reference material | What rules apply? | `brain/identity/`, each stage's `references/prompt.md`, and the knowledge folders `reference/`, `procedures/` and `measures/` | The model, but only the files its stage lists. For a question, only the top three knowledge files |
+| 4. Working artifacts | What am I working with? | The crew member's numbers and the question, passed in by code and not stored in the brain | The model |
+
+There are four stages, one per task, and each is one model call:
+
+| Stage | Task | Story |
+| --- | --- | --- |
+| `01-checkin-parse` | Turn a spoken or typed check-in answer into numbers | C3 |
+| `02-daily-summary` | Daily summary after a check-in | C6 |
+| `03-crew-summary` | Crew summary | C7 |
+| `04-answer` | Answer one question from the knowledge files, or decline | C5, C10, C11 |
+
+We depart from the paper in three places:
+
+- **Code routes, not the model.** In the paper the agent reads the routing file and the contract itself. A 4B model with no tool calling should not route itself, so code reads both files and hands the model only what the contract lists.
+- **Code runs the audits.** In the paper the agent runs a stage's audit checklist on its own output. Here each contract's Audit table describes checks that code runs, so the model cannot skip them.
+- **No `output/` folders.** In the paper each stage writes its result to a file that the next stage reads. Here results go back to the app, because crew data must not be stored in the brain.
+
+The paper's own evidence comes only from Claude Opus 4.6 and Sonnet 4.6, with no controlled comparison ([paper, sections 4 and 5](https://arxiv.org/html/2603.16021)). Whether the method holds on a small local model is what our evals measure.
 
 Four rules follow from that:
 
-1. **Code picks what the model reads.** The model never fetches its own files.
+1. **Code picks what the model reads.** The model never fetches its own files. Code follows the stage contract, so a person can see and change what is picked.
 2. **Every answer shows its sources.** If there is no source, there is no answer.
 3. **Safety rules live in code.** No file and no model reply can switch them off.
 4. **Nothing is added to the brain without passing the tests.**
@@ -71,10 +98,10 @@ If no file scores above the search threshold and the question is not about the c
 
 ### 4. Write the answer
 
-The prompt has five parts, always in this order:
+The Inputs table in `brain/stages/04-answer/CONTEXT.md` lists what the model is given. The prompt has five parts, always in this order:
 
 1. Who the companion is and how it speaks (`brain/identity/companion.md`)
-2. The rules: use only the sources and numbers below, never diagnose, say so if the sources do not answer the question
+2. The rules: use only the sources and numbers below, never diagnose, say so if the sources do not answer the question (`brain/stages/04-answer/references/prompt.md`)
 3. The sources, each with an id
 4. The numbers
 5. The question
@@ -105,13 +132,13 @@ The app shows the answer with its sources underneath. Each source shows its titl
 
 ### Fixed tasks
 
-Three companion tasks do not start from a free question. The app calls them directly, each with its own prompt file, and they skip search:
+Three companion tasks do not start from a free question. The app calls them directly, each through its own stage, and they skip search:
 
-| Task | Story | What the model is given |
-| --- | --- | --- |
-| Turn a spoken or typed check-in answer into numbers | C3 | The answer text and the B1 shape |
-| Daily summary after a check-in | C6 | Today's flags and their actions |
-| Crew summary | C7 | Crew-level numbers only |
+| Task | Stage | Story | What the model is given |
+| --- | --- | --- | --- |
+| Turn a spoken or typed check-in answer into numbers | `01-checkin-parse` | C3 | The answer text and the B1 shape |
+| Daily summary after a check-in | `02-daily-summary` | C6 | Today's flags and their actions |
+| Crew summary | `03-crew-summary` | C7 | Crew-level numbers only |
 
 Steps 5 and 6 still apply to them.
 
@@ -121,7 +148,17 @@ The brain lives at `brain/` at the repo root, so that people who do not write co
 
 ```
 brain/
-├── README.md            what each folder is for
+├── CLAUDE.md            layer 0: the map of this folder, for people and coding agents
+├── CONTEXT.md           layer 1: the routing table, task to stage
+├── stages/              layer 2: one numbered folder per task
+│   ├── 01-checkin-parse/
+│   │   ├── CONTEXT.md       the contract: Inputs, Process, Audit, Outputs
+│   │   └── references/
+│   │       └── prompt.md    the rules and worked examples the model is given
+│   ├── 02-daily-summary/
+│   ├── 03-crew-summary/
+│   └── 04-answer/
+├── README.md            how to edit, test and version the brain
 ├── identity/
 │   └── companion.md     who the companion is, how it speaks, what it will not do
 ├── reference/           background knowledge, one topic per file
@@ -132,7 +169,6 @@ brain/
 │   └── common-complaints/
 ├── procedures/          step-by-step procedures, including ones added during the mission
 ├── measures/            the seven measures: what each means, how it is calculated, its suggested action
-├── prompts/             one prompt file per task
 ├── safety/
 │   └── red-flags.json   red-flag terms and the escalation message
 ├── inbox/               packages waiting to be added
@@ -169,7 +205,8 @@ One file covers one topic and stays under about 400 words, so that three files f
 ## Safety rules
 
 - Red-flag matching and the escalation message are code, driven by `safety/red-flags.json`.
-- The add-a-source process cannot write to `safety/`, `prompts/` or `identity/`. Those change only through a normal code review.
+- The add-a-source process cannot write to `safety/`, `identity/`, `stages/` or the routing file. Those change only through a normal code review.
+- The red-flag check runs before any stage contract is read, so a broken contract cannot switch it off.
 - The companion never diagnoses. It gives reference information with its source and escalates red flags.
 - Code does all arithmetic. The model never calculates a status, a baseline or a trend.
 - If a model is off or slow, the app says so and the check-in continues by tapping (story C9).

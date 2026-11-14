@@ -1,9 +1,8 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import { resolveBrainRoot } from "./root.ts";
+import { CONTENT_DIRECTORIES, resolveStage, type Task } from "./stage.ts";
 import type { BrainDocument } from "./types.ts";
-
-const CONTENT_DIRECTORIES = ["reference", "procedures", "measures"] as const;
 
 function brainRoot(): string {
   return resolveBrainRoot();
@@ -63,11 +62,14 @@ async function markdownFiles(directory: string): Promise<string[]> {
   return nested.flat();
 }
 
-export async function loadBrainDocuments(): Promise<BrainDocument[]> {
+/** The active knowledge files in the given folders. A stage passes the folders its contract lists. */
+export async function loadBrainDocuments(
+  directories: readonly string[] = CONTENT_DIRECTORIES,
+): Promise<BrainDocument[]> {
   const root = brainRoot();
   const files = (
     await Promise.all(
-      CONTENT_DIRECTORIES.map((directory) =>
+      directories.map((directory) =>
         markdownFiles(path.join(root, directory)),
       ),
     )
@@ -87,14 +89,25 @@ export async function loadBrainDocuments(): Promise<BrainDocument[]> {
   );
 }
 
-export async function loadIdentity(): Promise<string> {
-  return readFile(path.join(brainRoot(), "identity", "companion.md"), "utf8");
-}
+export type LoadedStage = {
+  /** For example "stages/04-answer". */
+  id: string;
+  /** The files the model is given in full, in the order the stage's Inputs table lists them. */
+  context: string[];
+  /** The knowledge folders the stage searches. */
+  collections: string[];
+};
 
-export async function loadCompanionInstructions(): Promise<string> {
-  return readFile(path.join(brainRoot(), "prompts", "companion.md"), "utf8");
-}
-
-export async function loadPromptFile(name: string): Promise<string> {
-  return readFile(path.join(brainRoot(), "prompts", `${name}.md`), "utf8");
+/**
+ * Loads what a task's model call is given. The task is routed through
+ * brain/CONTEXT.md to its stage, and the stage's CONTEXT.md Inputs table
+ * decides which files are read. Nothing else from the brain reaches the model.
+ */
+export async function loadStage(task: Task): Promise<LoadedStage> {
+  const root = brainRoot();
+  const stage = await resolveStage(root, task);
+  const context = await Promise.all(
+    stage.files.map((file) => readFile(path.join(root, file), "utf8")),
+  );
+  return { id: stage.id, context, collections: stage.collections };
 }

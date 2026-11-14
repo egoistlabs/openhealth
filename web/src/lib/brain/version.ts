@@ -3,18 +3,21 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 
 // Files that do not change what the companion knows or how it answers.
-const NOT_FINGERPRINTED = ["evals/", "inbox/", "version.json", "changelog.md", "README.md"];
+// CLAUDE.md is the map for people and coding agents; code never reads it. The
+// routing file (CONTEXT.md) and the stage contracts are fingerprinted, because
+// they decide what the model is given.
+const NOT_FINGERPRINTED = ["evals/", "inbox/", "version.json", "changelog.md", "README.md", "CLAUDE.md"];
 
 /**
  * Why a version was made. The intent decides which part of the number goes up.
  *   fix    1.0.0 -> 1.0.1  tune or correct what is already there
- *   add    1.0.0 -> 1.1.0  the companion knows something new
- *   change 1.0.0 -> 2.0.0  guidance, behaviour or safety rules are different
+ *   add    1.0.0 -> 1.1.0  the companion knows or can do something new
+ *   change 1.0.0 -> 2.0.0  guidance, behaviour, safety rules or structure are different
  */
 export const INTENTS = {
-  fix: "Tune or correct what is already there: wording, keywords, prompt tuning. No new knowledge.",
-  add: "The companion knows something new: a new file, a new topic, a new red-flag term.",
-  change: "Guidance, behaviour or safety rules are different: a file was replaced or retired, the identity changed, a red flag was removed.",
+  fix: "Tune or correct what is already there: wording, keywords, tuning a stage prompt. No new knowledge.",
+  add: "The companion knows or can do something new: a new file, a new topic, a new red-flag term, a new stage.",
+  change: "Guidance, behaviour, safety rules or structure are different: a file was replaced or retired, the identity changed, a red flag was removed, the routing or a stage's inputs changed.",
 } as const;
 
 export type Intent = keyof typeof INTENTS;

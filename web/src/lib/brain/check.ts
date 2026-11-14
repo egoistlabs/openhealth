@@ -1,10 +1,18 @@
-// Checks that the brain files and the eval question set are well formed.
+// Checks that the brain's structure, its files and the eval question set are well formed.
 // It reads files only. It never calls the model.
 
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import {
+  CONTENT_DIRECTORIES,
+  MAX_CONTEXT_LINES,
+  STAGE_FOLDER_PATTERN,
+  TASKS,
+  readRoutes,
+  readStageContract,
+} from "./stage.ts";
 
-const CONTENT_DIRECTORIES = ["reference", "procedures", "measures"];
+const REQUIRED_SECTIONS = ["Inputs", "Process", "Outputs"];
 const REQUIRED_FIELDS = ["title", "topic", "keywords", "source", "authorised_by", "added", "status"];
 const MAX_WORDS = 400;
 
@@ -24,9 +32,73 @@ async function markdownFiles(directory: string): Promise<string[]> {
   return nested.flat();
 }
 
+// The ICM structure: CLAUDE.md (map), CONTEXT.md (routing) and one contract per stage.
+async function checkStructure(brainRoot: string, errors: string[], warnings: string[]) {
+  const exists = (relativePath: string) =>
+    readFile(path.join(brainRoot, relativePath), "utf8").then(() => true, () => false);
+
+  if (!(await exists("CLAUDE.md"))) errors.push("CLAUDE.md: missing. It is the map of the brain folder");
+
+  const { routes, problems } = await readRoutes(brainRoot);
+  errors.push(...problems);
+
+  for (const task of TASKS) {
+    const matching = routes.filter((route) => route.task === task);
+    if (matching.length === 0) errors.push(`CONTEXT.md: no route for the task "${task}", which the app runs`);
+    if (matching.length > 1) errors.push(`CONTEXT.md: the task "${task}" is routed more than once`);
+  }
+
+  const routedStages = new Set<string>();
+  for (const route of routes) {
+    const where = route.contract;
+    const stageId = path.posix.dirname(where);
+    if (!(TASKS as readonly string[]).includes(route.task)) {
+      warnings.push(`CONTEXT.md: the task "${route.task}" is routed, but the app has no code that runs it`);
+    }
+    if (path.posix.basename(where) !== "CONTEXT.md" || !STAGE_FOLDER_PATTERN.test(stageId)) {
+      errors.push(`CONTEXT.md: "${where}" must look like stages/01-name/CONTEXT.md`);
+      continue;
+    }
+    if (routedStages.has(stageId)) errors.push(`CONTEXT.md: two tasks are routed to ${stageId}. One stage does one job`);
+    routedStages.add(stageId);
+
+    const contract = await readStageContract(brainRoot, where);
+    errors.push(...contract.problems);
+    if (contract.lineCount === 0) continue;
+
+    for (const name of REQUIRED_SECTIONS) {
+      if (!contract.sections.includes(name)) errors.push(`${where}: the "## ${name}" section is missing`);
+    }
+    if (contract.sections.includes("Inputs") && contract.files.length === 0) {
+      errors.push(`${where}: no input has the scope "Full file", so the model would get no instructions`);
+    }
+    if (route.task === "answer" && contract.collections.length === 0) {
+      errors.push(`${where}: no knowledge folder is listed, so every question would be declined`);
+    }
+    const listed = new Set(contract.inputs.map((input) => input.path));
+    for (const fullPath of await markdownFiles(path.join(brainRoot, stageId, "references"))) {
+      const id = path.relative(brainRoot, fullPath).split(path.sep).join("/");
+      if (!listed.has(id)) warnings.push(`${id}: no row in ${where} lists this file, so nothing reads it`);
+    }
+    if (contract.lineCount > MAX_CONTEXT_LINES) {
+      warnings.push(`${where}: ${contract.lineCount} lines, over the ${MAX_CONTEXT_LINES} line guide. Move rules and examples into references/`);
+    }
+  }
+
+  const stageFolders = await readdir(path.join(brainRoot, "stages"), { withFileTypes: true }).catch(() => []);
+  for (const entry of stageFolders) {
+    if (!entry.isDirectory()) continue;
+    const stageId = `stages/${entry.name}`;
+    if (!STAGE_FOLDER_PATTERN.test(stageId)) errors.push(`${stageId}: a stage folder is named like 01-name, in lowercase with hyphens`);
+    else if (!routedStages.has(stageId)) errors.push(`${stageId}: no row in the CONTEXT.md Task Routing table points to this stage`);
+  }
+}
+
 export async function checkBrain(brainRoot: string): Promise<CheckResult> {
   const errors: string[] = [];
   const warnings: string[] = [];
+
+  await checkStructure(brainRoot, errors, warnings);
 
   // Content files
   const files = new Map<string, ContentFile>();

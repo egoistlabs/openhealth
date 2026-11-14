@@ -1,4 +1,4 @@
-import { loadPromptFile } from "../loader.ts";
+import { loadStage } from "../loader.ts";
 import { generateJson } from "../../ollama/client.ts";
 import { mentionsSubstance, numbersIn, sentencesIn } from "../../text.ts";
 
@@ -73,7 +73,7 @@ function fallbackSummary(flags: DailyFlag[]): string {
 export async function summarizeDailyCheckin(
   flags: DailyFlag[],
 ): Promise<DailySummaryResult> {
-  const instructions = await loadPromptFile("daily-summary");
+  const instructions = (await loadStage("daily-summary")).context.join("\n\n");
   try {
     const { data } = await generateJson({
       messages: [

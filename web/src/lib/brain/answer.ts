@@ -1,4 +1,4 @@
-import { loadBrainDocuments, loadCompanionInstructions, loadIdentity } from "./loader.ts";
+import { loadBrainDocuments, loadStage } from "./loader.ts";
 import { checkRedFlags } from "./safety.ts";
 import { searchBrain } from "./search.ts";
 import { buildAnswerMessages } from "./prompt.ts";
@@ -79,7 +79,8 @@ export async function prepareCompanionTurn(
     };
   }
 
-  const documents = await loadBrainDocuments();
+  const stage = await loadStage("answer");
+  const documents = await loadBrainDocuments(stage.collections);
   /* Retrieval sees the recent user turns as well, so short follow-ups like
      "why?" still find the right sources. The model's own question stays
      standalone; only the search query is widened. */
@@ -100,15 +101,10 @@ export async function prepareCompanionTurn(
     };
   }
 
-  const [identity, instructions] = await Promise.all([
-    loadIdentity(),
-    loadCompanionInstructions(),
-  ]);
   return {
     sources,
     messages: buildAnswerMessages({
-      identity,
-      instructions,
+      context: stage.context,
       sources,
       numbers,
       question,

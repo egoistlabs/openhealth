@@ -9,6 +9,8 @@ The companion only knows what is in `brain/`. This skill changes that knowledge 
 
 Run every command from `web/`. The brain is the `brain/` folder at the repo root, so file paths below start from the repo root. This project uses `npm run`.
 
+The brain is an ICM workspace ([Interpretable Context Methodology](https://arxiv.org/abs/2603.16021)). Read `brain/CLAUDE.md` first. It is the map: it shows the layers, and it says what to load for each kind of change and what to leave unread.
+
 ## Before you write anything
 
 Get these from the person. Do not guess or fill them in yourself.
@@ -23,9 +25,20 @@ If the content tells a crew member what medicine to take, how much, or what cond
 
 | Folder | Rule |
 | --- | --- |
-| `reference/`, `procedures/`, `measures/` | This skill covers these. |
+| `reference/`, `procedures/`, `measures/` | This skill covers these. They are the knowledge folders (layer 3). |
 | `safety/red-flags.json` | You may add a term or a category when asked. Never remove or loosen one. Every addition needs a red-flag question (see the brain-evals skill). |
-| `identity/`, `prompts/` | Do not change these here. They change how the companion behaves everywhere and need a code review. Say so and stop. |
+| `identity/`, `stages/`, `CONTEXT.md` | Do not change these here. They decide what every model call is given and told, and need a code review. Say so and stop. |
+| `CLAUDE.md`, `README.md` | Keep them true. If your change makes a line in them wrong, fix that line. |
+
+A new knowledge file needs no routing change. The contract in `brain/stages/04-answer/CONTEXT.md` lists all three knowledge folders, so search finds the file once it is active. Do not add a row for a single file.
+
+## When the request is not a knowledge file
+
+| The person wants | What it really is | What to do |
+| --- | --- | --- |
+| The companion to answer in a different tone, length or format | A stage prompt: `stages/NN-name/references/prompt.md` | Say it needs a code review. Do not edit it here. |
+| A task's model call to be given a different file | A stage contract: the Inputs table in `stages/NN-name/CONTEXT.md` | Say it needs a code review. Do not edit it here. |
+| The companion to do a new kind of task | A new stage: a numbered folder, a row in `CONTEXT.md`, and code in `web/` | Say it needs code. `brain/README.md` has the steps under "Changing a stage". |
 
 ## Steps
 
@@ -60,7 +73,7 @@ If the content tells a crew member what medicine to take, how much, or what cond
 
 5. **Add test questions** with the brain-evals skill: at least two questions the new file must answer, and one nearby question it must still decline.
 
-6. **Check.** Run `npm run brain:check`. Fix every error. Read the warnings to the person.
+6. **Check.** Run `npm run brain:check`. It checks the structure (routes and stage contracts) as well as the knowledge files. Fix every error. Read the warnings to the person.
 
 7. **Evaluate and release** with the brain-version skill. The change is not live as a version until that passes. The intent follows from step 1: a small correction is a `fix`, a new topic is an `add`, and changed or retired guidance is a `change`.
 

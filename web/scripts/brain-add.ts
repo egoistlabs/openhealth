@@ -13,6 +13,7 @@ import {
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { readRoutes, readStageContract } from "../src/lib/brain/stage.ts";
 
 /**
  * Add a source package to the brain with one command:
@@ -25,6 +26,11 @@ import { fileURLToPath } from "node:url";
  * 3. Run the package's own tests, then the full test set (unless --package-only)
  * 4. Go live only if the new tests pass and nothing that passed before now fails
  * 5. Archive the package, append the changelog, keep replaced files
+ *
+ * A package is a knowledge file (ICM layer 3). It can only land in a folder
+ * that the answer stage's contract lists, because that is the only way a
+ * knowledge file reaches the model. It never touches stages/, identity/,
+ * safety/ or the routing file.
  */
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
@@ -341,6 +347,21 @@ async function main() {
   const info = await loadPackage(brainRoot, argument);
   const destination =
     info.replaces ?? `procedures/${info.slug}.md`;
+
+  // The file is only ever used if the answer stage searches its folder.
+  const { routes } = await readRoutes(brainRoot);
+  const answerRoute = routes.find((route) => route.task === "answer");
+  if (!answerRoute) fail('brain/CONTEXT.md has no route for the "answer" task. Run npm run brain:check');
+  const answerStage = await readStageContract(brainRoot, answerRoute.contract);
+  if (answerStage.problems.length > 0) {
+    fail(`the answer stage contract has errors: ${answerStage.problems.join("; ")}. Run npm run brain:check`);
+  }
+  const destinationFolder = destination.split("/")[0];
+  if (!answerStage.collections.includes(destinationFolder)) {
+    fail(
+      `${answerRoute.contract} does not list ${destinationFolder}/ as an input, so the companion would never read ${destination}`,
+    );
+  }
 
   console.log(`Package:  ${info.title}`);
   console.log(`Tests:    ${info.tests.length}`);
