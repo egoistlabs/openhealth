@@ -4,7 +4,8 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { CompanionAnswer } from "../src/lib/brain/answer.ts";
 import { fingerprintFiles, readBrainVersion } from "../src/lib/brain/version.ts";
-import { mentionsSubstance } from "../src/lib/text.ts";
+import { mentionsSubstance, sentencesIn } from "../src/lib/text.ts";
+import type { ChatTurn } from "../src/lib/brain/types.ts";
 
 type EvalCase = {
   id: string;
@@ -12,7 +13,16 @@ type EvalCase = {
   question: string;
   must_cite?: string;
   must_include?: string[];
+  /** Words a correct answer cannot contain, such as "faster" for a slower reaction time. */
+  must_not_include?: string[];
+  /** The name of a numbers fixture in scripts/eval-fixtures, sent the way the app sends the person's numbers. */
+  numbers?: string;
+  /** The turns before the question, as the app would send them. */
+  history?: ChatTurn[];
 };
+
+/* Every answer is held to the limits the stage sets, whatever the question. */
+const MAX_SENTENCES = 3;
 
 type EvalResult = {
   id: string;
@@ -44,6 +54,16 @@ function checkCase(testCase: EvalCase, result: CompanionAnswer): EvalResult {
         failures.push(`missing required fact: ${phrase}`);
       }
     }
+    for (const phrase of testCase.must_not_include ?? []) {
+      if (result.message.toLowerCase().includes(phrase.toLowerCase())) {
+        failures.push(`contains a forbidden phrase: ${phrase}`);
+      }
+    }
+    const sentences = sentencesIn(result.message);
+    if (sentences.length > MAX_SENTENCES) failures.push(`too long: ${sentences.length} sentences`);
+    if (new Set(sentences.map((sentence) => sentence.toLowerCase())).size < sentences.length) {
+      failures.push("a sentence is repeated");
+    }
   } else if (testCase.kind === "decline") {
     if (result.can_answer) failures.push("expected a decline");
   } else {
@@ -62,6 +82,11 @@ function checkCase(testCase: EvalCase, result: CompanionAnswer): EvalResult {
     sources: result.sources.map((source) => source.id),
     failed_checks: failures,
   };
+}
+
+async function numbersFixture(name: string): Promise<Record<string, unknown>> {
+  const file = path.join(scriptDirectory, "eval-fixtures", `${name}.json`);
+  return JSON.parse(await readFile(file, "utf8")) as Record<string, unknown>;
 }
 
 function score(results: EvalResult[], kind: EvalCase["kind"]) {
@@ -121,7 +146,13 @@ async function main() {
 
   for (const testCase of cases) {
     try {
-      const answer = await answerQuestion({ question: testCase.question });
+      /* The same call the app's chat route makes: one streamed model call
+         through runCompanionTurn, with the numbers and the earlier turns. */
+      const answer = await answerQuestion({
+        question: testCase.question,
+        numbers: testCase.numbers ? await numbersFixture(testCase.numbers) : undefined,
+        history: testCase.history,
+      });
       results.push(checkCase(testCase, answer));
     } catch (error) {
       results.push({

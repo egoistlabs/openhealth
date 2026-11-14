@@ -1,10 +1,10 @@
 {
-  "version": "1.0.0",
-  "intent": "first",
+  "version": "2.0.0",
+  "intent": "change",
   "released": "2026-11-14",
-  "note": "First brain laid out as an ICM workspace: a routing file, four stages with contracts and prompts, identity, 22 knowledge files and red flags",
-  "score": "answerable 26/26, decline 10/10, red flag 5/5",
-  "fingerprint": "4d1511beec55",
+  "note": "Answers are written for a tired crew member: the app words the numbers and offers them as a source, the answer is at most three sentences in the first person, and code repairs or replaces answers that loop, run long, reverse a direction or name the wrong measure",
+  "score": "answerable 27/30, decline 11/11, red flag 5/5",
+  "fingerprint": "3b46fe0ed727",
   "files": {
     "CONTEXT.md": "163d297b365b",
     "identity/companion.md": "8e85a3039b05",
@@ -37,7 +37,7 @@
     "stages/02-daily-summary/references/prompt.md": "b34862c03811",
     "stages/03-crew-summary/CONTEXT.md": "86ba2d02d6c0",
     "stages/03-crew-summary/references/prompt.md": "086aaa7663c4",
-    "stages/04-answer/CONTEXT.md": "e11a21534ad8",
-    "stages/04-answer/references/prompt.md": "5c10c57a6f4e"
+    "stages/04-answer/CONTEXT.md": "42a0e1f2def8",
+    "stages/04-answer/references/prompt.md": "1db3f1ac82f8"
   }
 }

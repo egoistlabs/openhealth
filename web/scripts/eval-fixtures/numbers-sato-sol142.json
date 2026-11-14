@@ -1,0 +1,152 @@
+{
+    "sol": 142,
+    "measures": {
+        "Sleep duration": {
+            "today": "6h15m",
+            "normal": "7h25m",
+            "change": "\u22121h10m",
+            "status": "watch",
+            "days_outside": 3
+        },
+        "Reaction time": {
+            "today": "291 ms",
+            "normal": "248 ms",
+            "change": "+43 ms",
+            "status": "watch",
+            "days_outside": 2
+        },
+        "Sleep timing": {
+            "today": "04:48",
+            "normal": "03:57",
+            "change": "+51m",
+            "status": "watch",
+            "days_outside": 3
+        },
+        "Mood": {
+            "today": "4 /5",
+            "normal": "4",
+            "change": "\u00b10",
+            "status": "normal",
+            "days_outside": 0
+        },
+        "Workload & stress": {
+            "today": "3 /5",
+            "normal": "3",
+            "change": "\u00b10",
+            "status": "normal",
+            "days_outside": 0
+        },
+        "Teamwork": {
+            "today": "4 /5",
+            "normal": "4",
+            "change": "\u00b10",
+            "status": "normal",
+            "days_outside": 0
+        },
+        "Engagement": {
+            "today": "531 w",
+            "normal": "515 w",
+            "change": "+16 w",
+            "status": "normal",
+            "days_outside": 0,
+            "checkins_missed_7_days": 1
+        }
+    },
+    "facts": {
+        "off": [
+            {
+                "key": "timing",
+                "name": "Sleep timing",
+                "text": "Your sleep timing was 51 min later than your normal, 3 nights in a row.",
+                "value": "51 min later than your normal",
+                "detail": "3 nights",
+                "action": "Start wind-down at 23:30 tonight.",
+                "terms": [
+                    "sleep",
+                    "timing",
+                    "midpoint",
+                    "bedtime"
+                ],
+                "direction": "later",
+                "opposites": [
+                    "earlier"
+                ]
+            },
+            {
+                "key": "sleep",
+                "name": "Sleep duration",
+                "text": "Your sleep was 1h10m shorter than your normal, 3 nights in a row.",
+                "value": "1h10m shorter than your normal",
+                "detail": "3 nights",
+                "action": "Block an 8-hour sleep window tonight.",
+                "terms": [
+                    "sleep",
+                    "slept",
+                    "rest",
+                    "tired"
+                ],
+                "direction": "shorter",
+                "opposites": [
+                    "longer"
+                ]
+            },
+            {
+                "key": "rt",
+                "name": "Reaction time",
+                "text": "Your reaction time was 43 ms slower than your normal, 2 tests in a row.",
+                "value": "43 ms slower than your normal",
+                "detail": "2 tests",
+                "action": "Move precision tasks to after a break today.",
+                "terms": [
+                    "reaction",
+                    "reflex",
+                    "tap"
+                ],
+                "direction": "slower",
+                "opposites": [
+                    "faster",
+                    "quicker"
+                ]
+            }
+        ],
+        "normal": [
+            {
+                "key": "mood",
+                "name": "Mood",
+                "terms": [
+                    "mood",
+                    "feel",
+                    "feeling"
+                ]
+            },
+            {
+                "key": "load",
+                "name": "Workload & stress",
+                "terms": [
+                    "workload",
+                    "stress",
+                    "busy"
+                ]
+            },
+            {
+                "key": "team",
+                "name": "Teamwork",
+                "terms": [
+                    "teamwork",
+                    "team",
+                    "crew"
+                ]
+            },
+            {
+                "key": "engage",
+                "name": "Engagement",
+                "terms": [
+                    "engagement",
+                    "check-in",
+                    "checkin",
+                    "talk"
+                ]
+            }
+        ]
+    }
+}

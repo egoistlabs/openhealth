@@ -1,21 +1,18 @@
 "use client";
 
 import { useChat } from "@ai-sdk/react";
-import { DefaultChatTransport, isTextUIPart } from "ai";
+import { DefaultChatTransport } from "ai";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { extractPartialAnswer } from "@/lib/chat/partial-answer";
-import type { CompanionUIMessage, CompanionVerdict } from "@/lib/chat/types";
+import {
+  companionDataSchemas,
+  metadataSchema,
+  type CompanionProgress,
+  type CompanionUIMessage,
+  type CompanionVerdict,
+} from "@/lib/chat/types";
 import { useConsole } from "@/components/console/ConsoleProvider";
 import { useCompanionNumbers } from "../queries/use-companion-numbers";
 import { toSeedMessages, useChatHistory } from "../queries/use-chat-history";
-
-export function messageText(message?: CompanionUIMessage): string {
-  if (!message) return "";
-  return message.parts
-    .filter(isTextUIPart)
-    .map((part) => part.text)
-    .join("");
-}
 
 export function verdictOf(
   message?: CompanionUIMessage,
@@ -23,10 +20,16 @@ export function verdictOf(
   return message?.parts.find((part) => part.type === "data-verdict")?.data;
 }
 
+function progressOf(message?: CompanionUIMessage): CompanionProgress["step"] | undefined {
+  return message?.parts.find((part) => part.type === "data-progress")?.data.step;
+}
+
 /**
- * One companion turn end to end: seeds useChat from the existing log, streams
- * the grounded answer, then commits the server's verdict to the log. Only the
- * verdict (never the unverified draft) is written to the conversation.
+ * One companion turn end to end: seeds useChat from the existing log, follows
+ * the turn's progress, then commits the server's verdict to the log.
+ *
+ * Only the verdict is ever shown, spoken or saved. The server does not send the
+ * model's unchecked draft, so there is no draft to keep when a turn is stopped.
  */
 export function useCompanionChat(options: { onOffline: (question: string) => void }) {
   const c = useConsole();
@@ -51,6 +54,7 @@ export function useCompanionChat(options: { onOffline: (question: string) => voi
   const latest = useRef({
     numbers,
     tone: s.tone,
+    crew: s.me,
     addLines: c.addLines,
     onOffline: options.onOffline,
     question: "",
@@ -58,6 +62,7 @@ export function useCompanionChat(options: { onOffline: (question: string) => voi
   useEffect(() => {
     latest.current.numbers = numbers;
     latest.current.tone = s.tone;
+    latest.current.crew = s.me;
     latest.current.addLines = c.addLines;
     latest.current.onOffline = options.onOffline;
   });
@@ -72,25 +77,40 @@ export function useCompanionChat(options: { onOffline: (question: string) => voi
     id: `companion-${s.me}-${s.sol}`,
     messages: seed,
     transport,
+    /* every part the server sends is validated before it reaches the screen */
+    dataPartSchemas: companionDataSchemas,
+    messageMetadataSchema: metadataSchema,
     onFinish: ({ message, isAbort, isError, isDisconnect }) => {
-      /* Errors and disconnects never persist unverified text; onError supplies
-         the offline fallback. Only an explicit user stop commits a draft. */
+      /* onError supplies the offline reply for errors and disconnects */
       if (isError || isDisconnect) return;
 
       const verdict = verdictOf(message);
-      const text = verdict?.message ?? extractPartialAnswer(messageText(message));
-      latest.current.addLines([
-        {
-          who: "companion",
-          text: text || "I stopped before answering.",
-          sources: verdict?.sources,
-          escalation: verdict?.escalation?.required,
-          noAnswer: verdict
-            ? !verdict.can_answer && !verdict.escalation?.required
-            : undefined,
-          stopped: isAbort || undefined,
-        },
-      ]);
+      if (verdict) {
+        latest.current.addLines([
+          {
+            who: "companion",
+            text: verdict.message,
+            sources: verdict.sources,
+            facts: verdict.rows,
+            action: verdict.action ?? undefined,
+            escalation: verdict.escalation.required || undefined,
+            noAnswer: !verdict.can_answer && !verdict.escalation.required ? true : undefined,
+          },
+        ]);
+        return;
+      }
+
+      /* No verdict. Stop was pressed: say so, and keep nothing of the answer. */
+      if (isAbort) {
+        latest.current.addLines([
+          { who: "companion", text: "Stopped before I answered.", stopped: true },
+        ]);
+        return;
+      }
+
+      /* The stream ended without a verdict and without an error. The server
+         never does this on purpose, so treat it like the model being off. */
+      latest.current.onOffline(latest.current.question);
     },
     onError: () => {
       latest.current.onOffline(latest.current.question);
@@ -104,7 +124,14 @@ export function useCompanionChat(options: { onOffline: (question: string) => voi
       latest.current.question = question;
       void sendMessage(
         { text: question },
-        { body: { numbers: latest.current.numbers, tone: latest.current.tone } },
+        {
+          body: {
+            numbers: latest.current.numbers,
+            tone: latest.current.tone,
+            /* for the local turn log only; the model is never given it */
+            crew: latest.current.crew,
+          },
+        },
       );
     },
     [sendMessage],
@@ -114,16 +141,15 @@ export function useCompanionChat(options: { onOffline: (question: string) => voi
     () => [...messages].reverse().find((m) => m.role === "assistant"),
     [messages],
   );
-  const lastText = messageText(lastAssistant);
-  const verdict = verdictOf(lastAssistant);
   const streaming = status === "submitted" || status === "streaming";
 
   return {
     messages,
     status,
     streaming,
-    liveText: streaming ? extractPartialAnswer(lastText) : "",
-    verdict,
+    /* where the running turn is: searching, thinking, writing, checking */
+    progress: streaming ? progressOf(lastAssistant) ?? "searching" : undefined,
+    verdict: verdictOf(lastAssistant),
     error,
     send,
     stop,

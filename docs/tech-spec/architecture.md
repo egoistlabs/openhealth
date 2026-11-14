@@ -62,31 +62,33 @@ question (typed, or speech turned into text)
 1. Red-flag check        code    matches the question against safety/red-flags.json
    |
    v
-2. Gather                code    the crew member's current numbers from the core loop
-   |                             + the best few brain files from search
+2. Gather                code    the best few brain files from search
+   |                             + the crew member's numbers, already worded, if the question is about them
    v
-3. Enough to answer?     code    no good search result -> decline, model is not called
+3. Enough to answer?     code    no source at all -> decline, model is not called
    |
    v
-4. Write the answer      model   reads only what step 2 gathered
+4. Write the answer      model   reads only what step 2 gathered; code stops it if it loops or runs long
    |
    v
-5. Check the answer      code    sources are real, numbers are not invented
+5. Check the answer      code    repairs or rejects it; a rejected answer falls back to code's own reply or a decline
    |
    v
-6. Show and speak        app     answer + source labels + escalation notice if step 1 fired
+6. Show and speak        app     only the checked answer + rows for measures that are off + one action + sources
 ```
+
+All six steps are one function, `runCompanionTurn` in `web/src/lib/brain/turn.ts`. The chat route (`web/src/app/api/ai/chat/route.ts`) and the eval runner (`npm run evals`) both call it, so an eval score describes the path a crew member uses.
 
 ### 1. Red-flag check
 
-Code compares the question with a fixed list of red-flag terms in `brain/safety/red-flags.json` (for example chest pain, trouble breathing, thoughts of self-harm). On a match, the reply always starts with a fixed escalation message naming who to contact. The model can add reference information after it, but cannot remove or soften it.
+Code compares the question with a fixed list of red-flag terms in `brain/safety/red-flags.json` (for example chest pain, trouble breathing, thoughts of self-harm). On a match, the reply is the fixed escalation message naming who to contact. The model is not called.
 
 ### 2. Gather
 
 Code collects two things:
 
-- **Numbers:** the crew member's current statuses, baselines and flags, taken from the core loop in the B1 data shape.
 - **Files:** the top three brain files for the question, found by search.
+- **Numbers:** the crew member's current measures in the B1 data shape. Code does the maths and the wording. The app turns each measure that is off into a finished sentence, for example "Your reaction time was 43 ms slower than your normal, 2 tests in a row." The model never sees a signed number to interpret. The sentences are offered to the model as one more source, `app/your-numbers`, only when the question is about the person's own numbers.
 
 Search starts as keyword search over each file's title, keywords and body. It needs no model and no extra memory. If the tests show it misses too many questions, the fallback is a small embedding model through Ollama, which Patrick would need to fit into the 16 GB budget.
 
@@ -96,39 +98,54 @@ Files marked `status: replaced` are never returned.
 
 If no file scores above the search threshold and the question is not about the crew member's own numbers, code replies "I don't have that on board" without calling the model. This is the first of two ways the companion declines. It is fast, and it cannot be talked out of it.
 
+A question about the person's own numbers needs no file to match. Code recognises two kinds. A status question asks how the person is doing ("Anything I should watch?", "How did I sleep?"). A topic question only mentions a measure ("How many hours should I sleep?").
+
 ### 4. Write the answer
 
 The Inputs table in `brain/stages/04-answer/CONTEXT.md` lists what the model is given. The prompt has five parts, always in this order:
 
 1. Who the companion is and how it speaks (`brain/identity/companion.md`)
-2. The rules: use only the sources and numbers below, never diagnose, say so if the sources do not answer the question (`brain/stages/04-answer/references/prompt.md`)
-3. The sources, each with an id
-4. The numbers
+2. Every answering rule (`brain/stages/04-answer/references/prompt.md`). No rule lives in code: `web/src/lib/brain/prompt.ts` only labels the data
+3. The sources, each with an id, the worded numbers last
+4. The tone
 5. The question
 
-The model replies in a fixed JSON shape, enforced with Ollama's `format` option:
+The model is called through the AI SDK's `streamText` against Ollama's `/v1` endpoint, and replies in a fixed JSON shape:
 
 ```json
 {
   "can_answer": true,
-  "answer": "Two or three plain sentences.",
-  "sources_used": ["procedures/sleep-shift.md"]
+  "sources_used": ["procedures/sleep-shift.md"],
+  "answer": "At most three plain sentences."
 }
 ```
+
+The sources come before the answer on purpose. Code reads the answer as it is written and stops the model the moment a whole sentence repeats, the answer passes three sentences, or 180 seconds have gone by. Because the sources are already known by then, the finished sentences can still be checked and used.
 
 `can_answer: false` is the second way the companion declines: search found files, but the model judged that they do not answer the question.
 
 ### 5. Check the answer
 
-Code rejects the reply and falls back to the decline message if any of these is true:
+The Audit table in `brain/stages/04-answer/CONTEXT.md` is the list of checks. Two of them repair the text: a repeated sentence is dropped, and a long answer is cut to its first three sentences. The others reject it:
 
-- `sources_used` is empty, or names a file that was not in the prompt
-- the answer contains a number that appears in neither the sources nor the supplied numbers
-- the reply is not valid JSON after one retry
+- `sources_used` is empty, or names a source that was not in the prompt
+- the answer contains a number that appears in no supplied source
+- a measure is described backwards, such as "faster" for a slower reaction time
+- an answer from the numbers names a measure that is within normal, or none that is off
+- the answer repeats a label from the prompt, a source id or the decline sentence
+- the reply is not valid JSON and was not cut short after the sources were named
+
+A rejected answer to a status question falls back to the reply code writes from the numbers alone. Any other rejected answer is the decline message.
 
 ### 6. Show and speak
 
-The app shows the answer with its sources underneath. Each source shows its title, where it came from and its date, for example "Sleep shift procedure, added mission day 61, authorised by the flight surgeon". Kokoro speaks the answer (story C4).
+The model's draft never leaves the server. The route streams typed parts (AI SDK UI message stream): a progress part while the turn runs, then the checked answer as a text part, a `data-verdict` part and one `source-document` part per knowledge file. The browser validates each part against the schemas in `web/src/lib/chat/types.ts`.
+
+The Companion screen shows the answer sentence, the measures that are off as short rows built from the numbers, the one suggested action from the app, and the sources folded to their titles. Opening the sources shows where each came from, its date and who authorised it. The avatar speaks the checked answer, then the action (story C4). Stop ends the turn and keeps nothing of the answer.
+
+### The turn log
+
+Every turn writes one JSON line to `web/.logs/companion-turns.jsonl` when it ends: who asked what, what search found, the options sent to the model, its raw output, each check's result, the verdict, and how the turn ended. The file holds what a crew member typed, so it is git-ignored, stays on the laptop and never goes in `brain/`. Set `COMPANION_TURN_LOG=off` to turn it off. Each answer's message metadata carries the `turnId` of its line.
 
 ### Fixed tasks
 

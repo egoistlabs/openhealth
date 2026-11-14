@@ -1,6 +1,3 @@
-import type { ChatTurn, ScoredDocument } from "../brain/types.ts";
-import { buildAnswerMessages } from "../brain/prompt.ts";
-
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL ?? "http://localhost:11434")
   .replace(/\/+$/, "");
 const OLLAMA_MODEL = process.env.OLLAMA_MODEL ?? "medgemma:4b";
@@ -17,10 +14,12 @@ export const ANSWER_FORMAT = {
   type: "object",
   properties: {
     can_answer: { type: "boolean" },
-    answer: { type: "string" },
+    /* Before the answer on purpose: if the answer is cut short, what it was
+       built from is already known, so its finished sentences can still be checked. */
     sources_used: { type: "array", items: { type: "string" } },
+    answer: { type: "string" },
   },
-  required: ["can_answer", "answer", "sources_used"],
+  required: ["can_answer", "sources_used", "answer"],
   additionalProperties: false,
 };
 
@@ -104,36 +103,4 @@ export async function generateJson<Result>(input: {
   }
 
   throw new Error("Ollama returned an invalid response twice.");
-}
-
-export async function generateGroundedAnswer(input: {
-  /* the stage's "Full file" inputs; only needed when messages is not supplied */
-  context?: string[];
-  sources: ScoredDocument[];
-  numbers?: Record<string, unknown>;
-  question: string;
-  history?: ChatTurn[];
-  tone?: "gentle" | "direct";
-  /* prebuilt prompt messages, used when the caller already assembled them */
-  messages?: ChatMessage[];
-}): Promise<{ answer: ModelAnswer; model: string }> {
-  const { data, model } = await generateJson({
-    messages:
-      input.messages ??
-      buildAnswerMessages({
-        context: input.context ?? [],
-        sources: input.sources,
-        numbers: input.numbers,
-        question: input.question,
-        history: input.history,
-        tone: input.tone,
-      }),
-    schema: ANSWER_FORMAT,
-    validate: parseModelAnswer,
-    retryHint:
-      "Your previous response was not valid JSON matching the required schema. " +
-      "Return only a valid object with can_answer, answer, and sources_used.",
-  });
-
-  return { answer: data, model };
 }

@@ -4,10 +4,11 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCompanionChat } from "@/hooks/companion/mutations/use-companion-chat";
 import {
-  JOURNAL, KEYS, MEASURES, MKEY, P, avg, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, listJoin, overall, series,
+  JOURNAL, KEYS, MEASURES, P, avg, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, overall, series,
   type ConvoRow, type VoicePhrase,
 } from "@/lib/console/data";
 import { Presence } from "@/lib/console/presence";
+import { codeReply, isStatusQuestion, readFacts } from "@/lib/brain/facts";
 import { holdEmotion, replyEmotion, restEmotion } from "@/lib/console/emotion";
 import { Num, Segmented, StatusMark, Toggle } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
@@ -54,15 +55,22 @@ function CompanionStage() {
   useEffect(() => () => { window.clearTimeout(typeTimer.current); Presence.setState("idle"); }, []);
 
   const chat = useCompanionChat({
+    /* the model is off or failed: answer from the person's own numbers, with the same code-written
+       reply the server falls back to, so the wording and the rows match */
     onOffline: (q) => {
-      const fallback = localReply(q, lastIntent.current);
-      speak({ who: "companion", offline: true, text: fallback ?? "The companion model is not running, so I can't answer that right now. Your check-in and measures still work." });
+      const facts = readFacts(companionNumbers(s.me, s.sol));
+      if (facts && hasBaseline(s.me, s.sol) && (isStatusQuestion(q) || lastIntent.current === "sleep" || lastIntent.current === "watch")) {
+        const reply = codeReply(facts, q);
+        speak({ who: "companion", offline: true, text: reply.message, facts: reply.rows, action: reply.action ?? undefined });
+        return;
+      }
+      speak({ who: "companion", offline: true, text: localReply(q) ?? "The companion model is not running, so I can't answer that right now. Your check-in and measures still work." });
     },
   });
   const busy = busyLocal || chat.streaming;
 
-  /* The streamed text is an unverified draft: the companion thinks while it arrives and only
-     speaks the verified answer once it lands in the log (below). */
+  /* The server never sends the model's unchecked draft: the companion thinks until the checked
+     answer lands in the log, and only then shows and speaks it (below). */
   useEffect(() => {
     if (chat.status === "submitted" || chat.status === "streaming") Presence.setState("working");
     else if (!vega.current?.speaking) Presence.setState("idle");
@@ -80,25 +88,15 @@ function CompanionStage() {
     const fresh = rows.slice(spoken.current);
     spoken.current = rows.length;
     const reply = [...fresh].reverse().find((r) => r.who === "companion" && r.text);
-    if (reply && vega.current) vega.current.speak(reply.text!, { emotion: replyEmotion(reply, worst), silent: !s.voice });
+    /* the answer first, so its opening sentence stands on its own; the suggested action last */
+    if (reply && !reply.stopped && vega.current) {
+      vega.current.speak(reply.action ? `${reply.text} Worth trying: ${reply.action}` : reply.text!, { emotion: replyEmotion(reply, worst), silent: !s.voice });
+    }
   }, [rows, worst, s.voice]);
 
-  /* local reply from the person's own numbers: used for "sum up my week" and when the model is off (C9) */
-  const localReply = (q: string, intent?: string) => {
-    const t = q.toLowerCase();
-    if (intent === "sleep" || /sleep|slept|tired/.test(t)) {
-      const st = c.st("sleep");
-      if (!st.base) return "Not enough nights yet to compare with your normal.";
-      const d = st.delta!, h = Math.round(Math.abs(d) * 2) / 2, t2 = c.st("timing");
-      return `${Math.abs(d) < 0.25 ? "Sleep is right at your normal." : `Sleep is about ${h}h ${d < 0 ? "under" : "over"} your normal.`}${isOut(t2) ? ` Your midpoint is ${Math.round(Math.abs(t2.delta!))} min ${t2.delta! > 0 ? "later" : "earlier"} than usual.` : ""}`;
-    }
-    if (intent === "watch" || /watch|anything|worry/.test(t)) {
-      const f = c.flagsFor();
-      return f.length
-        ? `${f.length} thing${f.length > 1 ? "s" : ""} on watch: ${listJoin(f.map((x) => MKEY[x.key].short))}. The first suggestion: ${flagCopy(s.me, f[0].key, f[0].st, s.tone, s.sol).action.toLowerCase()}`
-        : "Nothing on watch today. Everything sits within your normal.";
-    }
-    if (/check-?in|start/.test(t)) return c.checkedToday() ? "Today's check-in is done." : "Check-in is open. Five taps, about a minute, and any question can be skipped.";
+  /* what the app can say without the model or the numbers */
+  const localReply = (q: string) => {
+    if (/check-?in|start/.test(q.toLowerCase())) return c.checkedToday() ? "Today's check-in is done." : "Check-in is open. Five taps, about a minute, and any question can be skipped.";
     return null;
   };
 
@@ -161,9 +159,7 @@ function CompanionStage() {
   const lastReply = [...rows].reverse().find((x) => x.who === "companion" && x.text);
   const shown = speaking != null
     ? { who: "companion" as const, text: speaking, sol: P, min: 0 }
-    : chat.streaming
-      ? { who: "companion" as const, text: chat.liveText, sol: P, min: 0 }
-      : lastReply;
+    : lastReply;
 
   return (
     <div className={`cstage${s.drawer ? " has-drawer" : ""}`}>
@@ -180,7 +176,7 @@ function CompanionStage() {
               vega.current = api;
               api?.setRestEmotion(restEmotion(worst));
             }} />
-            <Reply row={shown} live={speaking != null || chat.streaming} />
+            <Reply row={shown} live={speaking != null} progress={chat.progress} />
           </>}
         </section>
 
@@ -226,18 +222,62 @@ function CompanionStage() {
   );
 }
 
-/* The answer under the orb: escalation notice above, sources below (A9, C8, C10, C11) */
-function Reply({ row, live }: { row?: ConvoRow; live: boolean }) {
+/* What the companion is doing while a turn runs. Shown instead of the model's unchecked draft. */
+const STEP: Record<string, string> = {
+  searching: "Looking at what I have on board",
+  thinking: "Reading your question",
+  writing: "Writing an answer",
+  checking: "Checking the answer",
+};
+
+/* The first sentence is the answer and is what gets read at a glance; the rest supports it. */
+function splitLead(text: string): [string, string] {
+  const cut = text.search(/(?<=[.!?])\s+/);
+  return cut === -1 ? [text, ""] : [text.slice(0, cut), text.slice(cut).trim()];
+}
+
+/* The checked answer under the avatar, laid out to be read at a glance: the answer sentence, the
+   measures that are off (rows built from the numbers, not from the model's words), the one
+   suggested action, then the sources folded to their titles (A9, C8, C10, C11). */
+function Reply({ row, live, progress }: { row?: ConvoRow; live: boolean; progress?: string }) {
+  if (progress) {
+    return <p className="stage__reply text-text-2" role="status">{STEP[progress] ?? STEP.thinking}<span className="caret" aria-hidden="true" /></p>;
+  }
   if (!row) return <p className="stage__reply">Nothing said yet. Hold to speak or type below.</p>;
+  const plain = live || row.escalation || row.noAnswer || row.stopped;
+  const [lead, rest] = plain ? [row.text ?? "", ""] : splitLead(row.text ?? "");
   return (
-    <div className="grid w-full max-w-[56ch] justify-items-center gap-3 text-center">
+    <div className="grid max-h-[38vh] w-full max-w-[56ch] justify-items-center gap-3 overflow-y-auto text-center">
       {row.escalation ? <EscalationNotice /> : null}
       {row.noAnswer && !live ? <p className="label">Not on board</p> : null}
-      <p className="stage__reply line-clamp-none max-h-[30vh] overflow-y-auto">
-        {row.text}{live ? <span className="caret" aria-hidden="true" /> : null}
+      {row.stopped ? <p className="label">Stopped</p> : null}
+      <p className="stage__reply line-clamp-none min-h-0">
+        {lead}{live ? <span className="caret" aria-hidden="true" /> : null}
       </p>
+      {rest ? <p className="text-text-2">{rest}</p> : null}
+      {!live ? <AnswerFacts facts={row.facts} action={row.action} /> : null}
       {!live && row.offline ? <p className="small t2">The companion model is off. This answer comes from your own numbers only.</p> : null}
       {!live ? <AnswerSources sources={row.sources} /> : null}
+    </div>
+  );
+}
+
+/* The measures that are off and the one thing to try. Both come from the app's numbers. */
+function AnswerFacts({ facts, action }: { facts?: ConvoRow["facts"]; action?: string }) {
+  if (!facts?.length && !action) return null;
+  return (
+    <div className="grid w-full gap-2 border-t border-hair pt-3 text-left">
+      {facts?.length ? (
+        <dl className="dl">
+          {facts.map((f) => (
+            <div key={f.key} className="contents">
+              <dt>{f.label}</dt>
+              <dd>{f.value} <span className="t2">· {f.detail}</span></dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+      {action ? <p><span className="label">Worth trying </span>{action}</p> : null}
     </div>
   );
 }
@@ -251,19 +291,20 @@ function EscalationNotice() {
   );
 }
 
+/* Sources folded down to their titles; opening it shows where each came from and who signed it off. */
 function AnswerSources({ sources }: { sources?: ConvoRow["sources"] }) {
   if (!sources?.length) return null;
   return (
-    <div className="w-full text-left">
-      <p className="th">Sources</p>
+    <details className="w-full text-left small text-text-2">
+      <summary className="cursor-pointer"><span className="th">Sources</span> {sources.map((x) => x.title).join(" · ")}</summary>
       <ul className="mt-1 grid gap-1">
         {sources.map((x) => (
-          <li key={x.id} className="small text-text-2">
+          <li key={x.id}>
             <span className="text-text">{x.title}</span> · {x.source} · added {x.added} · authorised by {x.authorised_by}
           </li>
         ))}
       </ul>
-    </div>
+    </details>
   );
 }
 
@@ -384,6 +425,12 @@ function TrRow({ r }: { r: ConvoRow }) {
         {r.escalation ? <span className="sw sw--act"><StatusMark state="act" />Escalated </span> : null}
         {r.stopped ? <span className="label">Stopped </span> : null}
         {r.text}
+        {r.facts?.length ? (
+          <span className="mt-1 block border-l border-hair pl-3">
+            {r.facts.map((f) => <span key={f.key} className="small block"><span className="t2">{f.label}</span> {f.value} <span className="t2">· {f.detail}</span></span>)}
+          </span>
+        ) : null}
+        {r.action ? <span className="small block"><span className="t2">Worth trying</span> {r.action}</span> : null}
         {r.sources?.length ? <span className="small t2 block">Sources: {r.sources.map((x) => x.title).join(", ")}</span> : null}
       </span>
     </div>

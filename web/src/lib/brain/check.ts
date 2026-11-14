@@ -2,6 +2,7 @@
 // It reads files only. It never calls the model.
 
 import { readFile, readdir } from "node:fs/promises";
+import { NUMBERS_SOURCE_ID } from "./facts.ts";
 import path from "node:path";
 import {
   CONTENT_DIRECTORIES,
@@ -181,7 +182,10 @@ export async function checkBrain(brainRoot: string): Promise<CheckResult> {
   lines.forEach((line, index) => {
     if (!line.trim()) return;
     const where = `evals/questions.jsonl line ${index + 1}`;
-    let question: { id?: string; kind?: string; question?: string; must_cite?: string; must_include?: string[] };
+    let question: {
+      id?: string; kind?: string; question?: string; must_cite?: string; must_include?: string[];
+      must_not_include?: string[]; numbers?: string; history?: Array<{ role?: string; text?: string }>;
+    };
     try {
       question = JSON.parse(line);
     } catch {
@@ -194,9 +198,22 @@ export async function checkBrain(brainRoot: string): Promise<CheckResult> {
     else seenIds.add(question.id);
     if (!question.question?.trim()) errors.push(`${name}: question is missing`);
 
+    if (question.numbers !== undefined && !/^[a-z0-9-]+$/.test(String(question.numbers))) {
+      errors.push(`${name}: numbers must name a fixture in web/scripts/eval-fixtures, for example "numbers-sato-sol142"`);
+    }
+    if (question.history !== undefined && !(Array.isArray(question.history) && question.history.every(
+      (turn) => (turn.role === "user" || turn.role === "assistant") && typeof turn.text === "string",
+    ))) {
+      errors.push(`${name}: history must be a list of { role: "user" | "assistant", text }`);
+    }
+
     const flagged = matchedCategories(question.question ?? "");
     if (question.kind === "answerable") {
       if (!question.must_cite) errors.push(`${name}: an answerable question needs must_cite`);
+      /* the person's own numbers, worded by the app: a source that is not a brain file */
+      else if (question.must_cite === NUMBERS_SOURCE_ID) {
+        if (!question.numbers) errors.push(`${name}: must_cite "${NUMBERS_SOURCE_ID}" needs a numbers fixture`);
+      }
       else if (!files.has(question.must_cite)) errors.push(`${name}: must_cite "${question.must_cite}" does not exist`);
       else if (!activeIds.has(question.must_cite)) errors.push(`${name}: must_cite "${question.must_cite}" is a replaced file`);
       else citedFiles.add(question.must_cite);

@@ -90,6 +90,10 @@ export type ConvoRow = {
   value?: string;
   key?: string;
   sources?: Array<{ id: string; title: string; source: string; added: string; authorised_by: string }>;
+  /** The measures that are off, as short rows built from the numbers. */
+  facts?: Array<{ key: string; label: string; value: string; detail: string }>;
+  /** The one suggested action, from the app. */
+  action?: string;
   escalation?: boolean;
   noAnswer?: boolean;
   offline?: boolean;
@@ -543,6 +547,63 @@ export function previewToday<T>(id: string, vals: Partial<Day>, fn: () => T): T 
 }
 
 /* ---------- the numbers the companion is given (C5): this person's own measures only ---------- */
+/* Code does the maths and the wording. The model is handed finished sentences
+   ("43 ms slower than your normal"), never a signed number to interpret. */
+export type CompanionFact = {
+  key: MeasureKey;
+  name: string;
+  /** A full sentence in the second person, ready to be said aloud. */
+  text: string;
+  /** The short form for a row on screen: "43 ms slower than your normal". */
+  value: string;
+  /** How long it has been off: "2 tests". */
+  detail: string;
+  /** The one suggested action for this measure. */
+  action: string;
+  /** Words that mean this measure, in a question or an answer. */
+  terms: string[];
+  /** The direction word used in `text`, and words that would state it backwards. */
+  direction: string | null;
+  opposites: string[];
+};
+const FACT_TERMS: Record<MeasureKey, string[]> = {
+  sleep: ["sleep", "slept", "rest", "tired"],
+  timing: ["sleep", "timing", "midpoint", "bedtime"],
+  rt: ["reaction", "reflex", "tap"],
+  mood: ["mood", "feel", "feeling"],
+  load: ["workload", "stress", "busy"],
+  team: ["teamwork", "team", "crew"],
+  engage: ["engagement", "check-in", "checkin", "talk"],
+};
+function factFor(id: string, key: MeasureKey, st: Status, s: number): CompanionFact {
+  const d = st.delta ?? 0, k = st.k, unit = MKEY[key].unitWord;
+  const span = `${k} ${k === 1 ? unit.replace(/s$/, "") : unit}`;
+  const run = k >= 2 ? `, ${span} in a row` : "";
+  let value = "", subject = "", direction: string | null = null, opposites: string[] = [], detail = span;
+  switch (key) {
+    case "sleep": direction = d < 0 ? "shorter" : "longer"; opposites = [d < 0 ? "longer" : "shorter"]; subject = "Your sleep was"; value = `${fmtDelta("sleep", d).slice(1)} ${direction} than your normal`; break;
+    case "rt": direction = d > 0 ? "slower" : "faster"; opposites = d > 0 ? ["faster", "quicker"] : ["slower"]; subject = "Your reaction time was"; value = `${Math.round(Math.abs(d))} ms ${direction} than your normal`; break;
+    case "timing": direction = d > 0 ? "later" : "earlier"; opposites = [d > 0 ? "earlier" : "later"]; subject = "Your sleep timing was"; value = `${Math.abs(Math.round(d))} min ${direction} than your normal`; break;
+    case "mood": direction = "below"; opposites = ["above", "higher", "better"]; subject = "Your mood rating was"; value = "below your normal"; break;
+    case "load": direction = "above"; opposites = ["below", "lower", "lighter"]; subject = "Your workload rating was"; value = "above your normal"; break;
+    case "team": direction = "below"; opposites = ["above", "higher", "better"]; subject = "Your teamwork rating was"; value = "below your normal"; break;
+    case "engage":
+      if (st.k >= 2) { direction = "less"; opposites = ["more"]; subject = "You spoke with me"; value = "less than your normal"; }
+      else { subject = "You missed"; value = `${st.missed} check-ins in the last 7 days`; detail = "7 days"; }
+      break;
+  }
+  const text = key === "engage" && st.k < 2 ? `${subject} ${value}.` : `${subject} ${value}${run}.`;
+  return { key, name: MKEY[key].name, text, value, detail, action: SUGGEST[key](usualOnset(id, s)), terms: FACT_TERMS[key], direction, opposites };
+}
+const FACT_ORDER: MeasureKey[] = ["timing", "sleep", "load", "mood", "engage", "team", "rt"];
+export function companionFacts(id: string, s: number) {
+  const sts = MEASURES.map((m) => ({ m, st: mstatus(id, m.key, s) }));
+  const off = sts.filter((x) => isOut(x.st))
+    .sort((a, b) => RANK[b.st.state] - RANK[a.st.state] || b.st.k - a.st.k || FACT_ORDER.indexOf(a.m.key) - FACT_ORDER.indexOf(b.m.key))
+    .map((x) => factFor(id, x.m.key, x.st, s));
+  const normal = sts.filter((x) => x.st.state === "normal").map((x) => ({ key: x.m.key, name: x.m.name, terms: FACT_TERMS[x.m.key] }));
+  return { off, normal };
+}
 export function companionNumbers(id: string, s: number) {
   const measures: Record<string, unknown> = {};
   MEASURES.forEach((m) => {
@@ -556,5 +617,6 @@ export function companionNumbers(id: string, s: number) {
       ...(m.key === "engage" ? { checkins_missed_7_days: st.missed } : {}),
     };
   });
-  return { sol: s, measures };
+  /* `measures` is kept for the turn log only. The model is given `facts`. */
+  return { sol: s, measures, facts: companionFacts(id, s) };
 }
