@@ -1,15 +1,20 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { utils, type SlotItemMapArray, type Swapy } from "swapy";
+import { DragHandle, SwapyItem, SwapyLayout, SwapySlot } from "@/components/ui/swapy-draggable-card";
 import {
-  KEYS, MEASURES, MKEY, P, checkinCount, crewById, fmt, fmtBase, fmtDelta, hasBaseline, isOut, listJoin, overall, reason, solDate,
+  KEYS, MEASURES, MKEY, P, checkinCount, crewById, day, fmt, hm, fmtBase, fmtDelta, hasBaseline, isOut, listJoin, overall, reason, solDate,
   type Measure, type MeasureKey, type Status,
 } from "@/lib/console/data";
-import { railSvg, sparkSvg, trendSvg } from "@/lib/console/plots";
-import { Icon, Legend, Num, StatusMark, StatusRule, StatusWord, Term, Toggle } from "@/components/ui";
+import { railSvg, sparkSvg } from "@/lib/console/plots";
+import { CLS, Icon, Num, StatusMark, StatusRule, StatusWord, Term, Toggle } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
-import { FlagCard, FlagList, OkLine } from "./FlagCard";
+import { FlagCard, FlagTimeline, OkLine } from "./FlagCard";
 import { Plot } from "./Plot";
+import { CrewPortrait } from "./CrewPortrait";
+import { MeasureHistory } from "./MeasureHistory";
 import { ROUTE, ReplayNote } from "./Shell";
 
 /* Home: me vs my baseline (A4, A5), in the console layout: a main column and a margin column.
@@ -27,12 +32,11 @@ export function HomeScreen() {
 
   const primary = !atPresent
     ? <button type="button" className="btn-primary" onClick={() => set({ sol: P })}>Return to today <Icon name="arrow" /></button>
-    : due
-      ? <Link className="btn-primary" href={ROUTE.checkin}>Start daily check-in <Icon name="arrow" /></Link>
-      : <Link className="btn-primary" href={ROUTE.companion}>Talk to Pedro <Icon name="arrow" /></Link>;
+    : <Link className="btn-primary" href={ROUTE.companion}>Talk to Pedro <Icon name="arrow" /></Link>;
+  const today = day(s.me, s.sol), done = !!today?.checkin;
 
   return (
-    <>
+    <div className="home">
       <ReplayNote />
       <div className="pbar">
         <h1 className="pbar__t">Personal · me vs my baseline</h1>
@@ -41,10 +45,12 @@ export function HomeScreen() {
 
       <section className="sec">
         <div className="sec__main">
+          <div className="idn-wrap">
+          <CrewPortrait person={person} />
           <div className="idn">
             <p className="idn__name">{person.full}</p>
             <p className="idn__meta">
-              <span>{person.role}</span><span>Sol <Num>{s.sol}</Num></span>
+              <span className="idn__role">{person.role}</span><span>Age <Num>{person.age}</Num></span><span>Blood type <Num>{person.blood}</Num></span><span>Sol <Num>{s.sol}</Num></span>
               <span><Term k="baseline">Baseline</Term> window: <Num>14d</Num></span>
             </p>
             <div className="idn__status"><StatusRule state={worst} word={ready ? undefined : "Building baseline"} note="against your own normal only" /></div>
@@ -59,11 +65,29 @@ export function HomeScreen() {
             <p className="idn__row"><b>Simulated data</b><span className="t2">— prototype, not a medical device</span></p>
             <div className="idn__cta">{primary}</div>
           </div>
+          </div>
         </div>
         <aside className="sec__margin">
-          <div>
-            <h2 className="sec-t sec-t--rule">What this screen is</h2>
-            <p className="t2">How you are doing against your own normal. It never compares you with other crew, ranks anyone, or uses percentiles.</p>
+          <div className={`cicard${due ? " is-due" : ""}`} aria-labelledby="cicard-t">
+            <div className="cicard__h">
+              <h2 className="sec-t" id="cicard-t">Daily check-in</h2>
+              {done ? <span className="nav__ok">Done</span> : due ? <span className="nav__due">Due</span> : <span className="small t2">Not done</span>}
+            </div>
+            {done && today ? <>
+              <p className="small t2">Sol <Num>{s.sol}</Num> · logged at <Num>{hm(today.checkin!.min)}</Num></p>
+              <dl className="cicard__vals">
+                <dt>Sleep</dt><dd><Num>{today.sleep == null ? "—" : `${today.sleep.toFixed(1)}h`}</Num></dd>
+                <dt>Mood</dt><dd><Num>{today.mood ?? "—"}</Num>/5</dd>
+                <dt>Day load</dt><dd><Num>{today.load ?? "—"}</Num>/5</dd>
+                <dt>Teamwork</dt><dd><Num>{today.team ?? "—"}</Num>/5</dd>
+              </dl>
+              {atPresent ? <Link className="ta" href={`${ROUTE.checkin}?step=review`}>Review or correct</Link> : null}
+            </> : <>
+              <p className="t2">Five quick questions with Pedro: sleep, mood, day load, teamwork and shared meals. Then an optional reaction game. About 2 minutes.</p>
+              {atPresent
+                ? <Link className="btn-primary btn-primary--wide" href={ROUTE.checkin}>Start daily check-in <Icon name="arrow" /></Link>
+                : <p className="small t2">No check-in was logged on this sol.</p>}
+            </>}
           </div>
         </aside>
       </section>
@@ -79,14 +103,7 @@ export function HomeScreen() {
               {lead ? <> · {MKEY[lead.key].short} on {lead.st.state === "act" ? "act" : "watch"} for {lead.st.k} {MKEY[lead.key].unitWord}</> : null}.
             </p>
             <Discrepancy />
-            <div className="mrows" role="list">
-              <div className="mhead" aria-hidden="true">
-                <span className="th">Measure</span><span className="th r">Today</span><span className="th r">Normal</span><span className="th r">Delta</span>
-                <span className="th">Deviation</span><span className="th">14 sols</span><span className="th">Status</span>
-              </div>
-              {MEASURES.map((m, i) => <MeasureRow key={m.key} m={m} st={sts[i]} />)}
-            </div>
-            <Legend items={[["band", "Your normal range"], ["line", "Centre line: your median"], ["dot", "Today"], ["out", "Outside your normal"]]} />
+            <MeasureGrid sts={sts} />
           </>}
         </div>
         <aside className="sec__margin">
@@ -95,52 +112,115 @@ export function HomeScreen() {
             <p className="t2">Each measure&apos;s normal is the median of your previous 14 sols. The band is your usual spread. Outside the band for 2+ days reads Watch; 5+ reads Act.</p>
           </div>
           <div>
-            <h2 className="sec-t">Flags</h2>
-            {!ready ? <OkLine state="pending">Flags start once your baseline exists.</OkLine>
-              : flags.length ? <FlagList flags={flags} ctx="m" />
-                : <OkLine state="normal">All seven measures sit within your normal.</OkLine>}
+            {!ready ? <><h2 className="sec-t">Flags</h2><OkLine state="pending">Flags start once your baseline exists.</OkLine></>
+              : flags.length ? <FlagTimeline flags={flags} />
+                : <><h2 className="sec-t">Flags</h2><OkLine state="normal">All seven measures sit within your normal.</OkLine></>}
           </div>
         </aside>
       </section>
+    </div>
+  );
+}
+
+/* Today's measures as a compact card grid (A4): no table, no scroll. Each card shows the value, its
+   normal, the delta, a 14-sol sparkline and status. Drag a card by its grip to reorder; click it to
+   open the full stats in a modal (28-sol trend, deviation rail, flag, share toggle). */
+const MITEMS = MEASURES.map((m) => ({ id: m.key as string }));
+function MeasureGrid({ sts }: { sts: Status[] }) {
+  const [slotItemMap, setSlotItemMap] = useState<SlotItemMapArray>(() => utils.initSlotItemMap(MITEMS, "id"));
+  const slotted = useMemo(() => utils.toSlottedItems(MITEMS, "id", slotItemMap), [slotItemMap]);
+  const swapy = useRef<Swapy | null>(null);
+  const [openKey, setOpenKey] = useState<MeasureKey | null>(null);
+  useEffect(() => { swapy.current?.update(); }, [slotItemMap]);
+
+  return (
+    <>
+      <SwapyLayout id="mgrid" className="mgrid-wrap" config={{ manualSwap: true, swapMode: "hover", animation: "dynamic" }}
+        onReady={(sw) => { swapy.current = sw; }}
+        onSwap={(e) => setSlotItemMap(e.newSlotItemMap.asArray)}>
+        <div className="mgrid" role="list" aria-label="Today's measures">
+          {slotted.map(({ slotId, itemId }) => {
+            const i = MEASURES.findIndex((m) => m.key === itemId);
+            if (i < 0) return null;
+            return (
+              <SwapySlot key={slotId} id={slotId} className="mgrid__slot">
+                <SwapyItem id={itemId} key={itemId} className="mgrid__item" dragItemOpacity={60}>
+                  <MeasureCard m={MEASURES[i]} st={sts[i]} onOpen={() => setOpenKey(MEASURES[i].key)} />
+                </SwapyItem>
+              </SwapySlot>
+            );
+          })}
+        </div>
+      </SwapyLayout>
+      <p className="small t2 mgrid__hint">Click a card for full stats. Drag the grip to reorder.</p>
+      {openKey ? <MeasureModal m={MKEY[openKey]} st={sts[MEASURES.findIndex((m) => m.key === openKey)]} onClose={() => setOpenKey(null)} /> : null}
     </>
   );
 }
 
-/* One measure: value, normal, delta, deviation rail, 14-sol sparkline, status and a one-line reason (A4).
-   Selecting it opens the 28-sol trend and the share toggle. */
-function MeasureRow({ m, st }: { m: Measure; st: Status }) {
-  const c = useConsole();
-  const { s, set } = c;
-  const open = !!s.open[m.key], old = st.latest != null && st.latest < s.sol, hi = s.hi && s.hi.key === m.key;
-  const isSh = c.shared(s.me).includes(m.key);
+function MeasureCard({ m, st, onOpen }: { m: Measure; st: Status; onOpen: () => void }) {
+  const { s } = useConsole();
+  const old = st.latest != null && st.latest < s.sol, hi = s.hi && s.hi.key === m.key;
   return (
-    <div id={`mr-${m.key}`} className={`mr${open ? " is-open" : ""}${hi ? " is-hi" : ""}`} role="listitem">
-      <button type="button" className="mr__btn" aria-expanded={open} aria-controls={`mx-${m.key}`} onClick={() => set((p) => ({ open: { ...p.open, [m.key]: !p.open[m.key] } }))}>
-        <span className="mr__n">{m.name}<span className="chev"><Icon name="chev" /></span></span>
-        <span className={`mr__v r${old ? " is-old" : ""}`} title={old ? `From Sol ${st.latest}` : undefined}>{fmt(m.key, st.value)}</span>
-        <span className="mr__b r">{fmtBase(m.key, st.base)}</span>
-        <span className={`mr__d r${isOut(st) ? " is-out" : ""}`}>{st.base ? fmtDelta(m.key, st.delta) : "—"}</span>
-        <Plot as="span" className="mr__rail" draw={(w) => railSvg(st, w)} />
-        <Plot as="span" className="mr__spark" draw={(w) => sparkSvg(s.me, s.sol, m.key, w)} />
-        <span className="mr__s"><StatusWord state={st.state} /></span>
-        <span className="mr__why">{reason(s.me, m.key, st)}</span>
+    <div className={`mcard mcard--${CLS[st.state] || st.state}${hi ? " is-hi" : ""}`} role="listitem">
+      <div className="mcard__h">
+        <DragHandle className="mcard__grip" label={`Drag ${m.name} to reorder`} />
+        <span className="mcard__n">{m.name}</span>
+        <StatusWord state={st.state} />
+      </div>
+      <button type="button" className="mcard__btn" onClick={onOpen} aria-haspopup="dialog" aria-label={`${m.name}: open full stats`}>
+        <span className="mcard__row">
+          <span className={`mcard__v${old ? " is-old" : ""}`} title={old ? `From Sol ${st.latest}` : undefined}>{fmt(m.key, st.value)}</span>
+          <span className={`mcard__d${isOut(st) ? " is-out" : ""}`}>{st.base ? fmtDelta(m.key, st.delta) : "—"}</span>
+        </span>
+        <span className="mcard__b">Normal {fmtBase(m.key, st.base)}</span>
+        <Plot as="span" className="mcard__spark" draw={(w) => sparkSvg(s.me, s.sol, m.key, w)} />
       </button>
-      {open ? (
-        <div className="mr__x" id={`mx-${m.key}`}>
-          <div>
-            <Plot draw={(w) => trendSvg(s.me, s.sol, m.key, w)} label={`${m.name}, 28 sols, with your baseline band`} />
-            <Legend items={m.key === "sleep" || m.key === "engage"
-              ? [["bar", "Each sol"], ["band", "Your baseline"], ["line", "Your median (target)"], ["out", "Outside"]]
-              : [["dot", "Each sol"], ["band", "Your baseline"], ["line", "Your median"], ["out", "Outside"]]} />
-            <p className="foot-note">{m.source}. {m.tip}</p>
+    </div>
+  );
+}
+
+function MeasureModal({ m, st, onClose }: { m: Measure; st: Status; onClose: () => void }) {
+  const c = useConsole();
+  const { s } = c;
+  const ref = useRef<HTMLDialogElement>(null);
+  const isSh = c.shared(s.me).includes(m.key);
+  // No close() in cleanup: React dev mode runs effects twice, and that close would fire the dialog's
+  // `close` event and clear the selection, so the modal never appeared. Unmounting removes it anyway.
+  useEffect(() => {
+    const d = ref.current;
+    if (d && !d.open) d.showModal();
+  }, []);
+  return (
+    <dialog ref={ref} className="mmodal" aria-labelledby="mmodal-t" onClose={onClose}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="mmodal__in">
+        <header className="mmodal__h">
+          <div className="mmodal__ttl">
+            <h2 className="mmodal__t" id="mmodal-t">{m.name}</h2>
+            <p className="small t2">Sol <Num>{s.sol}</Num> · against your own normal</p>
           </div>
-          <div className="stack">
+          <dl className="mmodal__stats">
+            <div><dt>Today</dt><dd>{fmt(m.key, st.value)}</dd></div>
+            <div><dt>Your normal</dt><dd>{fmtBase(m.key, st.base)}</dd></div>
+            <div><dt>Delta</dt><dd className={isOut(st) ? "is-out" : undefined}>{st.base ? fmtDelta(m.key, st.delta) : "—"}</dd></div>
+          </dl>
+          <StatusWord state={st.state} />
+          <button type="button" className="mmodal__x" onClick={onClose} aria-label="Close">×</button>
+        </header>
+        <MeasureHistory key={m.key} m={m} me={s.me} sol={s.sol}
+          lead={<div className="mmodal__dev">
+            <p className="mmodal__why">{reason(s.me, m.key, st)}</p>
+            <h3 className="label">Deviation from your normal</h3>
+            <Plot className="mmodal__rail" draw={(w) => railSvg(st, w)} />
+          </div>}
+          aside={<>
             {isOut(st) ? <FlagCard k={m.key} st={st} ctx="x" /> : <OkLine state="normal">{m.name} has stayed inside your band. Nothing to do.</OkLine>}
             <Toggle on={isSh} label="Share with crew as an aggregate" onClick={() => toggleShare(c, m.key)} />
-          </div>
-        </div>
-      ) : null}
-    </div>
+            <p className="foot-note">{m.source}. {m.tip}</p>
+          </>} />
+      </div>
+    </dialog>
   );
 }
 

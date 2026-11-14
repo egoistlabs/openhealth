@@ -224,22 +224,20 @@ function Spine() {
   );
 }
 
-/* ---------- nav: Home, Check-in, Companion, Crew; then Alerts, Mission log ---------- */
+/* ---------- nav: Home, Companion, Crew; then Alerts, Mission log (check-in is a card on Home) ---------- */
 function Nav() {
-  const { s, set, atPresent, checkedToday, openFlags } = useConsole();
+  const { s, set, openFlags } = useConsole();
   const path = usePathname();
   const router = useRouter();
   const on = (r: string) => (r === "/" ? path === "/" : path.startsWith(r));
   const alertsOn = on(ROUTE.companion) && s.drawer && s.tab === "alerts" && !s.settings;
-  const ci = checkedToday() ? <span className="nav__ok">Done</span> : atPresent ? <span className="nav__due">Due</span> : null;
   let screens: Array<[string, string, boolean, ReactNode]> = [
-    [ROUTE.home, "Home", on(ROUTE.home), null],
-    [ROUTE.checkin, "Check-in", on(ROUTE.checkin), ci],
+    [ROUTE.home, "Home", on(ROUTE.home) || on(ROUTE.checkin), null],
     [ROUTE.companion, "Pedro", on(ROUTE.companion) && !alertsOn, null],
     [ROUTE.crew, "Crew", on(ROUTE.crew), null],
   ];
-  if (s.role === "crew") screens = [screens[3], screens[0], screens[1], screens[2]];
-  if (s.role === "ground") screens = [[ROUTE.ground, "Ground", path === ROUTE.ground, null], screens[3]];
+  if (s.role === "crew") screens = [screens[2], screens[0], screens[1]];
+  if (s.role === "ground") screens = [[ROUTE.ground, "Ground", path === ROUTE.ground, null], screens[2]];
   const nAlerts = openFlags().length;
   const [help, setHelp] = useState(false);
 

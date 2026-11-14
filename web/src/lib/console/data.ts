@@ -26,6 +26,11 @@ export type CrewMember = {
   init: string;
   role: string;
   code: string;
+  age: number;
+  /** shown only on the person's own Home profile; never on Crew or Ground views */
+  blood: string;
+  /** optional portrait image under /public, e.g. "/crew/sato.jpg"; a drawn portrait is used otherwise */
+  photo?: string;
   b: { onset: number; wake: number; rt: number; mood: number; load: number; team: number; words: number; meals: number };
   shares: MeasureKey[];
 };
@@ -144,16 +149,16 @@ export const TERMS: Record<string, string> = {
 };
 
 export const CREW: CrewMember[] = [
-  { id: "okafor", full: "Adaeze Okafor", init: "AO", role: "Commander", code: "CDR",
+  { id: "okafor", full: "Adaeze Okafor", init: "AO", role: "Commander", code: "CDR", age: 46, blood: "A+",
     b: { onset: -20, wake: 425, rt: 255, mood: 4, load: 3, team: 4, words: 380, meals: 1.6 },
     shares: ["sleep", "rt", "timing", "mood", "load", "team", "engage"] },
-  { id: "lindqvist", full: "Mattias Lindqvist", init: "ML", role: "Flight engineer", code: "FE",
+  { id: "lindqvist", full: "Mattias Lindqvist", init: "ML", role: "Flight engineer", code: "FE", age: 41, blood: "O-",
     b: { onset: 0, wake: 425, rt: 265, mood: 4, load: 3, team: 4, words: 450, meals: 1.4 },
     shares: ["sleep", "mood", "load", "team", "engage"] },
-  { id: "sato", full: "Kenji Sato", init: "KS", role: "Mission specialist, geology", code: "MS-1",
+  { id: "sato", full: "Kenji Sato", init: "KS", role: "Mission specialist, geology", code: "MS-1", age: 38, blood: "O+", photo: "/crew/sato.png",
     b: { onset: 15, wake: 460, rt: 248, mood: 4, load: 3, team: 4, words: 520, meals: 1.5 },
     shares: [] },
-  { id: "reyes", full: "Daniela Reyes", init: "DR", role: "Mission specialist, life support", code: "MS-2",
+  { id: "reyes", full: "Daniela Reyes", init: "DR", role: "Mission specialist, life support", code: "MS-2", age: 35, blood: "B+",
     b: { onset: -10, wake: 430, rt: 260, mood: 4, load: 3, team: 4, words: 300, meals: 1.2 },
     shares: ["sleep", "mood", "team", "engage"] },
 ];
