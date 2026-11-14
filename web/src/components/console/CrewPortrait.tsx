@@ -14,19 +14,20 @@ const LOOK: Record<string, { skin: string; hair: string; long?: boolean }> = {
   reyes: { skin: "#C48E66", hair: "#3A2418", long: true },
 };
 
-export function CrewPortrait({ person, size = 160 }: { person: CrewMember; size?: number }) {
+/* `bare`: head-and-shoulders cut-out with no moon backdrop or helmet, for poster cards. */
+export function CrewPortrait({ person, size = 160, className = "portrait", bare = false }: { person: CrewMember; size?: number; className?: string; bare?: boolean }) {
   const [photoOk, setPhotoOk] = useState(true);
   const h = Math.round(size * 1.2);
   if (person.photo && photoOk) {
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img className="portrait" src={person.photo} width={size} height={h} alt={`Portrait of ${person.full}`}
+      <img className={className} src={person.photo} width={size} height={h} alt={`Portrait of ${person.full}`}
         onError={() => setPhotoOk(false)} />
     );
   }
   const L = LOOK[person.id] ?? { skin: "#D8AE8A", hair: "#2A211C" };
   return (
-    <svg className="portrait" viewBox="0 0 200 240" width={size} height={h} role="img" aria-label={`Portrait of ${person.full}`}>
+    <svg className={className} preserveAspectRatio={bare ? "xMidYMax meet" : "xMidYMin slice"} viewBox={bare ? "36 78 128 162" : "0 0 200 240"} width={size} height={h} role="img" aria-label={`Portrait of ${person.full}`}>
       <defs>
         <radialGradient id={`moon-${person.id}`} cx="45%" cy="40%" r="60%">
           <stop offset="0" stopColor="#8D949C" /><stop offset="1" stopColor="#3B4048" />
@@ -38,12 +39,12 @@ export function CrewPortrait({ person, size = 160 }: { person: CrewMember; size?
           <stop offset="0" stopColor="#E3A04A" /><stop offset=".55" stopColor="#9C3F1E" /><stop offset="1" stopColor="#3A1A10" />
         </linearGradient>
       </defs>
-      {/* backdrop: space + moon */}
+      {bare ? null : <>{/* backdrop: space + moon */}
       <rect width="200" height="240" fill="#0B0D12" />
       <circle cx="100" cy="100" r="96" fill={`url(#moon-${person.id})`} />
       <g fill="#2F343B" opacity=".55">
         <circle cx="52" cy="70" r="14" /><circle cx="140" cy="48" r="9" /><circle cx="70" cy="140" r="10" /><circle cx="160" cy="120" r="7" />
-      </g>
+      </g></>}
       {/* suit body */}
       <path d="M38 240 C40 186 62 166 100 162 C138 166 160 186 162 240 Z" fill={`url(#suit-${person.id})`} />
       <path d="M100 172 V240" stroke="#B5B9B8" strokeWidth="1.5" />
@@ -65,9 +66,9 @@ export function CrewPortrait({ person, size = 160 }: { person: CrewMember; size?
       <rect x="128" y="184" width="22" height="13" fill="#1F3E73" /><rect x="128" y="189" width="22" height="3" fill="#E4E7EA" />
       <circle cx="96" cy="214" r="6" fill="#2C5AA8" /><circle cx="96" cy="230" r="6" fill="#B23A2E" /><circle cx="112" cy="222" r="5" fill="#3E7CC9" />
       {/* helmet at their side */}
-      <circle cx="30" cy="206" r="30" fill="#EDEFEC" />
+      {bare ? null : <><circle cx="30" cy="206" r="30" fill="#EDEFEC" />
       <ellipse cx="32" cy="204" rx="22" ry="21" fill={`url(#visor-${person.id})`} />
-      <ellipse cx="24" cy="196" rx="6" ry="4" fill="#FFFFFF" opacity=".35" />
+      <ellipse cx="24" cy="196" rx="6" ry="4" fill="#FFFFFF" opacity=".35" /></>}
     </svg>
   );
 }

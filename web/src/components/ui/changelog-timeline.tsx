@@ -45,6 +45,8 @@ export type ChangelogTimelineProps = ContainerProps & {
   defaultPinned?: string | null;
   onPinnedChange?: (id: string | null) => void;
   empty?: React.ReactNode;
+  /** Fill the parent's height (list scrolls inside) instead of capping at visibleEntries. */
+  fill?: boolean;
 };
 
 const FALLBACK: TimelineCategory = { label: "", mark: "·", color: "var(--c-action)" };
@@ -68,6 +70,7 @@ export function ChangelogTimeline({
   defaultPinned = null,
   onPinnedChange,
   empty = "Nothing here yet.",
+  fill = false,
   ref,
   className,
   ...rest
@@ -183,7 +186,7 @@ export function ChangelogTimeline({
 
   return (
     <div {...rest} ref={ref} role="region" aria-labelledby={title ? titleId : undefined} data-slot="changelog-timeline" data-expanded={activeId ?? ""} data-pinned={pinnedId ?? ""}
-      className={cx("flex w-full flex-col rounded-control border border-hair-strong bg-surface text-text", className)}>
+      className={cx("flex w-full flex-col rounded-control", fill && "h-full min-h-0", " border border-hair-strong bg-surface text-text", className)}>
       <style>{`
         @keyframes changelog-node-breathe { 0%,100% { transform:scale(1); opacity:.55 } 50% { transform:scale(1.35); opacity:1 } }
         @keyframes changelog-node-ripple { 0% { transform:scale(.8); opacity:.8 } 100% { transform:scale(3.2); opacity:0 } }
@@ -211,7 +214,7 @@ export function ChangelogTimeline({
         </div>
       ) : null}
 
-      <div data-list-viewport className="min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden" style={{ maxHeight: layout.maxHeight }}>
+      <div data-list-viewport className={cx(fill && "flex-1", "min-h-0 overflow-y-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden")} style={{ maxHeight: fill ? undefined : layout.maxHeight }}>
         <div ref={stageRef} data-rail-stage className="relative px-2 pb-2">
           <span data-rail-base aria-hidden="true" className="pointer-events-none absolute left-[17px] w-0.5 bg-hair-strong" style={{ top: layout.start, height: layout.length }} />
           <span data-rail-highlight aria-hidden="true" className="pointer-events-none absolute left-[16.5px] top-0 z-[1] h-px w-[3px] origin-top rounded-full"

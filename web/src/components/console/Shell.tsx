@@ -3,7 +3,8 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { CREW, MISSION, P, crewEvents, crewById, day, hm, solDate, type LogEvent } from "@/lib/console/data";
+import { CREW, MISSION, P, crewEvents, crewById, day, hasBaseline, hm, solDate, type LogEvent } from "@/lib/console/data";
+import { FlagList } from "./FlagCard";
 import { escalations, groundRows } from "@/lib/console/ground";
 import { tok } from "@/lib/console/plots";
 import { Icon, Num, Segmented, StatusMark, Toggle } from "@/components/ui";
@@ -23,6 +24,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
   const router = useRouter();
   const focus = path.startsWith(ROUTE.checkin) && atPresent;
   const full = path.startsWith(ROUTE.companion);
+  const alertsPanel = s.alerts && !full && s.role !== "ground";
   const mainRef = useRef<HTMLElement>(null);
 
   // scroll to top on route change (the progress line restarts because it is keyed on the path)
@@ -35,7 +37,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
     <>
       {theme === "blueprint" ? <DotBackground /> : null}
       <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); mainRef.current?.focus(); }}>Skip to content</a>
-      <div className={`app${s.log ? " has-log" : ""}${focus ? " is-focus" : ""}`} id="app">
+      <div className={`app${s.log || alertsPanel ? " has-log" : ""}${focus ? " is-focus" : ""}`} id="app">
         <Header />
         <Spine />
         <Nav />
@@ -44,7 +46,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
           <div key={path} className="progress is-run" aria-hidden="true" />
           <div id="view" className={full ? "is-full" : undefined}>{children}</div>
         </main>
-        <LogPanel />
+        {alertsPanel ? <AlertsPanel /> : <LogPanel />}
       </div>
       {!full && !path.startsWith(ROUTE.checkin) && !path.startsWith(ROUTE.ground) ? (
         <button type="button" className="orb" aria-label="Open Pedro" onClick={() => router.push(ROUTE.companion)}>
@@ -228,12 +230,13 @@ function Spine() {
 function Nav() {
   const { s, set, openFlags } = useConsole();
   const path = usePathname();
-  const router = useRouter();
   const on = (r: string) => (r === "/" ? path === "/" : path.startsWith(r));
-  const alertsOn = on(ROUTE.companion) && s.drawer && s.tab === "alerts" && !s.settings;
+  const inPedro = on(ROUTE.companion);
+  const drawerAlerts = inPedro && s.drawer && s.tab === "alerts" && !s.settings;
+  const alertsOn = drawerAlerts || (!inPedro && s.alerts);
   let screens: Array<[string, string, boolean, ReactNode]> = [
     [ROUTE.home, "Home", on(ROUTE.home) || on(ROUTE.checkin), null],
-    [ROUTE.companion, "Pedro", on(ROUTE.companion) && !alertsOn, null],
+    [ROUTE.companion, "Pedro", inPedro && !drawerAlerts, null],
     [ROUTE.crew, "Crew", on(ROUTE.crew), null],
   ];
   if (s.role === "crew") screens = [screens[2], screens[0], screens[1]];
@@ -260,13 +263,19 @@ function Nav() {
         <ul className="nav__list nav__list--tools">
           {s.role === "ground" ? null : <li>
             <button type="button" className={`nav__a${alertsOn ? " is-on" : ""}`} aria-label={`Alerts, ${nAlerts} open`}
-              onClick={() => { set({ drawer: true, tab: "alerts", settings: false }); if (!on(ROUTE.companion)) router.push(ROUTE.companion); }}>
+              aria-pressed={inPedro ? undefined : s.alerts} aria-controls={inPedro ? undefined : "log"}
+              onClick={() => {
+                // On the Pedro page alerts live in its drawer; everywhere else they open a side panel
+                // that pushes the content, like the Mission log (one panel at a time).
+                if (inPedro) set({ drawer: true, tab: "alerts", settings: false });
+                else set((p) => ({ alerts: !p.alerts, log: false }));
+              }}>
               <span>Alerts</span>{nAlerts ? <span className="nav__n nav__n--alert num">{nAlerts}</span> : null}
             </button>
           </li>}
           <li>
             <button type="button" className={`nav__a${s.log ? " is-open" : ""}`} aria-pressed={s.log} aria-controls="log"
-              onClick={() => set((p) => ({ log: !p.log }))}>
+              onClick={() => set((p) => ({ log: !p.log, alerts: false }))}>
               <span>Mission log</span>{s.log ? <span className="nav__n">Open</span> : null}
             </button>
           </li>
@@ -314,6 +323,29 @@ function GroundCrewNav() {
 }
 
 /* ---------- mission log side panel ---------- */
+/* Alerts side panel: same slot and push behaviour as the Mission log, so the current screen stays put. */
+function AlertsPanel() {
+  const c = useConsole();
+  const { s, set } = c;
+  const ready = hasBaseline(s.me, s.sol), flags = ready ? c.flagsFor() : [], open = c.openFlags().length;
+  return (
+    <aside className="log" id="log" aria-label="Alerts">
+      <div className="log__head">
+        <div className="log__row1">
+          <h2 className="sec-t m0">Alerts</h2>
+          <button type="button" className="ta ta--quiet small" onClick={() => set({ alerts: false })}>Close</button>
+        </div>
+        <span className="num small t2">Sol {s.sol} · {open} open of {flags.length}</span>
+      </div>
+      <div className="alerts-panel">
+        {!ready ? <p className="log__empty">Alerts start once your baseline exists.</p>
+          : flags.length ? <FlagList flags={flags} ctx="p" />
+            : <p className="log__empty">No open alerts. All seven measures sit within your normal.</p>}
+      </div>
+    </aside>
+  );
+}
+
 function LogPanel() {
   const { s, set, personEvents } = useConsole();
   const path = usePathname();
@@ -336,8 +368,11 @@ function LogPanel() {
       <div className="log__head">
         <div className="log__row1">
           <h2 className="sec-t m0">Mission log</h2>
-          <Segmented options={[["person", "Person"], ["crew", "Crew"]]} value={scope} label="Log scope" disabled={crewOnly ? ["person"] : []}
-            onChange={(v) => set({ logScope: v })} />
+          <span className="log__tools">
+            <Segmented options={[["person", "Person"], ["crew", "Crew"]]} value={scope} label="Log scope" disabled={crewOnly ? ["person"] : []}
+              onChange={(v) => set({ logScope: v })} />
+            <button type="button" className="log__x" aria-label="Close mission log" title="Close" onClick={() => set({ log: false })}>×</button>
+          </span>
         </div>
         <div className="log__row1">
           <span className="num small t2">{a === b ? `Sol ${b}` : `Sol ${a}–${b}`} · newest first</span>

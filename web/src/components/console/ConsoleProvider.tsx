@@ -24,6 +24,8 @@ export type ConsoleState = {
   tone: Tone;
   voice: boolean;
   log: boolean;
+  /** Alerts side panel (pushes content like the Mission log); on the Pedro page the drawer's Alerts tab is used instead */
+  alerts: boolean;
   logScope: "person" | "crew";
   logRange: "sol" | "three";
   logF: { flag: boolean; checkin: boolean; journal: boolean; obs: boolean };
@@ -46,7 +48,7 @@ const initial: ConsoleState = {
   role: "astro", me: "sato", sol: P,
   shares: Object.fromEntries(CREW.map((c) => [c.id, c.shares.slice()])),
   tone: "gentle", voice: true,
-  log: false, logScope: "person", logRange: "three", logF: { flag: true, checkin: true, journal: true, obs: true },
+  log: false, alerts: false, logScope: "person", logRange: "three", logF: { flag: true, checkin: true, journal: true, obs: true },
   hi: null, done: {}, extra: {}, convo: {}, draft: {}, open: {}, why: {},
   drawer: false, tab: "conversation", settings: false, chatted: false, rev: 0,
 };
