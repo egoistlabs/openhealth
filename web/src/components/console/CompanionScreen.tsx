@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useCompanionChat } from "@/hooks/companion/mutations/use-companion-chat";
 import {
-  JOURNAL, KEYS, MEASURES, P, avg, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, overall, series,
+  COMPANION_NAME, JOURNAL, KEYS, MEASURES, P, avg, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, overall, series,
   type ConvoRow, type VoicePhrase,
 } from "@/lib/console/data";
 import { Presence } from "@/lib/console/presence";
@@ -194,7 +194,7 @@ function CompanionStage() {
     <div className={`cstage${s.drawer ? " has-drawer" : ""}`}>
       <h1 className="vh">Companion, {crewById(s.me).full}</h1>
       <div className="cmain">
-        <section className="stage" aria-label="Companion">
+        <section className="stage" aria-label={COMPANION_NAME}>
           <div className="stage__tools">
             <Toggle on={s.voice} label="Voice" onClick={() => { set((p) => ({ voice: !p.voice })); setTypeMode(false); }} />
             <button type="button" className="ta ta--quiet" aria-pressed={s.settings} onClick={() => set((p) => ({ settings: !p.settings }))}>Settings</button>
@@ -226,7 +226,7 @@ function CompanionStage() {
               setText("");
               userSaid(q);
             }}>
-              <label className="vh" htmlFor="say">Message to the companion</label>
+              <label className="vh" htmlFor="say">Message to Pedro</label>
               <input ref={inputRef} className="field field--chat" id="say" autoComplete="off" value={text} onChange={(e) => setText(e.target.value)}
                 placeholder={s.voice && !typeMode ? "Type a message, or hold the mic to talk" : "Type a message"} maxLength={2000} />
               {s.voice ? <>
@@ -385,7 +385,7 @@ function Drawer({ trRef, jSel, setJSel, jSummary, setJSummary }: {
     )) : empty("Insights appear after a few check-ins.", atPresent ? <Link className="ta" href={ROUTE.checkin}>Start daily check-in</Link> : undefined);
   } else if (s.tab === "journal") {
     const es = (JOURNAL[s.me] || []).filter((j) => j.sol <= s.sol).slice().reverse();
-    if (!es.length) pane = empty("No entries yet.", <button type="button" className="ta" onClick={() => set({ tab: "conversation" })}>Talk to the companion</button>);
+    if (!es.length) pane = empty("No entries yet.", <button type="button" className="ta" onClick={() => set({ tab: "conversation" })}>Talk to Pedro</button>);
     else {
       const sel = es[Math.min(jSel, es.length - 1)];
       pane = <>
@@ -446,8 +446,8 @@ function TrRow({ r }: { r: ConvoRow }) {
         {atPresent ? <Link className="ta ta--quiet" href={`${ROUTE.checkin}?step=${r.key}`}>Correct</Link> : null}</span>
     </div>
   );
-  if (r.who === "summary") return <div className="trow trow--companion"><span className="trow__t">{hm(r.min)}</span><span className="trow__s">Companion</span><span className="trow__x"><WeekSummary /></span></div>;
-  const who = { companion: "Companion", you: "You", sys: "" }[r.who as "companion" | "you" | "sys"];
+  if (r.who === "summary") return <div className="trow trow--companion"><span className="trow__t">{hm(r.min)}</span><span className="trow__s">{COMPANION_NAME}</span><span className="trow__x"><WeekSummary /></span></div>;
+  const who = { companion: COMPANION_NAME, you: "You", sys: "" }[r.who as "companion" | "you" | "sys"];
   return (
     <div className={`trow trow--${r.who}`}>
       <span className="trow__t">{hm(r.min)}</span><span className="trow__s">{who}</span>

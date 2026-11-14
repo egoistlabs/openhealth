@@ -42,7 +42,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
         <LogPanel />
       </div>
       {!full && !path.startsWith(ROUTE.checkin) ? (
-        <button type="button" className="orb" aria-label="Open the companion" onClick={() => router.push(ROUTE.companion)}>
+        <button type="button" className="orb" aria-label="Open Pedro" onClick={() => router.push(ROUTE.companion)}>
           <PedroThumb />
         </button>
       ) : null}
@@ -226,7 +226,7 @@ function Nav() {
   let screens: Array<[string, string, boolean, ReactNode]> = [
     [ROUTE.home, "Home", on(ROUTE.home), null],
     [ROUTE.checkin, "Check-in", on(ROUTE.checkin), ci],
-    [ROUTE.companion, "Companion", on(ROUTE.companion) && !alertsOn, null],
+    [ROUTE.companion, "Pedro", on(ROUTE.companion) && !alertsOn, null],
     [ROUTE.crew, "Crew", on(ROUTE.crew), null],
   ];
   if (s.role === "crew") screens = [screens[3], screens[0], screens[1], screens[2]];
