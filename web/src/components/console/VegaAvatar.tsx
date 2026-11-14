@@ -5,6 +5,7 @@ import { createVega } from "@/lib/console/vega/engine";
 import { Presence } from "@/lib/console/presence";
 import type { Emotion } from "@/lib/console/emotion";
 import { Persona } from "./Persona";
+import { COMPANION_NAME } from "@/lib/console/data";
 
 export type VegaApi = {
   speak: (text: string, opts?: { emotion?: Emotion; silent?: boolean; rate?: number; voiceName?: string }) => void;
@@ -75,5 +76,5 @@ export function VegaAvatar({ onReady, onSpeech }: { onReady: (api: VegaApi | nul
   }, [reduced, canRender]);
 
   if (reduced || !canRender) return <Persona />;
-  return <div ref={ref} className="vega" role="img" aria-label="Companion" />;
+  return <div ref={ref} className="vega" role="img" aria-label={COMPANION_NAME} />;
 }

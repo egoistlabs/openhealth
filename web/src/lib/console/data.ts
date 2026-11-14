@@ -110,7 +110,14 @@ export const MISSION = {
   tz: "LMST",
   window: 14,
   earthDayOfSol1: Date.UTC(2041, 2, 3),
+  /* hab schedule and environment (simulated, same for every crew member) */
+  firstDuty: 8 * 60 + 30,
+  lightsDim: 22 * 60 + 30,
+  cabinTempC: 21.5,
 };
+
+/* the companion's name, shown on its avatar and spoken in the check-in */
+export const COMPANION_NAME = "Pedro";
 
 export const MEASURES: Measure[] = [
   { key: "sleep", code: "SL-03", name: "Sleep duration", short: "sleep", bad: "low", minHalf: 0.4, source: "Asked in conversation", unitWord: "nights",

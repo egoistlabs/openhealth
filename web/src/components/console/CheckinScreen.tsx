@@ -4,21 +4,32 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
-  MEASURES, MKEY, P, baseline, day, fmt, fmtBase, fmtDelta, hm, median, mstatus, previewToday, setToday,
-  type Day, type VoicePhrase,
+  COMPANION_NAME, MEASURES, MISSION, MKEY, P, baseline, crewById, day, fmt, fmtBase, fmtDelta, hm, median, mstatus, previewToday, setToday,
+  type Day,
 } from "@/lib/console/data";
-import { tapsSvg, tok } from "@/lib/console/plots";
-import { Icon, Legend, Num, StatusWord, Term } from "@/components/ui";
+import { Icon, Num, StatusMark, StatusWord } from "@/components/ui";
+import StepProgress, { type ProgressStep } from "@/components/ui/c-progress-7";
 import { useConsole } from "./ConsoleProvider";
-import { Plot } from "./Plot";
+import { ReactionGame } from "./ReactionGame";
 import { ROUTE, ReplayNote } from "./Shell";
-import { Wave } from "./Orb";
-import { HoldButton, VoiceState, type VState } from "./Voice";
+import { CheckinPedro, type PedroLine } from "./CheckinPedro";
 
 const STEPS = ["sleep", "mood", "load", "team", "meals", "game", "review"] as const;
+const LABEL: Record<(typeof STEPS)[number], string> = { sleep: "Sleep", mood: "Mood", load: "Day load", team: "Teamwork", meals: "Shared meals", game: "Reaction game", review: "Review" };
 type Step = (typeof STEPS)[number];
 type Vals = { onset: number; wake: number; mood: number | null; load: number | null; team: number | null; meals: number | null; rt: number | null; slow: number | null };
-type Game = { phase: "ready" | "wait" | "go" | "soon" | "done"; trials: number[]; goAt: number; x: number; y: number; fb: { x: number; y: number; t: string } | null };
+/* what Pedro says when each step opens */
+const ASK: Record<(typeof STEPS)[number], string> = {
+  sleep: "When did you fall asleep, and when did you wake up?",
+  mood: "How's your mood today, 1 to 5?",
+  load: "How heavy was today, 1 to 5? Count both workload and stress.",
+  team: "How well did the crew work together, 1 to 5?",
+  meals: "Did you eat with anyone today?",
+  game: "Optional: a quick reaction game. Press Space when the field turns green. Or skip it.",
+  review: "Here is today against your normal. Check it, then submit.",
+};
+/* answers from /api/ai/checkin-parse (lib/brain/tasks/checkin.ts) */
+type Parsed = { sleep_time?: string; wake_time?: string; mood?: number; workload?: number; teamwork?: number; shared_meal?: boolean };
 
 const CELLS: number[] = [];
 for (let m = 21 * 60; m <= 34 * 60 + 30; m += 30) CELLS.push(m - 1440);
@@ -40,17 +51,18 @@ export function CheckinScreen({ step }: { step?: string }) {
     };
   };
   const [ci, setCi] = useState(init);
-  const [v, setV] = useState<VState>(null);
-  const [game, setGame] = useState<Game>({ phase: "ready", trials: [], goAt: 0, x: 50, y: 50, fb: null });
-  const timer = useRef(0);
+  const greet = (n: number) => `Hi ${crewById(s.me).full.split(" ")[0]}, I'm ${COMPANION_NAME}. ${ASK[STEPS[n]]} Answer by tapping, or hold the mic and tell me.`;
+  const [line, setLine] = useState<PedroLine>(() => ({ id: 0, text: greet(ci.step) }));
+  const say = (text: string) => setLine((p) => ({ id: p.id + 1, text }));
+  /* true while Pedro turns a spoken answer into a value: the step stays locked until it lands */
+  const [hearing, setHearing] = useState(false);
+  const [trials, setTrials] = useState<number[]>([]);
   const qRef = useRef<HTMLHeadingElement>(null);
-  const fieldRef = useRef<HTMLDivElement>(null);
   const [lastMe, setLastMe] = useState(s.me);
 
   // switching person in the demo menu restarts the check-in for that person
-  if (lastMe !== s.me) { setLastMe(s.me); setCi(init()); setV(null); }
+  if (lastMe !== s.me) { setLastMe(s.me); const n = init(); setCi(n); say(greet(n.step)); }
 
-  useEffect(() => () => window.clearTimeout(timer.current), []);
   useEffect(() => { qRef.current?.focus({ preventScroll: true }); }, [ci.step]);
 
   if (!atPresent) {
@@ -68,7 +80,7 @@ export function CheckinScreen({ step }: { step?: string }) {
     );
   }
 
-  const k = STEPS[ci.step], i = ci.step, segN = Math.min(i, 5);
+  const k = STEPS[ci.step], i = ci.step;
   const vals = ci.vals;
   const answered = (key: Step) => key === "sleep" ? vals.onset != null && vals.wake != null : key === "game" || key === "review" ? true : vals[key as "mood"] != null;
   const setVal = (patch: Partial<Vals>, clear?: string) => setCi((p) => {
@@ -76,7 +88,11 @@ export function CheckinScreen({ step }: { step?: string }) {
     if (clear) delete skipped[clear];
     return { ...p, vals: { ...p.vals, ...patch }, skipped };
   });
-  const go = (n: number) => { window.clearTimeout(timer.current); setV(null); setCi((p) => ({ ...p, step: Math.max(0, Math.min(STEPS.length - 1, n)) })); };
+  const go = (n: number) => {
+    const to = Math.max(0, Math.min(STEPS.length - 1, n));
+    setCi((p) => ({ ...p, step: to }));
+    say(ASK[STEPS[to]]);
+  };
 
   const previewVals = (): Partial<Day> => {
     const sk = ci.skipped;
@@ -100,101 +116,172 @@ export function CheckinScreen({ step }: { step?: string }) {
     router.push(ROUTE.home);
   };
 
-  /* reaction game */
-  const arm = () => {
-    setGame((g) => ({ ...g, phase: "wait", fb: null }));
-    window.clearTimeout(timer.current);
-    timer.current = window.setTimeout(() => {
-      setGame((g) => ({ ...g, ...nextTarget(), fb: null }));
-      fieldRef.current?.focus({ preventScroll: true });
-    }, waitMs());
-  };
-  const finish = (trials: number[]) => {
-    window.clearTimeout(timer.current);
-    if (trials.length >= 3) { setVal({ rt: Math.round(median(trials)!), slow: trials.filter((x) => x > 500).length }); setGame((g) => ({ ...g, trials, phase: "done" })); }
-    else setGame((g) => ({ ...g, phase: "ready", trials: [] }));
-  };
-  const press = (e?: React.PointerEvent) => {
-    if (game.phase === "wait") { window.clearTimeout(timer.current); setGame((g) => ({ ...g, phase: "soon" })); timer.current = window.setTimeout(arm, 900); return; }
-    if (game.phase !== "go") return;
-    const tgt = fieldRef.current?.querySelector(".game__target");
-    if (e && tgt) {
-      const r = tgt.getBoundingClientRect(), pad = tok("--s-3");
-      if (e.clientX < r.left - pad || e.clientX > r.right + pad || e.clientY < r.top - pad || e.clientY > r.bottom + pad) {
-        setGame((g) => ({ ...g, fb: { x: g.x, y: g.y + 14, t: "Tap the ring" } })); return;
-      }
-    }
-    const ms = Math.round(nowMs() - game.goAt);
-    const trials = [...game.trials, ms];
-    setGame((g) => ({ ...g, trials, fb: { x: g.x, y: g.y + 12, t: `${ms} ms` } }));
-    if (trials.length >= 10) finish(trials); else arm();
-  };
+  /* voice through Pedro, one question at a time: the transcript goes to the check-in parser and only the
+     answer to the open step is used (other things the person mentions are ignored). Pedro reads it back; it
+     is saved like a tap, when the person presses Next. While Pedro works, the step is locked. */
+  const apply = async (text: string, at: Step) => {
+    let f: Parsed | null = null;
+    try {
+      const res = await fetch("/api/ai/checkin-parse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+      if (res.ok) f = ((await res.json()) as { fields?: Parsed }).fields ?? null;
+    } catch { /* offline: handled below */ }
+    if (!f) { say("I couldn't work that out just now. Please tap your answer instead."); return; }
 
-  /* voice result for a step: show what was understood, apply it to the control, offer Correct */
-  const onPhrase = (p: VoicePhrase) => {
-    const q = p.parse!;
-    if (q.key === "sleep") setVal({ onset: q.onset!, wake: q.wake! }, "sleep");
-    else setVal({ [q.key]: q.v } as Partial<Vals>, q.key);
-    const value = q.key === "sleep" ? `${hm(q.onset!)} → ${hm(q.wake!)} · ${fmt("sleep", (q.wake! - q.onset!) / 60)}` : q.key === "meals" ? (q.v ? `${q.v} shared` : "none") : `${q.v} of 5`;
-    setV({ kind: "understood", heard: p.text, label: q.label, value });
-    c.say(`Understood: ${q.label} ${value}.`);
+    const patch: Partial<Vals> = {};
+    let got = "";
+    const toMin = (t: string) => { const [hh, mm] = t.split(":").map(Number); return hh * 60 + mm; };
+    if (at === "sleep") {
+      if (!f.sleep_time && !f.wake_time) { say(`Sorry, I didn't catch your sleep times in that. ${ASK.sleep}`); return; }
+      let on = f.sleep_time ? toMin(f.sleep_time) : vals.onset;
+      if (f.sleep_time && on >= 12 * 60) on -= 1440; // evening times sit before midnight on the grid
+      const wk = f.wake_time ? toMin(f.wake_time) : vals.wake;
+      if (f.sleep_time && wk - on > 16 * 60 && wk - (on + 720) >= 60) on += 720; // "1:40" heard as 13:40
+      if (wk - on >= 60 && wk - on <= 16 * 60) { patch.onset = on; patch.wake = wk; got = `asleep ${hm(on)}, woke ${hm(wk)}`; }
+    } else if (at === "mood" && f.mood != null) { patch.mood = f.mood; got = `mood ${f.mood}`; }
+    else if (at === "load" && f.workload != null) { patch.load = f.workload; got = `day load ${f.workload}`; }
+    else if (at === "team" && f.teamwork != null) { patch.team = f.teamwork; got = `teamwork ${f.teamwork}`; }
+    else if (at === "meals" && f.shared_meal != null) { patch.meals = f.shared_meal ? 1 : 0; got = f.shared_meal ? "a shared meal" : "no shared meals"; }
+    if (!got) { say(`Sorry, I didn't catch your ${LABEL[at].toLowerCase()} in that. ${ASK[at]}`); return; }
+
+    setCi((p) => {
+      if (STEPS[p.step] !== at) return p; // never write into a step that is no longer open
+      const skipped = { ...p.skipped };
+      delete skipped[at];
+      return { ...p, vals: { ...p.vals, ...patch }, skipped, pick: 0 };
+    });
+    say(`Got it: ${got}. Press Next to save it, or tap to change it.`);
   };
-  const voice = (ctx: string) => s.voice ? (
-    <div className="ci__voice">
-      <div className="chat__row">
-        <HoldButton ctx={ctx} quiet enabled={s.voice} onPhrase={onPhrase} setV={setV}
-          tip="Simulated voice: there is no microphone yet. What was understood always shows before it is saved." />
-        <Wave />
-      </div>
-      <VoiceState v={v} inCheckin onCorrect={() => { setV(null); (document.querySelector('.scale__o[aria-checked="true"], .opt[aria-checked="true"], .trp__c.is-end') as HTMLElement | null)?.focus(); }} />
-    </div>
-  ) : null;
+  const hear = async (text: string) => {
+    setHearing(true);
+    try { await apply(text, k); } finally { setHearing(false); }
+  };
 
   /* ---------- steps ---------- */
   const stepSleep = () => {
     const on = vals.onset, wk = vals.wake;
-    const inR = (x: number) => x + 30 > on && x <= wk;
-    const isEnd = (x: number) => (on >= x && on < x + 30) || (wk >= x && wk < x + 30);
-    const h = (wk - on) / 60, b = baseline(s.me, "timing", P), bs = baseline(s.me, "sleep", P), mid = (on + wk) / 2;
+    const h = (wk - on) / 60, mid = (on + wk) / 2;
+    const bs = baseline(s.me, "sleep", P), bt = baseline(s.me, "timing", P);
     const step5 = (key: "onset" | "wake", d: number) => setCi((p) => {
       const nv = { ...p.vals, [key]: p.vals[key] + d };
       return nv.wake - nv.onset < 60 ? p : { ...p, vals: nv };
     });
-    return <>
-      <h1 className="ci__q focus-visible:outline-none" ref={qRef} tabIndex={-1}>When did you fall asleep, and when did you wake up?</h1>
-      <p className="ci__hint">{ci.pick === 1 ? <b>Now tap when you woke up.</b> : "Tap when you fell asleep, then when you woke up."}</p>
-      <div className="trp">
-        <div className="trp__grid" role="group" aria-label="Half-hour slots from 21:00 to 10:30">
-          {CELLS.map((x) => (
-            <button key={x} type="button" className={`trp__c${inR(x) ? " in-range" : ""}${isEnd(x) ? " is-end" : ""}`} aria-pressed={isEnd(x)} aria-label={hm(x)}
-              onClick={() => { setV(null); setCi((p) => {
-                const nv = { ...p.vals };
-                let pick = p.pick;
-                if (pick === 0) { nv.onset = x; nv.wake = Math.max(nv.wake, x + 60); pick = 1; }
-                else { if (x > nv.onset) nv.wake = x; else nv.onset = x; pick = 0; }
-                const skipped = { ...p.skipped }; delete skipped.sleep;
-                return { ...p, vals: nv, pick, skipped };
-              }); }}>{hm(x)}</button>
-          ))}
-        </div>
-        <div className="trp__fine">
-          <span className="stepper" role="group" aria-label="Fell asleep, fine adjust"><span className="label">Asleep</span>
-            <button type="button" className="sbtn" aria-label="Asleep 5 minutes earlier" onClick={() => step5("onset", -5)}>−</button><span className="num">{hm(on)}</span>
-            <button type="button" className="sbtn" aria-label="Asleep 5 minutes later" onClick={() => step5("onset", 5)}>+</button></span>
-          <span className="stepper" role="group" aria-label="Woke, fine adjust"><span className="label">Woke</span>
-            <button type="button" className="sbtn" aria-label="Woke 5 minutes earlier" onClick={() => step5("wake", -5)}>−</button><span className="num">{hm(wk)}</span>
-            <button type="button" className="sbtn" aria-label="Woke 5 minutes later" onClick={() => step5("wake", 5)}>+</button></span>
-        </div>
-        <p>Slept <Num>{fmt("sleep", h)}</Num>{bs ? <>, <Num>{fmtDelta("sleep", h - bs.med)}</Num> vs your normal</> : null}. Midpoint <Num>{hm(mid)}</Num>{b ? <>, <Num>{fmtDelta("timing", mid - b.med)}</Num> vs your normal</> : null}.</p>
+
+    /* your normal: median onset and wake over the last 14 sols */
+    const prev = Array.from({ length: 14 }, (_, n) => day(s.me, P - 14 + n)).filter((d): d is Day => d != null);
+    const nOn = median(prev.map((d) => d.onset)), nWk = median(prev.map((d) => d.wake));
+    /* share of a half-hour cell [x, x+30) covered by [a, b), as left/width percentages */
+    const span = (x: number, a: number, b: number) => {
+      const l = Math.max(a, x), r = Math.min(b, x + 30);
+      return r > l ? { left: `${((l - x) / 30) * 100}%`, width: `${((r - l) / 30) * 100}%` } : null;
+    };
+    const mark = (x: number, t: number) => (t >= x && t < x + 30 ? `${((t - x) / 30) * 100}%` : null);
+
+    /* last 7 sols: six logged sols plus tonight, which follows the picked times */
+    const week = Array.from({ length: 7 }, (_, n) => {
+      const sol = P - 6 + n, tonight = sol === P;
+      return { sol, tonight, h: tonight ? h : day(s.me, sol)?.sleep ?? null };
+    });
+    const hrs = week.map((w) => w.h).filter((x): x is number => x != null);
+    const avg7 = hrs.length ? hrs.reduce((a, b) => a + b, 0) / hrs.length : null;
+    const debt = bs ? week.reduce((a, w) => a + (w.h == null ? 0 : Math.max(0, bs.med - w.h)), 0) : null;
+    const drift = bt ? mid - bt.med : null;
+    const buffer = MISSION.firstDuty - (((wk % 1440) + 1440) % 1440);
+    const top = Math.max(9, bs?.med ?? 0, ...hrs), floor = 4; /* bars start at 4h so night-to-night changes show */
+    const pct = (x: number) => `${Math.max(0, (x - floor) / (top - floor)) * 100}%`;
+    const debtWarn = debt != null && debt > 1, bufWarn = buffer < 45;
+
+    const row = (l: string, v: React.ReactNode, warn?: boolean) => (
+      <div key={l} className="flex items-baseline justify-between gap-2 border-t-[0.5px] border-hair py-2 first:border-t-0">
+        <dt className="text-[12px] text-muted-foreground">{l}</dt>
+        <dd className={`flex items-center gap-1.5 font-mono text-[13px] ${warn == null ? "text-foreground" : warn ? "text-watch" : "text-success"}`}>
+          {warn == null ? null : <StatusMark state={warn ? "watch" : "normal"} />}{v}
+        </dd>
       </div>
-      {voice("sleep")}
-    </>;
+    );
+
+    return (
+      <div className="grid grid-cols-[minmax(0,1fr)_215px] max-md:grid-cols-1">
+        <div className="grid content-start gap-4 p-4 max-md:px-0">
+          <h1 className="ci__q focus-visible:outline-none" ref={qRef} tabIndex={-1}>When did you fall asleep, and when did you wake up?</h1>
+          <p className="ci__hint">{ci.pick === 1 ? <b>Now tap when you woke up.</b> : "Tap when you fell asleep, then when you woke up."}</p>
+
+          <div className="grid grid-cols-7 border-l-[0.5px] border-t-[0.5px] border-hair-strong" role="group" aria-label="Half-hour slots from 21:00 to 10:30">
+            {CELLS.map((x) => {
+              const fill = span(x, on, wk), norm = nOn != null && nWk != null ? span(x, nOn, nWk) : null;
+              const mOn = mark(x, on), mWk = mark(x, wk), end = mOn != null || mWk != null;
+              return (
+                <button key={x} type="button" aria-pressed={end} aria-label={hm(x)}
+                  className={`slp__c relative h-[34px] overflow-hidden border-b-[0.5px] border-r-[0.5px] border-hair-strong px-1.5 text-left align-top font-mono text-[11px] hover:bg-surface ${fill ? "text-foreground" : "text-muted-foreground"}`}
+                  onClick={() => { setCi((p) => {
+                    const nv = { ...p.vals };
+                    let pick = p.pick;
+                    if (pick === 0) { nv.onset = x; nv.wake = Math.max(nv.wake, x + 60); pick = 1; }
+                    else { if (x > nv.onset) nv.wake = x; else nv.onset = x; pick = 0; }
+                    const skipped = { ...p.skipped }; delete skipped.sleep;
+                    return { ...p, vals: nv, pick, skipped };
+                  }); }}>
+                  {fill ? <span className="absolute inset-y-0 bg-primary/20" style={fill} aria-hidden="true" /> : null}
+                  {norm ? <span className="absolute bottom-[3px] h-px bg-muted-foreground/70" style={norm} aria-hidden="true" /> : null}
+                  {mOn != null ? <span className="absolute inset-y-0 w-0.5 bg-primary" style={{ left: mOn }} aria-hidden="true" /> : null}
+                  {mWk != null ? <span className="absolute inset-y-0 w-0.5 bg-primary" style={{ left: mWk }} aria-hidden="true" /> : null}
+                  <span className="relative">{hm(x)}</span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex flex-wrap gap-x-5 gap-y-1 text-[12px] text-muted-foreground" aria-hidden="true">
+            <span className="inline-flex items-center gap-1.5"><i className="h-2.5 w-4 bg-primary/20" />Asleep</span>
+            <span className="inline-flex items-center gap-1.5"><i className="h-2.5 w-0.5 bg-primary" />Fell asleep, woke</span>
+            {nOn != null ? <span className="inline-flex items-center gap-1.5"><i className="h-px w-4 bg-muted-foreground/70" />Your normal</span> : null}
+          </div>
+
+          <div className="trp__fine">
+            <span className="stepper" role="group" aria-label="Fell asleep, fine adjust"><span className="label">Asleep</span>
+              <button type="button" className="sbtn" aria-label="Asleep 5 minutes earlier" onClick={() => step5("onset", -5)}>−</button><span className="num">{hm(on)}</span>
+              <button type="button" className="sbtn" aria-label="Asleep 5 minutes later" onClick={() => step5("onset", 5)}>+</button></span>
+            <span className="stepper" role="group" aria-label="Woke, fine adjust"><span className="label">Woke</span>
+              <button type="button" className="sbtn" aria-label="Woke 5 minutes earlier" onClick={() => step5("wake", -5)}>−</button><span className="num">{hm(wk)}</span>
+              <button type="button" className="sbtn" aria-label="Woke 5 minutes later" onClick={() => step5("wake", 5)}>+</button></span>
+          </div>
+          <p>Slept <Num>{fmt("sleep", h)}</Num>{bs ? <>, <Num>{fmtDelta("sleep", h - bs.med)}</Num> vs your normal</> : null}. Midpoint <Num>{hm(mid)}</Num>{bt ? <>, <Num>{fmtDelta("timing", mid - bt.med)}</Num> vs your normal</> : null}.</p>
+        </div>
+
+        <aside className="flex flex-col gap-4 border-l-[0.5px] border-hair p-4 max-md:border-l-0 max-md:border-t-[0.5px] max-md:px-0" aria-label="Sleep details">
+          <div>
+            <p className="mb-2 text-[12px] text-muted-foreground">Last 7 sols</p>
+            <div className="relative flex h-16 items-end gap-1.5" role="img"
+              aria-label={`Sleep for the last 7 sols: ${week.map((w) => `sol ${w.sol}${w.tonight ? " tonight" : ""} ${fmt("sleep", w.h)}`).join(", ")}${bs ? `. Your normal ${fmt("sleep", bs.med)}` : ""}.`}>
+              {bs ? <span className="absolute inset-x-0 border-t border-dashed border-muted-foreground/70" style={{ bottom: pct(bs.med) }} aria-hidden="true" /> : null}
+              {week.map((w) => (
+                <span key={w.sol} className={`flex-1 ${w.tonight ? "bg-primary" : "bg-hair-strong"}`} style={{ height: w.h == null ? 0 : pct(w.h) }} />
+              ))}
+            </div>
+            <div className="mt-1 flex gap-1.5 font-mono text-[11px] text-muted-foreground" aria-hidden="true">
+              {week.map((w) => <span key={w.sol} className={`flex-1 text-center ${w.tonight ? "text-primary" : ""}`}>{String(w.sol).slice(-2)}</span>)}
+            </div>
+          </div>
+
+          <dl className="border-t-[0.5px] border-hair pt-1" aria-live="polite">
+            {row("7-sol average", fmt("sleep", avg7))}
+            {row("Sleep debt", debt == null ? "—" : fmt("sleep", debt), debt == null ? undefined : debtWarn)}
+            {row("Midpoint drift", fmtDelta("timing", drift))}
+            {row("First duty", hm(MISSION.firstDuty))}
+            {row("Buffer after waking", buffer < 0 ? `−${fmt("sleep", -buffer / 60)}` : buffer >= 60 ? fmt("sleep", buffer / 60) : `${buffer}m`, bufWarn)}
+          </dl>
+
+          <p className="mt-auto border-t-[0.5px] border-hair pt-3 text-[11px] text-muted-foreground">
+            Cabin <span className="font-mono">{MISSION.cabinTempC.toFixed(1)}</span>°C · lights dim <span className="font-mono">{hm(MISSION.lightsDim)}</span>
+          </p>
+        </aside>
+      </div>
+    );
   };
 
   const stepRating = (key: "mood" | "load" | "team") => {
     const Q = { mood: ["How's your mood today, 1 to 5?", "Low", "High"], load: ["How heavy was today, 1 to 5?", "Light", "Heavy"], team: ["How well did the crew work together, 1 to 5?", "Poorly", "Very well"] }[key];
     const cur = vals[key], b = baseline(s.me, key, P), usual = b ? Math.round(b.med) : null;
-    const pickN = (n: number) => { setV(null); setVal({ [key]: n } as Partial<Vals>, key); };
+    const pickN = (n: number) => { setVal({ [key]: n } as Partial<Vals>, key); };
     return <>
       <h1 className="ci__q focus-visible:outline-none" ref={qRef} tabIndex={-1}>{Q[0]}</h1>
       {key === "load" ? <p className="ci__hint">Count both workload and stress.</p> : null}
@@ -216,7 +303,6 @@ export function CheckinScreen({ step }: { step?: string }) {
       </div>
       <div className="scale__anch"><span>1 · {Q[1]}</span><span>{Q[2]} · 5</span></div>
       {usual != null ? <p className="small t2">The grey rule marks your normal, <Num>{usual}</Num>.</p> : null}
-      {voice(key)}
     </>;
   };
 
@@ -225,52 +311,17 @@ export function CheckinScreen({ step }: { step?: string }) {
     <p className="ci__hint">Shared meals feed the crew&apos;s teamwork view as a weekly count. Nothing else about the meal is kept.</p>
     <div className="opts" role="radiogroup" aria-label="Shared meals today">
       {([[0, "No"], [1, "Yes, one meal"], [2, "Yes, two or more"]] as const).map(([n, l]) => (
-        <button key={n} type="button" className="opt" role="radio" aria-checked={vals.meals === n} onClick={() => { setV(null); setVal({ meals: n }, "meals"); }}>{l}</button>
+        <button key={n} type="button" className="opt" role="radio" aria-checked={vals.meals === n} onClick={() => { setVal({ meals: n }, "meals"); }}>{l}</button>
       ))}
     </div>
-    {voice("meals")}
   </>;
 
-  const stepGame = () => {
-    const b = baseline(s.me, "rt", P);
-    if (game.phase === "done") {
-      return <>
-        <h1 className="ci__q focus-visible:outline-none" ref={qRef} tabIndex={-1}>Reaction game result</h1>
-        <div className="rd-row">
-          <Rd l="Median" v={vals.rt} u="ms" d={b && vals.rt != null ? `${fmtDelta("rt", vals.rt - b.med)} vs your normal` : null} />
-          <Rd l="Slow taps" v={vals.slow} u={`of ${game.trials.length}`} />
-          {b ? <Rd l="Your normal" v={Math.round(b.med)} u="ms" /> : null}
-        </div>
-        <Plot className="plot game__strip" draw={(w) => tapsSvg(game.trials, w)} />
-        <Legend items={[["dot", "One tap"], ["out", "Slower than 500 ms"], ["line", "500 ms"]]} />
-        <p className="actions"><button type="button" className="btn" onClick={() => { setGame((g) => ({ ...g, trials: [] })); setVal({ rt: null, slow: null }); arm(); }}>Play again</button></p>
-      </>;
-    }
-    const msg = { ready: "Press Start. A ring appears; tap it as fast as you can.", wait: "Wait for the ring…", go: "", soon: "Too soon. Wait for the ring." }[game.phase];
-    return <>
-      <h1 className="ci__q focus-visible:outline-none" ref={qRef} tabIndex={-1}>Reaction game</h1>
-      <p className="ci__hint">Optional. Ten taps, about 30 seconds. It measures your <Term k="reaction time">reaction time</Term>. Press Space while the field is focused if you prefer the keyboard.</p>
-      <div className="game">
-        <div className="game__field" ref={fieldRef} tabIndex={0} role="button" aria-label="Reaction game field" aria-describedby="game-status"
-          onPointerDown={(e) => { e.preventDefault(); press(e); }}
-          onKeyDown={(e) => { if (e.key === " " || e.key === "Enter") { e.preventDefault(); if (!e.repeat) press(); } }}>
-          {game.phase === "go" ? (
-            <span className="game__target" style={{ left: `${game.x}%`, top: `${game.y}%` }}>
-              <svg viewBox="0 0 48 48" aria-hidden="true"><circle cx="24" cy="24" r="22" fill="none" stroke="currentColor" strokeWidth="2" /><circle cx="24" cy="24" r="3" fill="currentColor" /></svg>
-            </span>
-          ) : null}
-          {game.fb ? <span className="game__fb" style={{ left: `${game.fb.x}%`, top: `${game.fb.y}%` }}>{game.fb.t}</span> : null}
-          {game.phase === "go" ? null : <span>{msg}</span>}
-        </div>
-        <div className="actions">
-          {game.phase === "ready"
-            ? <button type="button" className="btn-primary" onClick={() => { setGame((g) => ({ ...g, trials: [] })); setVal({ rt: null, slow: null }); arm(); }}>Start</button>
-            : <button type="button" className="btn-primary" onClick={() => finish(game.trials)}>Stop</button>}
-          <span className="t2" id="game-status" aria-live="polite">Tap <Num>{Math.min(10, game.trials.length + (game.phase === "ready" ? 0 : 1))}</Num> of 10</span>
-        </div>
-      </div>
-    </>;
-  };
+  const stepGame = () => (
+    <ReactionGame qRef={qRef} base={baseline(s.me, "rt", P)}
+      result={vals.rt != null ? { rt: vals.rt, slow: vals.slow ?? 0, trials } : null}
+      onReset={() => { setTrials([]); setVal({ rt: null, slow: null }); }}
+      onDone={(t) => { setTrials(t); setVal({ rt: Math.round(median(t)!), slow: t.filter((x) => x > 500).length }); }} />
+  );
 
   const stepReview = () => {
     const rows = previewToday(s.me, previewVals(), () => MEASURES.map((m) => {
@@ -303,27 +354,39 @@ export function CheckinScreen({ step }: { step?: string }) {
   };
 
   const body = k === "sleep" ? stepSleep() : k === "game" ? stepGame() : k === "review" ? stepReview() : k === "meals" ? stepMeals() : stepRating(k);
-  const counter = i < 5 ? <><Num>{i + 1}</Num> of <Num>5</Num></> : k === "game" ? "Bonus · optional" : "Last step";
-  const nextLabel = k === "review" ? "Submit check-in" : k === "game" ? (game.phase === "done" ? "Next" : "Skip game") : "Next";
-  const primaryDisabled = k !== "review" && k !== "game" && !answered(k);
+  const progress: ProgressStep[] = STEPS.map((key, n) => {
+    const past = n < i, skipped = key === "game" ? vals.rt == null : !!ci.skipped[key];
+    return {
+      label: LABEL[key],
+      completed: past && !skipped,
+      current: n === i,
+      note: past && skipped ? "Skipped" : key === "game" && !past ? "Optional" : undefined,
+    };
+  });
+  const nextLabel = k === "review" ? "Submit check-in" : k === "game" ? (vals.rt != null ? "Next" : "Skip game") : "Next";
+  const primaryDisabled = hearing || (k !== "review" && k !== "game" && !answered(k));
 
   return (
     <div className="ci">
       <div className="ci__top">
         <span className="ci__name">Daily check-in</span>
-        <div className="ci__bar" aria-hidden="true">{[0, 1, 2, 3, 4, 5].map((n) => <i key={n} className={n < segN ? "is-done" : n === segN ? "is-now" : ""} />)}</div>
-        <span className="ci__step" aria-live="polite">{counter}</span>
+        <StepProgress layout="row" title="Progress" steps={progress} className="flex-1" listClassName="max-[1199px]:hidden" />
         <Link className="ta ta--quiet ci__exit" href={landing}>Exit</Link>
       </div>
-      <div className="ci__body">
-        {c.checkedToday() && i === 0 ? <p className="t2 small">Already logged today. Submitting again replaces today&apos;s entry.</p> : null}
-        {body}
+      <div className="ci__mid" aria-busy={hearing}>
+        <div className="ci__body">
+          {c.checkedToday() && i === 0 ? <p className="t2 small">Already logged today. Submitting again replaces today&apos;s entry.</p> : null}
+          {body}
+        </div>
+        <aside className="ci__rail" aria-label={COMPANION_NAME}>
+          <CheckinPedro line={line} voiceOn={s.voice} canListen={k !== "game" && k !== "review"} onHeard={hear} />
+        </aside>
       </div>
-      <div className="ci__foot">
-        <div className="actions">{i > 0 ? <button type="button" className="ta ta--quiet" onClick={() => go(i - 1)}><Icon name="back" />Back</button> : null}</div>
+      <div className={k === "sleep" ? "ci__foot ci__foot--rule" : "ci__foot"}>
+        <div className="actions">{i > 0 ? <button type="button" className="ta ta--quiet" disabled={hearing} onClick={() => go(i - 1)}><Icon name="back" />Back</button> : null}</div>
         <div className="actions">
-          {i < 5 ? <button type="button" className="ta ta--quiet" onClick={() => { setCi((p) => ({ ...p, skipped: { ...p.skipped, [k]: true } })); go(i + 1); }}>Skip</button> : null}
-          <button type="button" className={k === "game" && game.phase !== "done" ? "btn btn--lg" : "btn-primary btn--lg"} disabled={primaryDisabled}
+          {i < 5 ? <button type="button" className="ta ta--quiet" disabled={hearing} onClick={() => { setCi((p) => ({ ...p, skipped: { ...p.skipped, [k]: true } })); go(i + 1); }}>Skip</button> : null}
+          <button type="button" className={k === "game" && vals.rt == null ? "btn btn--lg" : "btn-primary btn--lg"} disabled={primaryDisabled}
             onClick={() => (k === "review" ? submit() : answered(k) && go(i + 1))}>
             {nextLabel} <Icon name="arrow" />
           </button>
@@ -332,13 +395,3 @@ export function CheckinScreen({ step }: { step?: string }) {
     </div>
   );
 }
-
-function Rd({ l, v, u, d }: { l: string; v: number | null; u?: string; d?: string | null }) {
-  return <div className="rd"><span className="rd__l">{l}</span><span className="rd__v">{v ?? "—"}{u ? <i>{u}</i> : null}</span>{d != null ? <span className="rd__d">{d}</span> : null}</div>;
-}
-
-
-/* reaction game timing and placement (kept outside the component: impure by design) */
-function nextTarget() { return { phase: "go" as const, x: 12 + Math.random() * 76, y: 18 + Math.random() * 64, goAt: performance.now() }; }
-function waitMs() { return 900 + Math.random() * 1600; }
-function nowMs() { return performance.now(); }

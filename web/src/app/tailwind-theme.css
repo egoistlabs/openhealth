@@ -26,6 +26,14 @@
   --color-info: var(--c-info);
   --color-info-text: var(--c-info-text);
 
+  /* shadcn names, so copied shadcn components (components/ui) pick up the console tokens */
+  --color-foreground: var(--c-text);
+  --color-muted-foreground: var(--c-text-2);
+  --color-primary: var(--c-action);
+  --color-secondary: var(--c-hair-strong);
+  --color-success: var(--c-normal);
+  --color-success-foreground: var(--c-normal);
+
   --font-sans: var(--f-sans);
   --font-mono: var(--f-mono);
   --font-display: var(--f-display);

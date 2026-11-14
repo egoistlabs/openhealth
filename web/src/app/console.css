@@ -378,7 +378,6 @@ svg .miss { stroke: var(--c-text-3); stroke-width: var(--bw); }
 /* ---------- CHECK-IN ---------- */
 .ci { min-height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
 .ci__top { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: var(--s-2) var(--s-6); padding: var(--s-4) var(--s-6); border-bottom: var(--bw) solid var(--c-hair); color: var(--c-text-2); }
-.ci__step .num { color: var(--c-text); }
 .ci__opt { color: var(--c-text); }
 .ci__body { padding: var(--s-12) var(--s-6); max-width: calc(var(--side-w) * 2.2); display: grid; gap: var(--s-6); align-content: start; }
 .ci__q { font: var(--fw-regular) var(--fs-readout) / var(--lh-readout) var(--f-sans); text-wrap: balance; max-width: 26ch; }
@@ -412,9 +411,16 @@ svg .miss { stroke: var(--c-text-3); stroke-width: var(--bw); }
 .opt[aria-checked="true"] { background: var(--c-surface-2); box-shadow: none; border-bottom: var(--bw-status) solid var(--c-text); }
 .game { display: grid; gap: var(--s-3); }
 .game__field { position: relative; height: var(--tap-field); border: var(--bw) solid var(--c-hair-strong); border-radius: var(--r-control); background: var(--c-surface); cursor: crosshair; touch-action: manipulation; user-select: none; -webkit-user-select: none; display: grid; place-items: center; color: var(--c-text-2); }
-.game__target { position: absolute; width: var(--s-12); height: var(--s-12); margin: calc(var(--s-12) / -2) 0 0 calc(var(--s-12) / -2); }
-.game__target svg { display: block; width: 100%; height: 100%; }
-.game__fb { position: absolute; font: var(--fw-medium) var(--fs-label) / var(--lh-label) var(--f-mono); color: var(--c-text); pointer-events: none; }
+/* Space-bar reaction game: red + square = wait, green + circle = press (colour is never the only cue) */
+.game__field { cursor: pointer; align-content: center; gap: var(--s-2); transition: background-color 80ms linear, border-color 80ms linear; }
+.game__field[data-phase="wait"], .game__field[data-phase="soon"] { background: color-mix(in srgb, var(--c-act) 30%, var(--c-surface)); border-color: var(--c-act); color: var(--c-text); }
+.game__field[data-phase="go"] { background: color-mix(in srgb, var(--c-normal) 55%, var(--c-surface)); border-color: var(--c-normal); color: var(--c-text); }
+.game__field[data-phase="go"] .mk--normal, .game__field[data-phase="wait"] .mk--act, .game__field[data-phase="soon"] .mk--act { fill: currentColor; }
+.game__big { display: inline-flex; align-items: center; gap: var(--s-3); font: var(--fw-display) var(--fs-title) / 1.2 var(--f-display); }
+.game__big .mk { width: 18px; height: 18px; }
+.game__last { font: var(--fw-medium) var(--fs-label) / var(--lh-label) var(--f-mono); color: var(--c-text-2); }
+.kbd { display: inline-block; padding: 0 var(--s-2); margin: 0 2px; border: var(--bw) solid var(--c-hair-strong); border-bottom-width: 2px; border-radius: 4px; font: var(--fw-medium) 12px / 1.6 var(--f-mono); color: var(--c-text); background: var(--c-surface-2); }
+.kbd--lg { font-size: var(--fs-body); padding: var(--s-1) var(--s-3); margin-right: var(--s-1); }
 .game__strip svg { display: block; }
 .sumt { width: 100%; border-collapse: collapse; }
 .sumt th { text-align: left; padding: var(--s-2) var(--s-3) var(--s-2) 0; border-bottom: var(--bw) solid var(--c-hair-strong); white-space: nowrap; }
@@ -725,16 +731,17 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
 /* ---------- check-in: one question, one button ---------- */
 .ci__top { display: flex; flex-wrap: nowrap; align-items: center; gap: var(--s-4); padding: var(--s-3) var(--s-6); }
 .ci__name { color: var(--c-text); font-weight: var(--fw-semi); white-space: nowrap; }
-.ci__bar { flex: 1 1 auto; display: flex; gap: var(--s-1); max-width: 420px; }
-.ci__bar i { flex: 1; height: 4px; border-radius: var(--r-pill); background: var(--c-hair-strong); transition: background-color var(--dur-panel) var(--ease); }
-.ci__bar i.is-done { background: var(--c-action); }
-.ci__bar i.is-now { background: var(--c-text-2); }
-.ci__step { white-space: nowrap; color: var(--c-text-2); }
 .ci__exit { margin-left: auto; }
-.ci__body { width: 100%; max-width: 860px; margin: 0 auto; padding: var(--s-12) var(--s-8) var(--s-6); }
+/* question in the main column, step list in the right margin column */
+.ci__mid { width: 100%; max-width: 1640px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--s-6); align-items: stretch; }
+.ci__body { width: 100%; max-width: none; margin: 0; padding: var(--s-6) 0 var(--s-4) var(--s-8); gap: var(--s-4); }
+.ci__rail { padding: var(--s-6) var(--s-8) var(--s-4) var(--s-6); border-left: 0.5px solid var(--c-hair); }
 .ci__q { font: var(--fw-display) var(--fs-hero-h) / 1.2 var(--f-display); letter-spacing: var(--tr-display); max-width: 24ch; }
-.ci__foot { width: 100%; max-width: 860px; margin: 0 auto; border-top: 0; padding: var(--s-4) var(--s-8) var(--s-8); }
+.ci__foot { width: 100%; max-width: 1640px; margin: 0 auto; border-top: 0; padding: var(--s-3) var(--s-8); }
 .ci__voice { border-top: 0; padding-top: 0; }
+/* while Pedro turns a spoken answer into a value, the question can't be changed or left */
+.ci__mid[aria-busy="true"] .ci__body { pointer-events: none; opacity: 0.6; transition: opacity var(--dur) var(--ease); }
+.ci__foot--rule { border-top: 0.5px solid var(--c-hair); }
 .hold--quiet { border-color: transparent; color: var(--c-text-2); padding-left: 0; }
 .hold--quiet:hover { border-color: transparent; color: var(--c-text); }
 .scale, .opts, .trp__grid { gap: var(--grid-gap); border-left: var(--grid-cl); }
@@ -781,6 +788,10 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
   .ci__name { display: none; }
   .ci__body { padding: var(--s-6) var(--s-4); }
   .ci__foot { padding: var(--s-3) var(--s-4) var(--s-6); }
+  /* phone: the step list folds to the bar and count, above the question (list hidden via a Tailwind class) */
+  .ci__mid { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .ci__rail { order: -1; position: static; border-left: 0; padding: var(--s-4) var(--s-4) 0; }
+  .ci__rail ol { display: none; }
   .cstage .chat { padding: var(--s-2) var(--s-4) var(--s-4); }
   .cstage .chat__row { flex-wrap: nowrap; }
   .cstage .chat__row .field { min-width: 0; flex: 1 1 0; }
@@ -841,4 +852,18 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
 
 /* Companion 3D avatar (components/console/VegaAvatar). The canvas is transparent; a soft spotlight sits behind. */
 .stage .vega { position: relative; flex: none; width: min(calc(var(--orb-lg) * 1.25), 86cqw); height: min(calc(var(--orb-lg) * 1.25), 66cqh); background: radial-gradient(closest-side, color-mix(in srgb, var(--c-action) 16%, transparent), transparent); -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent); mask-image: linear-gradient(to bottom, black 80%, transparent); }
+/* Pedro in the check-in rail: the avatar, what he says, and the hold-to-talk mic */
+.pedro { display: grid; gap: var(--s-2); }
+.pedro__face { position: relative; height: 280px; margin: 0 calc(var(--s-4) * -1); background: radial-gradient(closest-side, color-mix(in srgb, var(--c-action) 16%, transparent), transparent); -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent); mask-image: linear-gradient(to bottom, black 80%, transparent); }
+.pedro__face .vega { position: absolute; inset: 0; }
+.pedro__face .persona { width: 160px; margin: var(--s-4) auto 0; aspect-ratio: 1 / 1; }
+.pedro__name { font-size: 12px; color: var(--c-text-2); }
+.pedro__say { font-size: var(--fs-body); color: var(--c-text); text-wrap: pretty; }
+.pedro__off { font-size: 12px; color: var(--c-text-2); }
+.pedro .hold--quiet { justify-self: start; }
+@media (max-width: 959px) {
+  .pedro { grid-template-columns: 88px minmax(0, 1fr); column-gap: var(--s-3); align-items: start; }
+  .pedro__face { grid-row: span 4; height: 88px; margin: 0; }
+  .pedro__face .persona { width: 88px; margin: 0; }
+}
 .vega canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }

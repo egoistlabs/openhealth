@@ -3,6 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { Presence } from "@/lib/console/presence";
 import { OrbCanvas, usePresenceState } from "./Orb";
+import { COMPANION_NAME } from "@/lib/console/data";
 
 /* The companion's face (A7). One still picture, animated as a cut-out puppet:
    - speaking: the jaw drops with the voice level and a mouth opening appears in the gap
@@ -96,7 +97,7 @@ export function Persona() {
   return (
     <div className="persona" data-state={state}>
       {/* framed on the head and shoulders, so the mouth is easy to see */}
-      <svg viewBox={VIEW} role="img" aria-label={`Companion, ${state}`}>
+      <svg viewBox={VIEW} role="img" aria-label={`${COMPANION_NAME}, ${state}`}>
         <defs>
           <clipPath id={`cut-${clipId}`}><polygon points={CUT} /></clipPath>
           <filter id={`soft-${clipId}`} x="-20%" y="-20%" width="140%" height="140%"><feGaussianBlur stdDeviation="7" /></filter>

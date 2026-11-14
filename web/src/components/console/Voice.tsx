@@ -288,12 +288,14 @@ export function useHoldToTalk(ctx: string, opts: {
   return { bind, down };
 }
 
-export function HoldButton({ ctx, quiet, enabled, onPhrase, setV, tip, live, onStart }: {
+export function HoldButton({ ctx, quiet, enabled, onPhrase, setV, tip, live, onStart, label = "Or hold to answer by voice" }: {
   ctx: string; quiet?: boolean; enabled: boolean; onPhrase: (p: VoicePhrase) => void; setV: (v: VState) => void; tip: string; live?: boolean; onStart?: () => void;
+  /** text on the quiet button */
+  label?: string;
 }) {
   const { bind, down } = useHoldToTalk(ctx, { enabled, onPhrase, setV, live, onStart });
   return quiet ? (
-    <button type="button" className={`hold hold--quiet${down ? " is-down" : ""}`} data-tip={tip} {...bind}><Icon name="mic" />Or hold to answer by voice</button>
+    <button type="button" className={`hold hold--quiet${down ? " is-down" : ""}`} data-tip={tip} {...bind}><Icon name="mic" />{label}</button>
   ) : (
     <button type="button" className={`hold hold--icon${down ? " is-down" : ""}`} aria-label="Hold to speak" data-tip={tip} {...bind}><Icon name="mic" /></button>
   );
