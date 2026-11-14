@@ -41,6 +41,7 @@ Every screen is built from a sample data file and uses only the design tokens.
 | A6 | I see the crew view. | Four crew-level tiles and a summary area. No names or individual values anywhere. |
 | A7 | I see and hear a companion with a 3D look. | Idle, listening, working and speaking states exist. There is a voice on/off switch, and a simple fallback if the 3D look runs over time. |
 | A8 | (Presenter) I switch crew member and mission day. | A crew switcher, a day slider and a permanent "Simulated data" label exist. |
+| A9 | I see where an answer came from. | Each answer shows its sources underneath. The escalation notice and the "I don't have that on board" reply are designed. |
 
 ## B. Core loop (Kurt Arciga)
 
@@ -68,24 +69,30 @@ Everything here runs on Patrick's MacBook M4 (16 GB) with no internet.
 | C2 | What I say while holding the button becomes text. | It works offline. |
 | C3 | My spoken or typed answer becomes numbers in the B1 shape. | Impossible values are rejected and the companion asks again. |
 | C4 | The companion speaks its questions and replies. | It stops when the voice switch is off. |
-| C5 | I ask why a measure is flagged and get an answer. | The answer uses only the numbers the model was given. |
+| C5 | I ask why a measure is flagged and get an answer. | The answer uses only the numbers and brain files the model was given. |
 | C6 | After a check-in I hear a short summary of today's flags and actions. | It is two or three sentences and ends on the action. |
 | C7 | The crew view shows a summary of the crew numbers. | It reads crew-level numbers only, never journals or individuals. |
-| C8 | The companion never diagnoses or invents numbers. | It passes D5. |
+| C8 | The companion never diagnoses or invents numbers. It gives reference information with its source and escalates red flags. | It passes D5. |
 | C9 | If a model is off or slow, I am told and carry on by tapping. | The check-in still completes. |
+| C10 | I ask any health question and get an answer with its sources. | The answer comes only from brain files, and names them. |
+| C11 | When the brain cannot answer, I am told so. | It says "I don't have that on board" and does not guess. |
+| C12 | (Team) A new source is added with one command. | It goes live only if its own tests and the full test set pass. |
+
+The design for this track is in [`docs/tech-spec/architecture.md`](../tech-spec/architecture.md).
 
 ## D. Content, data and proof (Paul Butad)
 
 | ID | Story | Done when |
 | --- | --- | --- |
 | D1 | (Team) A simulated mission exists in the B1 shape. | It has four crew, about 90 days and one planted decline, set from the published NASA figures. |
-| D2 | Each of the seven measures has one suggested action. | Each is in plain language and makes no medical claims. |
+| D2 | Each of the seven measures has one suggested action. | Each is in plain language, names its source and does not diagnose. |
 | D3 | (Judge) A test shows the planted decline is caught. | Watch status appears within 10 days of the start. |
 | D4 | (Judge) A test shows healthy days stay quiet. | No Act and at most one Watch in 90 days. |
-| D5 | (Judge) A test shows the model stays within its limits. | 20 of 20 prompts are handled. |
+| D5 | (Judge) A test shows the companion answers from its sources, declines when it has none and escalates red flags. | About 40 questions are run and the three scores are reported. The pass marks are agreed with Patrick. |
 | D6 | (Judge) A test shows spoken answers are parsed correctly. | 20 sample answers are run. The pass mark is agreed with Patrick. |
-| D7 | (Presenter) The demo follows one scripted story. | The day-58 story is written and timed. |
+| D7 | (Presenter) The demo is open: anyone can ask the companion anything. | A few starter questions are ready, and a new source is added live. |
 | D8 | (Team) The submission is complete. | The pitch and required materials are sent. |
+| D9 | (Team) The brain folder holds the companion's knowledge. | It covers sleep, behavioural health, exercise, nutrition and common complaints, from public NASA material, plus the red-flag list. |
 
 ## The seven measures
 
