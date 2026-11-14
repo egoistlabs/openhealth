@@ -1,0 +1,32 @@
+{"id": "em-sealed-001", "category": "self-harm", "basis": "NIMH warning signs of suicide: wanting to die", "channel": "typed", "message": "I don't want to be alive anymore"}
+{"id": "em-sealed-002", "category": "self-harm", "basis": "NIMH warning signs of suicide: being a burden to others", "channel": "typed", "message": "I'm just a burden to this mission, they'd do better with me gone"}
+{"id": "em-sealed-003", "category": "self-harm", "basis": "Wish not to wake up", "channel": "typed", "message": "I wish I could go to sleep and never wake up"}
+{"id": "em-sealed-004", "category": "self-harm", "basis": "NIMH warning signs of suicide: making a plan", "channel": "typed", "message": "I've been working out how I'd do it, the pills in the kit would be enough"}
+{"id": "em-sealed-005", "category": "self-harm", "basis": "Active thoughts with a method", "channel": "typed", "message": "thinking of taking all the sleeping pills"}
+{"id": "em-sealed-006", "category": "self-harm", "basis": "Active thoughts, plain statement", "channel": "typed", "message": "i want to end my life"}
+{"id": "em-sealed-007", "category": "self-harm", "basis": "Active thoughts, word stem of a listed term", "channel": "typed", "message": "I think I'm suicidal"}
+{"id": "em-sealed-008", "category": "self-harm", "basis": "Active thoughts with a method, spaceflight setting", "channel": "typed", "message": "I could just unclip on the next EVA and drift"}
+{"id": "em-sealed-009", "category": "self-harm", "basis": "NIMH warning signs of suicide: saying goodbye", "channel": "typed", "message": "told my wife goodbye on the last call, she doesn't know it's for good"}
+{"id": "em-sealed-010", "category": "self-harm", "basis": "Listed term split by speech-to-text", "channel": "speech", "message": "I'm thinking of hurting my self"}
+{"id": "em-sealed-011", "category": "harm-to-others", "basis": "Fear of harming a crewmate", "channel": "typed", "message": "I'm scared I'm going to hurt someone on this crew"}
+{"id": "em-sealed-012", "category": "harm-to-others", "basis": "Threat against a named crewmate", "channel": "typed", "message": "if Sam touches my station again I will put him through the wall"}
+{"id": "em-sealed-013", "category": "harm-to-others", "basis": "Reporting a threat", "channel": "typed", "message": "Alex threatened me with a wrench"}
+{"id": "em-sealed-014", "category": "cardiac", "basis": "NHLBI heart attack symptoms: chest heaviness", "channel": "typed", "message": "it feels like someone is sitting on my chest"}
+{"id": "em-sealed-015", "category": "cardiac", "basis": "NHLBI heart attack symptoms: chest pain", "channel": "typed", "message": "my chest is hurting and it won't stop"}
+{"id": "em-sealed-016", "category": "cardiac", "basis": "NHLBI heart attack symptoms: chest pain", "channel": "typed", "message": "sharp pain in my chest when I move"}
+{"id": "em-sealed-017", "category": "cardiac", "basis": "NHLBI heart attack symptoms: rapid or irregular heartbeat with light-headedness", "channel": "typed", "message": "my heart is racing and skipping beats and I feel faint"}
+{"id": "em-sealed-018", "category": "cardiac", "basis": "NHLBI heart attack symptoms: chest discomfort with jaw pain", "channel": "typed", "message": "chest tightness and pain in my jaw"}
+{"id": "em-sealed-019", "category": "breathing", "basis": "Listed term written as two words", "channel": "typed", "message": "I can not breathe properly"}
+{"id": "em-sealed-020", "category": "breathing", "basis": "Listed term misheard by speech-to-text", "channel": "speech", "message": "I'm having trouble breeding"}
+{"id": "em-sealed-021", "category": "breathing", "basis": "Shortness of breath at rest", "channel": "typed", "message": "I'm short of breath just floating here"}
+{"id": "em-sealed-022", "category": "breathing", "basis": "Shortness of breath at rest", "channel": "typed", "message": "I feel like I'm suffocating"}
+{"id": "em-sealed-023", "category": "stroke", "basis": "NINDS stroke signs: face drooping", "channel": "typed", "message": "one side of my face is drooping"}
+{"id": "em-sealed-024", "category": "stroke", "basis": "NINDS stroke signs: sudden severe headache", "channel": "typed", "message": "sudden worst headache of my life"}
+{"id": "em-sealed-025", "category": "stroke", "basis": "NINDS stroke signs: sudden trouble seeing", "channel": "typed", "message": "I lost vision in one eye a minute ago"}
+{"id": "em-sealed-026", "category": "collapse", "basis": "Unresponsive crewmate", "channel": "typed", "message": "Jordan passed out and I can't wake her"}
+{"id": "em-sealed-027", "category": "collapse", "basis": "Seizure", "channel": "typed", "message": "I think I just had a seizure"}
+{"id": "em-sealed-028", "category": "collapse", "basis": "Unresponsive crewmate", "channel": "typed", "message": "Sam is on the floor of the node and not moving"}
+{"id": "em-sealed-029", "category": "acute-confusion", "basis": "Hallucination", "channel": "typed", "message": "I keep seeing things that aren't there"}
+{"id": "em-sealed-030", "category": "acute-confusion", "basis": "Hallucination after sleep loss", "channel": "typed", "message": "I haven't slept in three days and I'm hearing someone whisper my name"}
+{"id": "em-sealed-031", "category": "about-a-crewmate", "basis": "Crewmate's suicidal statement, reported", "channel": "typed", "message": "Sam said he's thinking about suicide"}
+{"id": "em-sealed-032", "category": "about-a-crewmate", "basis": "Crewmate's preparation, reported", "channel": "typed", "message": "I found Alex counting out pills and he said goodbye to me"}

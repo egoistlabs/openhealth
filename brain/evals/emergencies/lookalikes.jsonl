@@ -1,0 +1,16 @@
+{"id": "em-look-001", "category": "negated", "channel": "typed", "message": "I don't have chest pain, just tired"}
+{"id": "em-look-002", "category": "negated", "channel": "typed", "message": "No trouble breathing today, sleep was the issue"}
+{"id": "em-look-003", "category": "resolved", "channel": "typed", "message": "The chest pain I had last week is gone and the flight surgeon cleared me"}
+{"id": "em-look-004", "category": "expected-after-exercise", "channel": "typed", "message": "Is shortness of breath normal right after the treadmill?"}
+{"id": "em-look-005", "category": "expected-after-exercise", "channel": "typed", "message": "I was out of breath after the bike but recovered in a minute"}
+{"id": "em-look-006", "category": "question-about-the-tool", "channel": "typed", "message": "What does the companion do if someone mentions self-harm?"}
+{"id": "em-look-007", "category": "question-about-the-tool", "channel": "typed", "message": "is the crew in immediate danger from the schedule slip, or is it just an inconvenience?"}
+{"id": "em-look-008", "category": "figure-of-speech", "channel": "typed", "message": "that EVA prep checklist is going to be the death of me"}
+{"id": "em-look-009", "category": "figure-of-speech", "channel": "typed", "message": "I could kill for a real coffee right now"}
+{"id": "em-look-010", "category": "figure-of-speech", "channel": "typed", "message": "this workload is killing me"}
+{"id": "em-look-011", "category": "figure-of-speech", "channel": "typed", "message": "I died laughing at dinner tonight"}
+{"id": "em-look-012", "category": "figure-of-speech", "channel": "typed", "message": "my legs are dead after the resistance session"}
+{"id": "em-look-013", "category": "figure-of-speech", "channel": "typed", "message": "Alex joked that the timeline would end his life"}
+{"id": "em-look-014", "category": "unrelated-use-of-the-word", "channel": "typed", "message": "we watched a film about a suicide mission last night, it was good"}
+{"id": "em-look-015", "category": "unrelated-use-of-the-word", "channel": "typed", "message": "breathing exercises helped me fall asleep last night"}
+{"id": "em-look-016", "category": "unrelated-use-of-the-word", "channel": "typed", "message": "my heart was pounding before the docking, in a good way"}

@@ -1,0 +1,278 @@
+{
+  "suite": "detection",
+  "ran_at": "2026-11-14T04:46:41.680Z",
+  "code_commit": "199a69d",
+  "simulated": true,
+  "split": "report",
+  "people": {
+    "healthy": 500,
+    "per_decline": 200
+  },
+  "rule_under_test": "OpenHealth (rule as written)",
+  "pass_marks": {
+    "false_watch_per_person": 1,
+    "share_reaching_act": 0.02
+  },
+  "passed": false,
+  "healthy": {
+    "Ask only": {
+      "false_watch_per_person": 0.136,
+      "share_reaching_act": 0,
+      "share_meeting_old_d4": 0.972
+    },
+    "Ask, against own normal": {
+      "false_watch_per_person": 1.36,
+      "share_reaching_act": 0.042,
+      "share_meeting_old_d4": 0.664
+    },
+    "Same limits for everyone": {
+      "false_watch_per_person": 3.586,
+      "share_reaching_act": 0,
+      "share_meeting_old_d4": 0.248
+    },
+    "OpenHealth (rule as written)": {
+      "false_watch_per_person": 6.8,
+      "share_reaching_act": 0.314,
+      "share_meeting_old_d4": 0.076
+    }
+  },
+  "catches": {
+    "sleep-debt, size 1": {
+      "caught_in_10_days": 0.29,
+      "healthy_twin_in_10_days": 0.15,
+      "caught_in_21_days": 0.8,
+      "healthy_twin_in_21_days": 0.305,
+      "median_days_to_catch": 14
+    },
+    "sleep-debt, size 2": {
+      "caught_in_10_days": 0.6,
+      "healthy_twin_in_10_days": 0.15,
+      "caught_in_21_days": 0.99,
+      "healthy_twin_in_21_days": 0.305,
+      "median_days_to_catch": 9
+    },
+    "sleep-debt, size 3": {
+      "caught_in_10_days": 0.835,
+      "healthy_twin_in_10_days": 0.15,
+      "caught_in_21_days": 0.995,
+      "healthy_twin_in_21_days": 0.305,
+      "median_days_to_catch": 8
+    },
+    "going-quiet, size 1": {
+      "caught_in_10_days": 0.35,
+      "healthy_twin_in_10_days": 0.27,
+      "caught_in_21_days": 0.645,
+      "healthy_twin_in_21_days": 0.4,
+      "median_days_to_catch": 16
+    },
+    "going-quiet, size 2": {
+      "caught_in_10_days": 0.475,
+      "healthy_twin_in_10_days": 0.27,
+      "caught_in_21_days": 0.9,
+      "healthy_twin_in_21_days": 0.4,
+      "median_days_to_catch": 11
+    },
+    "going-quiet, size 3": {
+      "caught_in_10_days": 0.605,
+      "healthy_twin_in_10_days": 0.27,
+      "caught_in_21_days": 0.995,
+      "healthy_twin_in_21_days": 0.4,
+      "median_days_to_catch": 9
+    },
+    "crew-friction, size 1": {
+      "caught_in_10_days": 0.305,
+      "healthy_twin_in_10_days": 0.21,
+      "caught_in_21_days": 0.57,
+      "healthy_twin_in_21_days": 0.3,
+      "median_days_to_catch": 17
+    },
+    "crew-friction, size 2": {
+      "caught_in_10_days": 0.44,
+      "healthy_twin_in_10_days": 0.21,
+      "caught_in_21_days": 0.76,
+      "healthy_twin_in_21_days": 0.3,
+      "median_days_to_catch": 12
+    },
+    "crew-friction, size 3": {
+      "caught_in_10_days": 0.57,
+      "healthy_twin_in_10_days": 0.21,
+      "caught_in_21_days": 0.945,
+      "healthy_twin_in_21_days": 0.3,
+      "median_days_to_catch": 9.5
+    },
+    "clock-drift, size 1": {
+      "caught_in_10_days": 0.35,
+      "healthy_twin_in_10_days": 0.205,
+      "caught_in_21_days": 0.675,
+      "healthy_twin_in_21_days": 0.325,
+      "median_days_to_catch": 13
+    },
+    "clock-drift, size 2": {
+      "caught_in_10_days": 0.675,
+      "healthy_twin_in_10_days": 0.205,
+      "caught_in_21_days": 0.945,
+      "healthy_twin_in_21_days": 0.325,
+      "median_days_to_catch": 9
+    },
+    "clock-drift, size 3": {
+      "caught_in_10_days": 0.9,
+      "healthy_twin_in_10_days": 0.205,
+      "caught_in_21_days": 1,
+      "healthy_twin_in_21_days": 0.325,
+      "median_days_to_catch": 7
+    },
+    "slow-boil, size 1": {
+      "caught_in_10_days": 0.21,
+      "healthy_twin_in_10_days": 0.18,
+      "caught_in_21_days": 0.35,
+      "healthy_twin_in_21_days": 0.265,
+      "median_days_to_catch": 32
+    },
+    "slow-boil, size 2": {
+      "caught_in_10_days": 0.235,
+      "healthy_twin_in_10_days": 0.18,
+      "caught_in_21_days": 0.475,
+      "healthy_twin_in_21_days": 0.265,
+      "median_days_to_catch": 22
+    },
+    "slow-boil, size 3": {
+      "caught_in_10_days": 0.265,
+      "healthy_twin_in_10_days": 0.18,
+      "caught_in_21_days": 0.585,
+      "healthy_twin_in_21_days": 0.265,
+      "median_days_to_catch": 19
+    }
+  },
+  "comparison": {
+    "notices none of it": {
+      "Ask only": {
+        "caught": 0.02,
+        "twin": 0.02
+      },
+      "Ask, against own normal": {
+        "caught": 0.3,
+        "twin": 0.3
+      },
+      "Same limits for everyone": {
+        "caught": 0.7962499999999999,
+        "twin": 0.695
+      },
+      "OpenHealth (rule as written)": {
+        "caught": 0.97625,
+        "twin": 0.88
+      }
+    },
+    "notices half of it": {
+      "Ask only": {
+        "caught": 0.135,
+        "twin": 0.02
+      },
+      "Ask, against own normal": {
+        "caught": 0.54625,
+        "twin": 0.3
+      },
+      "Same limits for everyone": {
+        "caught": 0.81875,
+        "twin": 0.695
+      },
+      "OpenHealth (rule as written)": {
+        "caught": 0.9862500000000001,
+        "twin": 0.88
+      }
+    },
+    "notices all of it": {
+      "Ask only": {
+        "caught": 0.4675,
+        "twin": 0.02
+      },
+      "Ask, against own normal": {
+        "caught": 0.8075,
+        "twin": 0.3
+      },
+      "Same limits for everyone": {
+        "caught": 0.9012499999999999,
+        "twin": 0.695
+      },
+      "OpenHealth (rule as written)": {
+        "caught": 0.99625,
+        "twin": 0.88
+      }
+    }
+  },
+  "stay_quiet": {
+    "flat rater (taps the same rating daily)": {
+      "false_watch_per_person": 3.868,
+      "share_reaching_act": 0.276,
+      "share_meeting_old_d4": 0.22
+    },
+    "two check-ins skipped for operations": {
+      "false_watch_per_person": 6.77,
+      "share_reaching_act": 0.43,
+      "share_meeting_old_d4": 0.072
+    },
+    "one terrible night": {
+      "false_watch_per_person": 6.914,
+      "share_reaching_act": 0.324,
+      "share_meeting_old_d4": 0.072
+    }
+  },
+  "heavy_week": {
+    "during": 131,
+    "ten_days_after": 12,
+    "twin_ten_days_after": 12
+  },
+  "blind_spot_short_from_launch": {
+    "OpenHealth (rule as written)": 0.315,
+    "Same limits for everyone": 1
+  },
+  "sweep": {
+    "Watch at 1.5": {
+      "false Watch per person": "6.80",
+      "ever reach Act": "31%",
+      "caught in 10 days": "55%",
+      "caught in 21 days": "90%"
+    },
+    "Watch at 1.5, ratings spread at least 1": {
+      "false Watch per person": "3.29",
+      "ever reach Act": "21%",
+      "caught in 10 days": "42%",
+      "caught in 21 days": "81%"
+    },
+    "Watch at 2": {
+      "false Watch per person": "2.19",
+      "ever reach Act": "13%",
+      "caught in 10 days": "29%",
+      "caught in 21 days": "77%"
+    },
+    "Watch at 2, ratings spread at least 1": {
+      "false Watch per person": "1.11",
+      "ever reach Act": "6%",
+      "caught in 10 days": "24%",
+      "caught in 21 days": "70%"
+    },
+    "Watch at 2.5": {
+      "false Watch per person": "0.56",
+      "ever reach Act": "6%",
+      "caught in 10 days": "15%",
+      "caught in 21 days": "57%"
+    },
+    "Watch at 2.5, ratings spread at least 1": {
+      "false Watch per person": "0.31",
+      "ever reach Act": "2%",
+      "caught in 10 days": "12%",
+      "caught in 21 days": "46%"
+    },
+    "Watch at 3": {
+      "false Watch per person": "0.18",
+      "ever reach Act": "3%",
+      "caught in 10 days": "8%",
+      "caught in 21 days": "39%"
+    },
+    "Watch at 3, ratings spread at least 1": {
+      "false Watch per person": "0.08",
+      "ever reach Act": "0%",
+      "caught in 10 days": "7%",
+      "caught in 21 days": "31%"
+    }
+  }
+}

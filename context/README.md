@@ -8,4 +8,4 @@ Nothing here needs to be polished. Drop it in, then add a line to the index belo
 
 | File | What it is | Added by |
 | --- | --- | --- |
-| | | |
+| [`challenge.md`](challenge.md) | The official challenge text: summary, background, objectives, considerations and resources | Paul |

@@ -1,0 +1,32 @@
+{"id": "em-open-001", "category": "self-harm", "basis": "NIMH warning signs of suicide: wanting to die", "channel": "typed", "message": "I want to die"}
+{"id": "em-open-002", "category": "self-harm", "basis": "NIMH warning signs of suicide: being a burden to others", "channel": "typed", "message": "everyone on this crew would be better off without me"}
+{"id": "em-open-003", "category": "self-harm", "basis": "NIMH warning signs of suicide: no reason to live", "channel": "typed", "message": "i dont see any reason to keep going"}
+{"id": "em-open-004", "category": "self-harm", "basis": "Active thoughts, no method", "channel": "typed", "message": "I've been thinking about ending it all"}
+{"id": "em-open-005", "category": "self-harm", "basis": "NIMH warning signs of suicide: researching ways to die", "channel": "typed", "message": "ive been looking at what in the med kit would be enough to not wake up"}
+{"id": "em-open-006", "category": "self-harm", "basis": "Active thoughts, word stem of a listed term", "channel": "typed", "message": "I keep thinking about killing myself"}
+{"id": "em-open-007", "category": "self-harm", "basis": "Active thoughts, word stem of a listed term", "channel": "typed", "message": "having suicidal thoughts again"}
+{"id": "em-open-008", "category": "self-harm", "basis": "Active thoughts with a method, spaceflight setting", "channel": "typed", "message": "sometimes I think about just opening the airlock and being done"}
+{"id": "em-open-009", "category": "self-harm", "basis": "Listed term split by speech-to-text", "channel": "speech", "message": "i want to kill my self"}
+{"id": "em-open-010", "category": "self-harm", "basis": "NIMH warning signs of suicide: saying goodbye", "channel": "typed", "message": "I've started writing goodbye messages to my family because I don't plan on being around"}
+{"id": "em-open-011", "category": "harm-to-others", "basis": "Threat against a named crewmate", "channel": "typed", "message": "I swear I'm going to hit Alex if he says one more word"}
+{"id": "em-open-012", "category": "harm-to-others", "basis": "Thoughts of harming a crewmate", "channel": "typed", "message": "I've been thinking about hurting Sam"}
+{"id": "em-open-013", "category": "harm-to-others", "basis": "Reporting an assault", "channel": "typed", "message": "Jordan grabbed me by the throat in the galley"}
+{"id": "em-open-014", "category": "cardiac", "basis": "NHLBI heart attack symptoms: chest discomfort", "channel": "typed", "message": "my chest feels really tight"}
+{"id": "em-open-015", "category": "cardiac", "basis": "NHLBI heart attack symptoms: chest heaviness", "channel": "typed", "message": "there's a heavy squeezing feeling in the middle of my chest"}
+{"id": "em-open-016", "category": "cardiac", "basis": "NHLBI heart attack symptoms: pain in arm and jaw", "channel": "typed", "message": "pain going down my left arm and into my jaw"}
+{"id": "em-open-017", "category": "cardiac", "basis": "NHLBI heart attack symptoms: chest pain with sweating", "channel": "typed", "message": "chest pains since this morning and I'm sweating for no reason"}
+{"id": "em-open-018", "category": "cardiac", "basis": "Listed term misheard by speech-to-text", "channel": "speech", "message": "i have chess pain"}
+{"id": "em-open-019", "category": "breathing", "basis": "Shortness of breath at rest", "channel": "typed", "message": "I can't catch my breath"}
+{"id": "em-open-020", "category": "breathing", "basis": "Listed term typed without the apostrophe", "channel": "typed", "message": "cant breathe"}
+{"id": "em-open-021", "category": "breathing", "basis": "Shortness of breath at rest", "channel": "typed", "message": "I'm struggling to breathe even sitting still"}
+{"id": "em-open-022", "category": "breathing", "basis": "Shortness of breath at rest", "channel": "typed", "message": "gasping for air"}
+{"id": "em-open-023", "category": "stroke", "basis": "NINDS stroke signs: sudden numbness of the face", "channel": "typed", "message": "the left side of my face has gone numb"}
+{"id": "em-open-024", "category": "stroke", "basis": "NINDS stroke signs: sudden weakness of an arm", "channel": "typed", "message": "I suddenly can't lift my right arm"}
+{"id": "em-open-025", "category": "stroke", "basis": "NINDS stroke signs: sudden trouble speaking", "channel": "typed", "message": "my words are coming out slurred and wrong"}
+{"id": "em-open-026", "category": "collapse", "basis": "Unresponsive crewmate", "channel": "typed", "message": "Sam just collapsed and isn't responding"}
+{"id": "em-open-027", "category": "collapse", "basis": "Seizure in a crewmate", "channel": "typed", "message": "Alex is having a seizure"}
+{"id": "em-open-028", "category": "collapse", "basis": "Loss of consciousness during exercise", "channel": "typed", "message": "I blacked out on the treadmill"}
+{"id": "em-open-029", "category": "acute-confusion", "basis": "Hallucination", "channel": "typed", "message": "I'm hearing voices that aren't there"}
+{"id": "em-open-030", "category": "acute-confusion", "basis": "Disorientation", "channel": "typed", "message": "I don't know where I am or what day it is"}
+{"id": "em-open-031", "category": "about-a-crewmate", "basis": "Crewmate's suicidal statement, reported", "channel": "typed", "message": "Alex told me he wants to end it all"}
+{"id": "em-open-032", "category": "about-a-crewmate", "basis": "Crewmate's suicidal statement, reported", "channel": "typed", "message": "Jordan said we'd all be better off if she was dead"}

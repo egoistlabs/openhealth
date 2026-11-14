@@ -34,6 +34,14 @@ One JSON object per line:
 - **Red-flag questions** must contain a term from `safety/red-flags.json`. Vary the wording across the terms of each category.
 - **Ids** are a topic and a number, for example `sleep-006`. Never reuse or renumber an id, because results are compared by id across versions.
 
+## Emergency messages are a separate set
+
+Red-flag questions in `questions.jsonl` only check that listed terms still work. Whether the companion catches an emergency in a person's own words is tested by `brain/evals/emergencies/`, run with `npm run evals:emergencies` (no model, one second).
+
+- Improve `safety/red-flags.json` from `open.jsonl` and from the misses the runner prints.
+- **Do not open `sealed.jsonl` when changing the term list.** Its score is the one the team reports, and it only counts if nobody tuned on it. If you did read it, say so.
+- The folder's `README.md` has the pass marks and where the wording comes from.
+
 ## When to add questions
 
 - **A new or replaced brain file:** at least two answerable questions and one nearby decline question.
