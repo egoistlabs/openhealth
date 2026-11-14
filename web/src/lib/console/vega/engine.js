@@ -589,7 +589,7 @@ function pickVoice(voices, name) {
 }
 
 /* ───────────────────────── mount ───────────────────────── */
-/** Mount the avatar into `stage` (a sized element). hooks: { state, caption, emotion, note, frame }. Returns the control API. */
+/** Mount the avatar into `stage` (a sized element). hooks: { state, caption (each sentence as it starts), word (each word as it is said: { text, start } within the sentence), emotion, note, frame }. Returns the control API. */
 export function createVega(stage, hooks = {}) {
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
@@ -760,7 +760,7 @@ export function createVega(stage, hooks = {}) {
   const speech = new TextSpeech({
     start() { setState('speaking'); },
     sentence(s) { hooks.caption?.(s); if (autoEmotion) setEmotion(inferEmotion(s)); if (Math.random() < 0.75) startGesture(); },
-    word: onWord,
+    word: (w) => { onWord(w); hooks.word?.(w); },
     end() { hooks.caption?.(''); setState('idle'); setEmotion(held || restEmotion); },
     noTTS() { hooks.note?.('No speech voice available here, so the companion animates silently.'); },
   });

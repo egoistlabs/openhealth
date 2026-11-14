@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useCompanionChat } from "@/hooks/companion/mutations/use-companion-chat";
 import {
   JOURNAL, KEYS, MEASURES, P, avg, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, overall, series,
@@ -15,7 +15,7 @@ import { useConsole } from "./ConsoleProvider";
 import { FlagList } from "./FlagCard";
 import { toggleShare } from "./HomeScreen";
 import { Wave, usePresenceState } from "./Orb";
-import { VegaAvatar, type VegaApi } from "./VegaAvatar";
+import { VegaAvatar, type SpeechEvents, type VegaApi } from "./VegaAvatar";
 import { ROUTE } from "./Shell";
 import { HoldButton, VoiceState, type VState } from "./Voice";
 
@@ -47,6 +47,24 @@ function CompanionStage() {
   const typeTimer = useRef(0);
   const lastIntent = useRef<string | undefined>(undefined);
   const vega = useRef<VegaApi | null>(null);
+  /* live captions: the reply being spoken, revealed up to the word the avatar is saying */
+  const [reveal, setReveal] = useState<{ row: ConvoRow; upto: number } | null>(null);
+  const said = useRef<{ row: ConvoRow; text: string; base: number; cursor: number; upto: number } | null>(null);
+  const onSpeech: SpeechEvents = {
+    sentence: (sentence) => {
+      const sp = said.current; if (!sp) return;
+      const i = sp.text.indexOf(sentence, sp.cursor);
+      sp.base = i >= 0 ? i : sp.cursor;
+      sp.cursor = sp.base + sentence.length;
+      setReveal({ row: sp.row, upto: sp.upto }); // first sentence: show the (still empty) caption straight away
+    },
+    word: (w) => {
+      const sp = said.current; if (!sp) return;
+      sp.upto = Math.max(sp.upto, Math.min(sp.text.length, sp.base + w.start + w.text.length));
+      setReveal({ row: sp.row, upto: sp.upto });
+    },
+    end: () => { said.current = null; setReveal(null); },
+  };
 
   const rows = c.convo();
   /* rows already in the log when the screen opened are history: they are shown, not spoken */
@@ -82,16 +100,18 @@ function CompanionStage() {
   useEffect(() => {
     vega.current?.hold(holdEmotion({ working: busy, listening: pstate === "listening", typing: text.trim().length > 0 }));
   }, [busy, pstate, text]);
-  /* speak each new companion reply aloud, with the face for its scenario */
-  useEffect(() => {
+  /* speak each new companion reply aloud, with the face for its scenario. A layout effect, so the
+     reply is hidden before the first paint and then revealed word by word as it is said. */
+  useLayoutEffect(() => {
     if (rows.length <= spoken.current) return;
     const fresh = rows.slice(spoken.current);
     spoken.current = rows.length;
     const reply = [...fresh].reverse().find((r) => r.who === "companion" && r.text);
+    if (!reply || reply.stopped || !vega.current) return;
     /* the answer first, so its opening sentence stands on its own; the suggested action last */
-    if (reply && !reply.stopped && vega.current) {
-      vega.current.speak(reply.action ? `${reply.text} Worth trying: ${reply.action}` : reply.text!, { emotion: replyEmotion(reply, worst), silent: !s.voice });
-    }
+    const aloud = reply.action ? `${reply.text} Worth trying: ${reply.action}` : reply.text!;
+    said.current = { row: reply, text: aloud, base: 0, cursor: 0, upto: 0 };
+    vega.current.speak(aloud, { emotion: replyEmotion(reply, worst), silent: !s.voice });
   }, [rows, worst, s.voice]);
 
   /* what the app can say without the model or the numbers */
@@ -156,10 +176,19 @@ function CompanionStage() {
     userSaid(p.text, p.intent);
   };
 
+  /* What shows under the avatar:
+     - while the answer is being prepared: nothing but "Thinking…" (the streamed draft is never shown)
+     - while the avatar speaks: the reply, revealed up to the word being said
+     - otherwise: the last reply in full, with its sources */
   const lastReply = [...rows].reverse().find((x) => x.who === "companion" && x.text);
-  const shown = speaking != null
-    ? { who: "companion" as const, text: speaking, sol: P, min: 0 }
-    : lastReply;
+  const thinking = chat.streaming;
+  const shown = thinking
+    ? undefined
+    : reveal
+      ? { ...reveal.row, text: reveal.row.text!.slice(0, reveal.upto) }
+      : speaking != null
+        ? { who: "companion" as const, text: speaking, sol: P, min: 0 }
+        : lastReply;
 
   return (
     <div className={`cstage${s.drawer ? " has-drawer" : ""}`}>
@@ -172,11 +201,11 @@ function CompanionStage() {
             <button type="button" className="ta ta--quiet" aria-expanded={s.drawer} aria-controls="drawer" onClick={() => set((p) => ({ drawer: !p.drawer }))}>{s.drawer ? "Hide log" : "Show log"}</button>
           </div>
           {s.settings ? <Settings /> : <>
-            <VegaAvatar onReady={(api) => {
+            <VegaAvatar onSpeech={onSpeech} onReady={(api) => {
               vega.current = api;
               api?.setRestEmotion(restEmotion(worst));
             }} />
-            <Reply row={shown} live={speaking != null} progress={chat.progress} />
+            <Reply row={shown} live={reveal != null || speaking != null} progress={chat.progress} />
           </>}
         </section>
 
@@ -202,7 +231,8 @@ function CompanionStage() {
                 placeholder={s.voice && !typeMode ? "Type a message, or hold the mic to talk" : "Type a message"} maxLength={2000} />
               {s.voice ? <>
                 <Wave />
-                <HoldButton ctx="companion" enabled={s.voice && !busy} onPhrase={onPhrase} setV={setV} tip="Hold to talk. Simulated: there is no microphone yet." />
+                <HoldButton ctx="companion" live enabled={s.voice && !busy} onPhrase={onPhrase} setV={setV}
+                  onStart={() => { vega.current?.stop(); Presence.setState("idle"); }} tip="Hold to talk" />
               </> : null}
               {chat.streaming ? (
                 <button type="button" className="ta" onClick={chat.stop}>Stop</button>
@@ -247,11 +277,11 @@ function Reply({ row, live, progress }: { row?: ConvoRow; live: boolean; progres
   const plain = live || row.escalation || row.noAnswer || row.stopped;
   const [lead, rest] = plain ? [row.text ?? "", ""] : splitLead(row.text ?? "");
   return (
-    <div className="grid max-h-[38vh] w-full max-w-[56ch] justify-items-center gap-3 overflow-y-auto text-center">
+    <div className="grid max-h-[38vh] w-full max-w-[min(94%,88ch)] justify-items-center gap-3 overflow-y-auto text-center">
       {row.escalation ? <EscalationNotice /> : null}
       {row.noAnswer && !live ? <p className="label">Not on board</p> : null}
       {row.stopped ? <p className="label">Stopped</p> : null}
-      <p className="stage__reply line-clamp-none min-h-0">
+      <p className="stage__reply line-clamp-none max-w-none min-h-0">
         {lead}{live ? <span className="caret" aria-hidden="true" /> : null}
       </p>
       {rest ? <p className="text-text-2">{rest}</p> : null}
