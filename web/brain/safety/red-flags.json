@@ -1,0 +1,21 @@
+{
+  "escalation_message": "Please contact the mission medical officer or designated flight surgeon now and follow the mission's urgent support procedure. If you may be in immediate danger, tell a crewmate and contact mission support without delay.",
+  "categories": [
+    {
+      "id": "chest-pain",
+      "terms": ["chest pain", "chest hurts", "pain in my chest", "pressure in my chest"]
+    },
+    {
+      "id": "breathing",
+      "terms": ["can't breathe", "cannot breathe", "trouble breathing", "difficulty breathing", "shortness of breath"]
+    },
+    {
+      "id": "self-harm",
+      "terms": ["suicide", "kill myself", "end my life", "hurt myself", "self-harm", "self harm"]
+    },
+    {
+      "id": "immediate-danger",
+      "terms": ["immediate danger", "going to hurt someone", "hurt someone right now"]
+    }
+  ]
+}

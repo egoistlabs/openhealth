@@ -1,93 +1,75 @@
-
 import { NextRequest, NextResponse } from "next/server";
+import { answerQuestion } from "@/lib/brain/answer";
 
 export const runtime = "nodejs";
-const OLLAMA_BASE_URL = process.env.OLLAMA_BASE_URL;
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL;
+export const dynamic = "force-dynamic";
+
+const MAX_MESSAGE_LENGTH = 2_000;
+const MAX_NUMBERS_LENGTH = 4_000;
+
+function isPlainObject(value: unknown): value is Record<string, unknown> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.getPrototypeOf(value) === Object.prototype
+  );
+}
+
+function validateNumbers(value: unknown): Record<string, unknown> | null {
+  if (value === undefined) return {};
+  if (!isPlainObject(value)) return null;
+
+  try {
+    const serialized = JSON.stringify(value);
+    if (serialized.length > MAX_NUMBERS_LENGTH) return null;
+    const parsed: unknown = JSON.parse(serialized);
+    return isPlainObject(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
 
 export async function POST(request: NextRequest) {
   try {
-    const body = await request.json();
+    const body: unknown = await request.json();
+    if (!isPlainObject(body)) {
+      return NextResponse.json({ error: "A JSON object is required." }, { status: 400 });
+    }
+
     const message = body.message;
-    // validate
     if (
       typeof message !== "string" ||
-      !message.trim()
+      !message.trim() ||
+      message.length > MAX_MESSAGE_LENGTH
     ) {
       return NextResponse.json(
-        { error: "Message is required." },
-        { status: 400 }
+        { error: `Message must be between 1 and ${MAX_MESSAGE_LENGTH} characters.` },
+        { status: 400 },
       );
     }
 
-    // send request to ollama
-    const response = await fetch(
-      `${OLLAMA_BASE_URL}/api/chat`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-            model: OLLAMA_MODEL,
-            messages: [
-                {
-                role: "user",
-                content: message.trim(),
-                },
-            ],
-            stream: false,
-            keep_alive: "10m",
-            options: {
-                num_predict: 256,
-                num_ctx: 4096,
-            },
-            }),
-        signal: AbortSignal.timeout(180000),
-        cache: "no-store",
-      }
-    );
-
-    if (!response.ok) {
-      const errorDetails = await response.text();
-
-      console.error("Ollama Error:", errorDetails);
-
+    const numbers = validateNumbers(body.numbers);
+    if (!numbers) {
       return NextResponse.json(
-        {
-          error: "Ollama request failed.",
-          details: errorDetails,
-        },
-        { status: response.status }
+        { error: "Numbers must be a JSON object no larger than 4 KB." },
+        { status: 400 },
       );
     }
 
-    const data = await response.json();
-
-    // Return AI response
-    return NextResponse.json({
-      success: true,
-      model: data.model,
-      message: data.message?.content ?? "",
-    });
-  } catch (error) {
-    console.error("AI API Error:", error);
-
-    if (
-      error instanceof Error &&
-      error.name === "TimeoutError"
-    ) {
-      return NextResponse.json(
-        { error: "The AI request timed out." },
-        { status: 504 }
-      );
-    }
-
+    const result = await answerQuestion(message.trim(), numbers);
     return NextResponse.json(
-      {
-        error: "Unable to communicate with Ollama.",
-      },
-      { status: 500 }
+      { success: true, ...result },
+      { headers: { "Cache-Control": "no-store" } },
+    );
+  } catch (error) {
+    if (error instanceof Error && error.name === "TimeoutError") {
+      return NextResponse.json({ error: "The AI request timed out." }, { status: 504 });
+    }
+    console.error("AI chat pipeline error:", error);
+    return NextResponse.json(
+      { error: "Unable to complete the AI request. Check that Ollama is running locally." },
+      { status: 502 },
     );
   }
 }
