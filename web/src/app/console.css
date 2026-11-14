@@ -80,7 +80,7 @@ ul, ol { list-style: none; }
 /* tooltip terms */
 .term { text-decoration: underline dotted var(--c-text-3); text-underline-offset: var(--s-1); cursor: help; border-radius: var(--r-control); }
 .term:hover, .term:focus-visible { text-decoration-color: var(--c-text); }
-.tip { position: fixed; z-index: 40; max-width: var(--tip-w); padding: var(--s-2) var(--s-3); background: var(--c-surface-2); border: var(--bw) solid var(--c-hair-strong); color: var(--c-text); font-size: var(--fs-label); line-height: var(--lh-label); pointer-events: none; }
+.tip { position: fixed; z-index: 40; max-width: var(--tip-w); white-space: pre-line; padding: var(--s-2) var(--s-3); background: var(--c-surface-2); border: var(--bw) solid var(--c-hair-strong); color: var(--c-text); font-size: var(--fs-label); line-height: var(--lh-label); pointer-events: none; }
 
 /* legends */
 .legend { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); margin-top: var(--s-2); color: var(--c-text-2); font-size: var(--fs-label); line-height: var(--lh-label); }
@@ -835,7 +835,8 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
   .home .sec__margin { gap: var(--s-4); }
   .home .sec:last-child { border-bottom: 0; }
   .home .idn { gap: var(--s-2); }
-  .home .portrait { width: 184px; height: 220px; }
+  /* the photo fills the header height (name block + wearable strip) instead of leaving space under it */
+  .home .portrait { width: 248px; height: auto; min-height: 220px; align-self: stretch; }
   .home .today-sum { padding-bottom: var(--s-2); }
   .home .disc { padding: var(--s-2) 0; }
   .home .sec-t { margin-bottom: var(--s-2); }
@@ -1285,3 +1286,4 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
 .fu__dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
 .fu__t { flex: 1; min-width: 200px; }
 .fu__act { display: flex; gap: var(--s-1); }
+

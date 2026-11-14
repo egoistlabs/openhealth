@@ -21,6 +21,8 @@ import { MEASURE_INFO } from "@/lib/console/measure-info";
 import { ROUTE, ReplayNote } from "./Shell";
 import { PainBodyStill, PainCards, sevColour, type PainMark } from "./BodyMap";
 import { setFollowUp, useFollowUps } from "@/lib/console/body/followups";
+import { fmtVital, fmtVitalDelta, vitals, type Vital } from "@/lib/console/wearable";
+import { lightDelayMin } from "@/lib/console/ground";
 
 /* Home: me vs my baseline (A4, A5), in the console layout: a main column and a margin column.
    Main: who, overall status, sharing, the one primary button, then today's measures.
@@ -67,8 +69,12 @@ export function HomeScreen() {
                 {sh.length ? "Make all private" : "Share aggregates with crew"}
               </button>
             </p>
-            <p className="idn__row"><b>Simulated data</b><span className="t2">— prototype, not a medical device</span></p>
-            <div className="idn__cta">{primary}</div>
+            {/* Talk to Pedro sits beside this line so the wearable strip can use the full width below */}
+            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12, width: "100%", flexWrap: "wrap" }}>
+              <p className="idn__row"><b>Simulated data</b><span className="t2">— prototype, not a medical device</span></p>
+              <div>{primary}</div>
+            </div>
+            <Vitals id={s.me} sol={s.sol} />
           </div>
           </div>
         </div>
@@ -173,6 +179,92 @@ function MeasureGrid({ sts }: { sts: Status[] }) {
     </>
   );
 }
+
+/* Wearable vitals beside the identity block: last night's readings from a (simulated) smartwatch or chest
+   monitor, each against the person's own normal, with Watch when outside their usual spread. */
+function Vitals({ id, sol }: { id: string; sol: number }) {
+  const vs = useMemo(() => vitals(id, sol), [id, sol]);
+  const off = vs.filter((v) => v.state !== "normal").length, urgent = vs.filter((v) => v.state === "act").length;
+  return (
+    <section style={V.box} aria-labelledby="vit-t">
+      <div style={V.head}>
+        <h2 id="vit-t" style={V.title}>Wearable · last night</h2>
+        <span style={{ ...V.sub, color: VITAL_COLOUR[urgent ? "act" : off ? "watch" : "normal"] }}>
+          {urgent ? `${urgent} urgent${off > urgent ? `, ${off - urgent} on watch` : ""}` : off ? `${off} off your normal` : "All stable"}
+        </span>
+        {/* the readings are on board straight away; Earth gets them after the one-way light time
+            (3 to 22 min depending on where Mars and Earth are; about 44 min there and back at the farthest) */}
+        <span style={V.delay} data-tip={`Mars to Earth one-way light time today is ${lightDelayMin(sol)} min (it ranges from 3 to 22 min over the orbit). A reply from Earth takes as long again: ${2 * lightDelayMin(sol)} min there and back.`} tabIndex={0}>
+          On board now · Earth sees it in <b>{lightDelayMin(sol)} min</b> · {2 * lightDelayMin(sol)} min round trip
+        </span>
+        <span style={V.src}>Simulated, like the CSA Bio-Monitor on the ISS</span>
+      </div>
+      <div style={V.grid}>
+        {vs.map((v) => (
+          <div key={v.key} style={{ ...V.tile, borderTopColor: VITAL_COLOUR[v.state], ...(v.state === "act" ? V.tileAct : null) }} tabIndex={0}
+            data-tip={`${v.label}: ${VITAL_WORD[v.state]}.\n${v.tip}\n\nHealthy range: ${v.range}\nYour normal: ${fmtVital(v, v.normal)}. Tonight: ${fmtVital(v, v.value)} (${fmtVitalDelta(v)}).\n\nQuick fact: ${v.fact}`}
+            aria-label={`${v.label} ${fmtVital(v, v.value)}, ${fmtVitalDelta(v)} from your normal of ${fmtVital(v, v.normal)}, ${VITAL_WORD[v.state]}`}>
+            <div style={{ minWidth: 0 }}>
+              <div style={V.label}>
+                {VITAL_SHORT[v.key]}
+                <span style={{ marginLeft: 6, color: VITAL_COLOUR[v.state], fontWeight: 600 }}>{VITAL_TAG[v.state]}</span>
+              </div>
+              <div style={V.num}>{v.value.toFixed(v.digits)}</div>
+              <div style={{ ...V.delta, color: v.state === "normal" ? "var(--c-text-3)" : VITAL_COLOUR[v.state] }}>
+                {fmtVitalDelta(v)} <span style={{ color: "var(--c-text-3)" }}>vs {v.normal.toFixed(v.digits)}</span>
+              </div>
+            </div>
+            <VitalRing v={v} />
+          </div>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+/* the app's status colours: green stable, amber Watch, red Act (urgent) */
+const VITAL_COLOUR: Record<Vital["state"], string> = { normal: "var(--c-normal)", watch: "var(--c-watch)", act: "var(--c-act)" };
+/* shape + word + colour, like the status marks elsewhere, so the level never depends on colour alone */
+const VITAL_TAG: Record<Vital["state"], string> = { normal: "● Stable", watch: "▲ Watch", act: "■ Urgent" };
+const VITAL_WORD: Record<Vital["state"], string> = {
+  normal: "Stable, within your normal",
+  watch: "Watch, outside your usual range",
+  act: "Urgent, far outside your normal: tell the crew medical officer",
+};
+const VITAL_SHORT: Record<string, string> = { rhr: "Heart rate", hrv: "HRV", spo2: "SpO₂", temp: "Skin temp", resp: "Breathing" };
+const VITAL_UNIT: Record<string, string> = { rhr: "bpm", hrv: "ms", spo2: "%", temp: "°C", resp: "/min" };
+
+/* ring gauge: the arc shows where tonight sits against the person's normal (half = exactly normal,
+   full or empty = two spreads away); yellow when outside their usual spread */
+function VitalRing({ v }: { v: Vital }) {
+  const r = 16, c = 2 * Math.PI * r;
+  const frac = Math.min(0.97, Math.max(0.06, 0.5 + (v.value - v.normal) / (4 * v.band)));
+  const col = VITAL_COLOUR[v.state];
+  return (
+    <svg width="40" height="40" viewBox="0 0 40 40" aria-hidden="true" style={{ flex: "none" }}>
+      <circle cx="20" cy="20" r={r} fill="none" stroke="var(--c-hair-strong)" strokeWidth="3" />
+      <circle cx="20" cy="20" r={r} fill="none" stroke={col} strokeWidth="3" strokeLinecap="round"
+        strokeDasharray={`${frac * c} ${c}`} transform="rotate(-90 20 20)" />
+      <text x="20" y="20" textAnchor="middle" dominantBaseline="central" fontSize="9" fill="var(--c-text-2)" fontFamily="var(--f-mono)">{VITAL_UNIT[v.key]}</text>
+    </svg>
+  );
+}
+
+/* inline so the strip renders even when the stylesheet is stale in dev */
+const V = {
+  box: { width: "100%", display: "grid", gap: 4, marginTop: 2, paddingTop: 6, borderTop: "1px solid var(--c-hair)" },
+  head: { display: "flex", alignItems: "baseline", gap: 12, flexWrap: "wrap" },
+  title: { fontSize: 11, fontWeight: 600, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--c-text-2)" },
+  sub: { fontSize: 11 },
+  delay: { fontSize: 11, color: "var(--c-text-2)", outline: "none" },
+  src: { marginLeft: "auto", fontSize: 10, color: "var(--c-text-3)" },
+  grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(128px, 1fr))", gap: 8 },
+  tile: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, padding: "5px 10px", border: "1px solid var(--c-hair)", borderTopWidth: 2, borderRadius: 6, background: "var(--c-surface)", outline: "none" },
+  tileAct: { background: "color-mix(in srgb, var(--c-act) 10%, var(--c-surface))", borderColor: "var(--c-act)" },
+  label: { fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--c-text-3)", whiteSpace: "nowrap" },
+  num: { fontFamily: "var(--f-display, inherit)", fontSize: 26, fontWeight: 300, lineHeight: 1.1, color: "var(--c-text)", whiteSpace: "nowrap" },
+  delta: { fontFamily: "var(--f-mono)", fontSize: 11, whiteSpace: "nowrap" },
+} satisfies Record<string, React.CSSProperties>;
 
 /* Body: where it hurt on this sol (pain and skin marks from the check-in), on the 3D body, plus a short list.
    Opens the check-in review, where each mark can be read in full or corrected. */

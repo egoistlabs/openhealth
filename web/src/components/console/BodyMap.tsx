@@ -464,8 +464,9 @@ export function PainBodyStill({ marks, active }: { marks: PainMark[]; active?: s
 
 const S = {
   /* a positioned box with a real height (at least 110px), and the pictures laid inside it absolutely, so their
-     size never depends on the card passing its height down */
-  still: { position: "relative", flex: "1 1 110px", minHeight: 110 },
+     size never depends on the card passing its height down. The 70px floor lets the Home row shrink so the
+     page does not scroll; with spare height the pictures grow. */
+  still: { position: "relative", flex: "1 1 70px", minHeight: 70 },
   stillIn: { position: "absolute", inset: 0, display: "flex", justifyContent: "center", gap: 6 },
   stillFig: { display: "grid", gridTemplateRows: "minmax(0, 1fr) auto", justifyItems: "center", gap: 2, margin: 0, height: "100%", minHeight: 0 },
   stillImg: { position: "relative", height: "100%", maxWidth: "100%" },
