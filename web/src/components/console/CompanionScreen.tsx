@@ -82,7 +82,7 @@ function CompanionStage() {
         speak({ who: "companion", offline: true, text: reply.message, facts: reply.rows, action: reply.action ?? undefined });
         return;
       }
-      speak({ who: "companion", offline: true, text: localReply(q) ?? "The companion model is not running, so I can't answer that right now. Your check-in and measures still work." });
+      speak({ who: "companion", offline: true, text: localReply(q) ?? "The companion is unavailable right now, so I can't answer that. Your check-in and measures still work." });
     },
   });
   const busy = busyLocal || chat.streaming;

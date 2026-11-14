@@ -6,7 +6,7 @@ Last updated: 14 Nov 2026. Status: design agreed, nothing built or tested yet.
 
 ## The idea in short
 
-The model is [medgemma:4b](https://ollama.com/library/medgemma:4b), run locally with Ollama. It is small, so we do not rely on what it remembers from training. Its knowledge lives in a folder of plain files called the **brain**. Code decides what the model reads, checks what it writes, and enforces the safety rules. The model only turns the material it is given into a spoken or written answer.
+The default model is [medgemma:4b](https://ollama.com/library/medgemma:4b), run locally with Ollama. Setting `LOCAL_LLM=false` switches inference to a Claude model through the Anthropic API (see [Model provider switch](#model-provider-switch)). The local model is small, so we do not rely on what it remembers from training. Its knowledge lives in a folder of plain files called the **brain**. Code decides what the model reads, checks what it writes, and enforces the safety rules. The model only turns the material it is given into a spoken or written answer.
 
 This is an ICM-based architecture. ICM is the [Interpretable Context Methodology](https://arxiv.org/abs/2603.16021) (Van Clief and McDermott, 2026). Its core idea is that folder structure does the work an agent framework would otherwise do in code: plain files carry the prompts and the context, and scripts do the mechanical work that needs no model. The folder is the source of knowledge, a person can read and edit it, and changing the folder changes what the companion knows without retraining anything.
 
@@ -51,7 +51,18 @@ Four rules follow from that:
 | The Ollama page lists medgemma:4b with a vision capability only, and no tool calling | Code does all searching and routing |
 | 4.3B parameters, 3.3 GB download | Prompts stay short and focused: a few files per question |
 | Runs on a MacBook M4 with 16 GB, next to speech-to-text and Kokoro (story C1) | No second large model. Search starts as keyword search, which needs no model |
-| No internet | Everything below runs on the laptop |
+| No internet | Everything below runs on the laptop. `LOCAL_LLM=false` is the opt-in exception |
+
+## Model provider switch
+
+The pipeline is provider-agnostic. `LOCAL_LLM` chooses where the one model call happens:
+
+| `LOCAL_LLM` | Provider | Model | Notes |
+| --- | --- | --- | --- |
+| unset / `true` | Ollama on this machine | `OLLAMA_MODEL`, default `medgemma:4b` | The default, and the only mode that meets the "No internet" constraint |
+| `false` | Anthropic Claude API | `ANTHROPIC_MODEL`, default `claude-sonnet-5` | Opt-in. Sends the question, the person's numbers and the selected sources to Anthropic |
+
+Code still runs the red-flag check, search and every audit in step 5. Only step 4 changes. The switch lives in `web/src/lib/llm/config.ts`; the four stages reach it through `web/src/lib/llm/client.ts` and `web/src/lib/llm/provider.ts`. There is no automatic fallback: if `LOCAL_LLM=false` and `ANTHROPIC_API_KEY` is missing, the request fails with a clear error rather than using Ollama.
 
 ## How a question is answered
 
@@ -110,7 +121,7 @@ The Inputs table in `brain/stages/04-answer/CONTEXT.md` lists what the model is 
 4. The tone
 5. The question
 
-The model is called through the AI SDK's `streamText` against Ollama's `/v1` endpoint, and replies in a fixed JSON shape:
+The model is called through the AI SDK's `streamText`, against Ollama's `/v1` endpoint locally or the Anthropic API when `LOCAL_LLM=false`, and replies in a fixed JSON shape:
 
 ```json
 {

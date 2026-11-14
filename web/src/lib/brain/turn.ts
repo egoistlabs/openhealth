@@ -1,6 +1,7 @@
 import { jsonSchema, Output, streamText, type JSONSchema7 } from "ai";
-import { ANSWER_FORMAT, parseModelAnswer } from "../ollama/client.ts";
-import { companionModel, COMPANION_MODEL_ID } from "../ollama/provider.ts";
+import { companionModelId, modelSettings } from "../llm/config.ts";
+import { companionModel } from "../llm/provider.ts";
+import { ANSWER_FORMAT, parseModelAnswer } from "../llm/schema.ts";
 import { extractPartialAnswer } from "../chat/partial-answer.ts";
 import { sentencesIn } from "../text.ts";
 import {
@@ -16,8 +17,6 @@ import {
   type TurnTrace,
 } from "./answer.ts";
 
-/* Sent to the model as they are, and written to the turn log as they are. */
-export const MODEL_SETTINGS = { temperature: 0.2, seed: 42, maxOutputTokens: 256 } as const;
 export const MODEL_TIMEOUT_MS = 180_000;
 
 export type TurnStep = "searching" | "thinking" | "writing" | "checking";
@@ -102,7 +101,7 @@ function describeError(error: unknown): string {
   return error instanceof Error ? `${error.name}: ${error.message}` : String(error);
 }
 
-/* What was sent to Ollama, without the prompt (its size is logged separately). */
+/* What was sent to the model, without the prompt (its size is logged separately). */
 function requestOptionsSent(body: unknown): Record<string, unknown> | null {
   const parsed = typeof body === "string" ? parseJson(body) : body;
   if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) return null;
@@ -158,10 +157,12 @@ export async function runCompanionTurn(
   const { context, messages } = prepared;
   const system = messages[0]?.role === "system" ? messages[0].content : "";
   const turns = messages[0]?.role === "system" ? messages.slice(1) : messages;
+  const modelId = companionModelId();
+  const settings = modelSettings();
 
-  report.model = COMPANION_MODEL_ID;
+  report.model = modelId;
   report.modelCalled = true;
-  report.options = { ...MODEL_SETTINGS, timeout_total_ms: MODEL_TIMEOUT_MS, stop_on_repeated_sentence: true, stop_after_sentences: MAX_SENTENCES };
+  report.options = { ...settings, timeout_total_ms: MODEL_TIMEOUT_MS, stop_on_repeated_sentence: true, stop_after_sentences: MAX_SENTENCES };
   report.promptChars = messages.reduce((total, message) => total + message.content.length, 0);
 
   /* One controller owns every reason to stop: the browser went away, the model
@@ -191,8 +192,8 @@ export async function runCompanionTurn(
       output: Output.object({
         schema: jsonSchema(ANSWER_FORMAT as unknown as JSONSchema7),
       }),
-      ...MODEL_SETTINGS,
-      /* keep the body that was sent to Ollama, for the turn log */
+      ...settings,
+      /* keep the request body, for the turn log */
       include: { requestBody: true },
       abortSignal: controller.signal,
       onError: ({ error }) => {
@@ -243,8 +244,8 @@ export async function runCompanionTurn(
   }
 
   hooks.onStep?.("checking");
-  /* A call that failed outright (Ollama not running) is an error, not an
-     answer to decline: the caller shows its own offline message. */
+  /* A call that failed outright (the provider is not reachable) is an error,
+     not an answer to decline: the caller shows its own offline message. */
   if (report.error && !raw) {
     report.outcome = "error";
     throw Object.assign(new Error(report.error), { report });
@@ -255,7 +256,7 @@ export async function runCompanionTurn(
   const finalized = finalizeCompanionAnswer(
     complete ?? (cutShort ? salvage(raw) : null),
     context,
-    COMPANION_MODEL_ID,
+    modelId,
     cutShort,
   );
   report.audit = finalized.audit;

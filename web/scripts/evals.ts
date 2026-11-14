@@ -4,6 +4,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { CompanionAnswer } from "../src/lib/brain/answer.ts";
 import { fingerprintFiles, readBrainVersion } from "../src/lib/brain/version.ts";
+import { companionModelId, llmProvider } from "../src/lib/llm/config.ts";
 import { mentionsSubstance, sentencesIn } from "../src/lib/text.ts";
 import type { ChatTurn } from "../src/lib/brain/types.ts";
 
@@ -193,7 +194,8 @@ async function main() {
 
   const report = {
     ran_at: new Date().toISOString(),
-    model: process.env.OLLAMA_MODEL ?? "medgemma:4b",
+    provider: llmProvider(),
+    model: companionModelId(),
     brain: { version: brain.label, fingerprint: brain.fingerprint },
     question_set: { fingerprint: questionSet, questions: cases.length },
     code: codeVersion(),

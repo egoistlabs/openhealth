@@ -1,5 +1,5 @@
 import { loadStage } from "../loader.ts";
-import { generateJson } from "../../ollama/client.ts";
+import { generateJson } from "../../llm/client.ts";
 import { mentionsSubstance, numbersIn, sentencesIn } from "../../text.ts";
 
 export type DailyFlag = {
@@ -88,7 +88,7 @@ export async function summarizeDailyCheckin(
       retryHint:
         "Your previous response was not valid JSON. Return only {\"summary\": \"...\"}.",
       temperature: 0.2,
-      numPredict: 200,
+      maxOutputTokens: 200,
     });
 
     const check = checkSummary(data.summary, flags);

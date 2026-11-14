@@ -1,5 +1,5 @@
 import { loadStage } from "../loader.ts";
-import { generateJson } from "../../ollama/client.ts";
+import { generateJson } from "../../llm/client.ts";
 import { numbersIn, sentencesIn } from "../../text.ts";
 
 export type CrewNumbers = Record<string, number | string | boolean | null>;
@@ -96,7 +96,7 @@ export async function summarizeCrew(
       retryHint:
         "Your previous response was not valid JSON. Return only {\"summary\": \"...\"}.",
       temperature: 0.2,
-      numPredict: 200,
+      maxOutputTokens: 200,
     });
 
     const check = checkSummary(data.summary, crew);

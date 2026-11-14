@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { parseCheckinAnswer } from "@/lib/brain/tasks/checkin";
+import { providerHint } from "@/lib/llm/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -36,7 +37,7 @@ export async function POST(request: NextRequest) {
     }
     console.error("Check-in parsing error:", error);
     return NextResponse.json(
-      { error: "Unable to parse the check-in. Check that Ollama is running locally." },
+      { error: `Unable to parse the check-in. ${providerHint()}` },
       { status: 502 },
     );
   }

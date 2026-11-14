@@ -12,7 +12,7 @@ import { readBrainVersion } from "@/lib/brain/version";
 import type { ChatTurn } from "@/lib/brain/types";
 import { startTurn, type TurnEvent } from "@/lib/chat/turn-log";
 import type { CompanionUIMessage, CompanionVerdict } from "@/lib/chat/types";
-import { COMPANION_MODEL_ID } from "@/lib/ollama/provider";
+import { companionModelId, providerHint } from "@/lib/llm/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -26,8 +26,9 @@ const MAX_CONVERSATION_LENGTH = 24_000;
 const TONES = ["gentle", "direct"] as const;
 type Tone = (typeof TONES)[number];
 
-const SAFE_STREAM_ERROR =
-  "Unable to complete the AI request. Check that Ollama is running locally.";
+function safeStreamError(): string {
+  return `Unable to complete the AI request. ${providerHint()}`;
+}
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return (
@@ -211,7 +212,7 @@ export async function POST(request: NextRequest) {
     history_turns: conversation.history.length,
     brain_version: brainVersion,
   });
-  const metadata = { turnId: turn.event.turn_id, model: COMPANION_MODEL_ID, brainVersion };
+  const metadata = { turnId: turn.event.turn_id, model: companionModelId(), brainVersion };
 
   /* The stream carries typed parts only. The model's draft never leaves the
      server: the browser gets progress steps, then the checked answer. */
@@ -278,7 +279,7 @@ export async function POST(request: NextRequest) {
       });
       turn.set({ verdict_sent: !request.signal.aborted });
     },
-    onError: () => SAFE_STREAM_ERROR,
+    onError: () => safeStreamError(),
     /* Runs once when the response stream ends, however it ends. */
     onEnd: async ({ isAborted, isCancelled, outcome }) => {
       await turn.end({

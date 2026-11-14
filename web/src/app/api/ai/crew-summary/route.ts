@@ -4,6 +4,7 @@ import {
   summarizeCrew,
   type CrewNumbers,
 } from "@/lib/brain/tasks/crew";
+import { providerHint } from "@/lib/llm/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -76,7 +77,7 @@ export async function POST(request: NextRequest) {
     }
     console.error("Crew summary error:", error);
     return NextResponse.json(
-      { error: "Unable to build the crew summary. Check that Ollama is running locally." },
+      { error: `Unable to build the crew summary. ${providerHint()}` },
       { status: 502 },
     );
   }

@@ -7,9 +7,9 @@ The spec is still being locked. Until it lands in `docs/`, this repo is the plac
 ## Tech Stack
 
 - **Frontend:** Next.js
-- **AI Runtime:** Ollama
-- **AI Model:** MedGemma 4B
-- **Architecture:** Fully local inference (no external LLM API required)
+- **AI Runtime:** Ollama, or the Anthropic Claude API
+- **AI Model:** MedGemma 4B locally, or a Claude model
+- **Architecture:** Local inference by default, with an opt-in cloud mode
 
 ## Where things go
 
@@ -28,7 +28,7 @@ Before running OpenHealth, make sure you have:
 
 - [Node.js](https://nodejs.org/) installed.
 - [pnpm](https://pnpm.io/installation) installed.
-- [Ollama](https://ollama.com/download) installed.
+- [Ollama](https://ollama.com/download) installed for the default local mode, or an `ANTHROPIC_API_KEY` for cloud mode.
 - At least 8 GB of system RAM recommended for experimenting with the 4B model. More available memory is preferable.
 
 ## Setting Up Ollama
@@ -186,14 +186,38 @@ pnpm install
 
 ### 3. Configure Environment Variables
 
-Create a `.env.local` file in the project root:
+Create a `.env` file inside `web/` (Next.js runs from that folder, so a root-level `.env` is not read):
 
 ```env
+LOCAL_LLM=true
 OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=medgemma:4b
 ```
 
-These variables configure the local Ollama server and the model used by the application.
+`web/.env` is git-ignored. Copy `web/.env.example` if you want a starting point.
+
+#### Switching between Ollama and Claude
+
+`LOCAL_LLM` chooses the provider. Both paths use the same pipeline, prompts, safety checks and evals:
+
+| `LOCAL_LLM` | Provider | Model | Needs |
+| --- | --- | --- | --- |
+| `true` (default) | Ollama on this machine | `OLLAMA_MODEL`, default `medgemma:4b` | Ollama running |
+| `false` | Anthropic Claude API | `ANTHROPIC_MODEL`, default `claude-sonnet-5` | `ANTHROPIC_API_KEY` |
+
+For the cloud path, add:
+
+```env
+LOCAL_LLM=false
+ANTHROPIC_API_KEY=your-key-here
+ANTHROPIC_MODEL=claude-sonnet-5
+```
+
+Unset `LOCAL_LLM` means `true`, so existing local setups keep working unchanged. There is no silent fallback: if `LOCAL_LLM=false` and the key is missing, the request fails with a clear error instead of quietly using Ollama.
+
+Restart the dev server after changing `.env`; the values are read at startup.
+
+**Privacy:** with `LOCAL_LLM=false`, the question, chat history, the person's numbers and the selected brain excerpts are sent to the Anthropic API. The red-flag check and the answer audits still run locally in code, but inference no longer stays on the machine. The default local mode sends nothing off the machine.
 
 ### 4. Start the Development Server
 
@@ -211,7 +235,7 @@ Make sure Ollama is running before testing AI conversations.
 
 ## Connecting Next.js to Ollama
 
-OpenHealth communicates with Ollama through its local REST API.
+OpenHealth communicates with Ollama through its local REST API in the default mode. When `LOCAL_LLM=false`, the same pipeline calls the Anthropic API instead; see [Switching between Ollama and Claude](#switching-between-ollama-and-claude).
 
 **Chat endpoint:**
 
@@ -282,8 +306,9 @@ ollama pull medgemma:4b
 
 ## Important Notes
 
-- OpenHealth is designed to run AI inference locally through Ollama.
-- No external LLM API key is required.
+- OpenHealth runs AI inference locally through Ollama by default.
+- No external LLM API key is required for the default setup.
+- Setting `LOCAL_LLM=false` switches inference to the Anthropic Claude API and sends prompt data off the machine.
 - Model performance depends on the machine's available RAM and hardware acceleration.
 
 ## Adding Your Work

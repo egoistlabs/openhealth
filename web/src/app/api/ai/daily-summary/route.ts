@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { summarizeDailyCheckin, type DailyFlag } from "@/lib/brain/tasks/daily";
+import { providerHint } from "@/lib/llm/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -65,7 +66,7 @@ export async function POST(request: NextRequest) {
     }
     console.error("Daily summary error:", error);
     return NextResponse.json(
-      { error: "Unable to build the daily summary. Check that Ollama is running locally." },
+      { error: `Unable to build the daily summary. ${providerHint()}` },
       { status: 502 },
     );
   }

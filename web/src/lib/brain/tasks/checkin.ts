@@ -1,5 +1,5 @@
 import { loadStage } from "../loader.ts";
-import { generateJson } from "../../ollama/client.ts";
+import { generateJson } from "../../llm/client.ts";
 
 /**
  * The check-in subset of the B1 data shape (stories A1 / C3): sleep and wake
@@ -130,7 +130,7 @@ export async function parseCheckinAnswer(
       "Your previous response was not valid JSON for the check-in schema. " +
       "Return every field, using null when the answer did not state it.",
     temperature: 0,
-    numPredict: 200,
+    maxOutputTokens: 200,
   });
 
   const fields: CheckinFields = {};
