@@ -110,7 +110,7 @@ The fix to try is a floor that applies to everyone, next to the personal baselin
 | Ask only: mood rating of 2 or less | A chatbot that asks "how are you?" |
 | Ask, against own normal: mood rating against the person's own baseline | The same question, read more carefully |
 | Same limits for everyone: sleep under 6 hours, mood 2 or less, workload 5, teamwork 2 or less | Population ranges. ISS crews average about 6.1 hours, so the sleep limit alone flags about half of all nights |
-| OpenHealth: seven measures against the person's own baseline | Us |
+| Pedro: seven measures against the person's own baseline | Us |
 
 **The awareness dial.** If the mood rating never moves in our simulated declines, "asking misses it" is true by construction and proves nothing. So each decline is run three ways: the person notices none of it, half of it, or all of it, and their mood rating falls by that share. The result then shows when asking is enough and when it is not.
 
@@ -271,7 +271,7 @@ Two rules that the new suites change:
 
 Three numbers, each with its limit said out loud:
 
-1. Hidden declines caught by OpenHealth against the ask-only monitor, with false flags per crew member per 90 days. *Simulated crew, our own noise assumptions.*
+1. Hidden declines caught by Pedro against the ask-only monitor, with false flags per crew member per 90 days. *Simulated crew, our own noise assumptions.*
 2. Emergencies escalated in wording we never tuned on, with the count. *Written by us, not by astronauts.*
 3. Check-in completed with every model stopped. *One laptop.*
 
@@ -300,7 +300,7 @@ The other 12 misses go on to the model, and their replies were not checked in th
 | Ask only | 0.14 | 0% | 97% |
 | Ask, against own normal | 1.36 | 4% | 66% |
 | Same limits for everyone | 3.59 | 0% | 25% |
-| OpenHealth, rule as written | 6.80 | 31% | 8% |
+| Pedro, rule as written | 6.80 | 31% | 8% |
 
 **Suite 1, hidden declines, rule as written (200 each).** A catch counts only on a measure that really changed.
 
@@ -329,7 +329,7 @@ A running-total rule and a rule that needs two measures to agree were also tried
 
 **Suite 1, asking against measuring.** Medium declines, any flag within 21 days. Each cell is caught, then the healthy twin in brackets.
 
-| The person notices | Ask only | Ask, against own normal | Same limits for everyone | OpenHealth, rule as written |
+| The person notices | Ask only | Ask, against own normal | Same limits for everyone | Pedro, rule as written |
 | --- | --- | --- | --- | --- |
 | None of it | 2% (2%) | 30% (30%) | 80% (70%) | 98% (88%) |
 | Half of it | 14% (2%) | 55% (30%) | 82% (70%) | 99% (88%) |

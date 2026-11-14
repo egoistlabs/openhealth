@@ -10,7 +10,7 @@ const inter = Inter({ variable: "--font-inter", subsets: ["latin"] });
 const jetbrainsMono = JetBrains_Mono({ variable: "--font-jetbrains-mono", subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "OpenHealth",
+  title: "Pedro",
   description: "Crew wellbeing companion. Prototype running on simulated data; not a medical device.",
 };
 

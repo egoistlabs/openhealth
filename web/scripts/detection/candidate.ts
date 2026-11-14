@@ -8,7 +8,7 @@
 import { ownBaseline, RULE_AS_WRITTEN, type Monitor } from "./monitors.ts";
 
 export const candidate: Monitor = ownBaseline(
-  "OpenHealth (rule as written)",
+  "Pedro (rule as written)",
   "Seven measures against the person's own baseline. Stand-in for the core loop",
   RULE_AS_WRITTEN,
 );

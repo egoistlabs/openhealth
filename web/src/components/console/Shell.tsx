@@ -88,7 +88,7 @@ function Header() {
   return (
     <header className="hdr" id="hdr">
       <div className="hdr__l">
-        <Link className="hdr__mission" href={landing}>OpenHealth</Link>
+        <Link className="hdr__mission" href={landing}>Pedro</Link>
         <span className="hdr__sol">
           Sol <Num>{s.sol}</Num>
           <span className="hdr__time">
