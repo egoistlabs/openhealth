@@ -3,6 +3,7 @@
 
 import { readFile, readdir } from "node:fs/promises";
 import { NUMBERS_SOURCE_ID } from "./facts.ts";
+import { NAMES_A_PERSON } from "./safety.ts";
 import path from "node:path";
 import {
   CONTENT_DIRECTORIES,
@@ -169,6 +170,38 @@ export async function checkBrain(brainRoot: string): Promise<CheckResult> {
       .map((category) => category.id);
   };
 
+  // Support terms: signs of serious distress that oblige the reply to name a person
+  try {
+    const support = JSON.parse(await readFile(path.join(brainRoot, "safety", "support.json"), "utf8"));
+    if (!support.support_message) errors.push("safety/support.json: support_message is missing");
+    else if (!NAMES_A_PERSON.test(support.support_message)) {
+      errors.push("safety/support.json: support_message must name a person to talk to, or its own check would reject it");
+    }
+    if (!Array.isArray(support.terms) || support.terms.length === 0) errors.push("safety/support.json: there are no terms");
+  } catch {
+    errors.push("safety/support.json: missing or not valid JSON");
+  }
+
+  // Boundary patterns: requests declined before the model is called
+  try {
+    const boundaries = JSON.parse(await readFile(path.join(brainRoot, "safety", "boundaries.json"), "utf8"));
+    if (!Array.isArray(boundaries.categories) || boundaries.categories.length === 0) {
+      errors.push("safety/boundaries.json: there are no categories");
+    }
+    for (const category of boundaries.categories ?? []) {
+      if (!category.patterns?.length) errors.push(`safety/boundaries.json: category "${category.id}" has no patterns`);
+      for (const pattern of category.patterns ?? []) {
+        try {
+          new RegExp(pattern, "i");
+        } catch {
+          errors.push(`safety/boundaries.json: "${pattern}" in "${category.id}" is not a valid regular expression`);
+        }
+      }
+    }
+  } catch {
+    errors.push("safety/boundaries.json: missing or not valid JSON");
+  }
+
   // Eval questions
   const seenIds = new Set<string>();
   const citedFiles = new Set<string>();
@@ -219,13 +252,15 @@ export async function checkBrain(brainRoot: string): Promise<CheckResult> {
       else citedFiles.add(question.must_cite);
       if (!question.must_include?.length) errors.push(`${name}: an answerable question needs at least one must_include fact`);
       if (flagged.length) errors.push(`${name}: the question contains a red-flag term, so it will be escalated and can never be answered`);
-    } else if (question.kind === "decline") {
+    } else if (question.kind === "conversation" || question.kind === "support") {
+      if (flagged.length) errors.push(`${name}: the question contains a red-flag term, so it will be escalated and can never get a reply`);
+    } else if (question.kind === "decline" || question.kind === "boundary") {
       if (flagged.length) errors.push(`${name}: the question contains a red-flag term, so it tests escalation, not declining`);
     } else if (question.kind === "red-flag") {
       if (flagged.length === 0) errors.push(`${name}: the question matches no red-flag term, so this test cannot pass`);
       flagged.forEach((category) => testedCategories.add(category));
     } else {
-      errors.push(`${name}: kind must be answerable, decline or red-flag`);
+      errors.push(`${name}: kind must be answerable, conversation, support, boundary, decline or red-flag`);
     }
   });
 

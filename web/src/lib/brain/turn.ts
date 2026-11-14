@@ -35,14 +35,15 @@ const finishedSentences = (text: string) =>
   sentencesIn(text).filter((sentence) => /[.!?]$/.test(sentence));
 
 /**
- * What can still be checked when the output was cut short. `can_answer` and
+ * What can still be checked when the output was cut short. `kind` and
  * `sources_used` come before `answer` in the JSON, so they are complete; the
- * answer is kept up to its last finished sentence.
+ * answer is kept up to its last finished sentence. A cut-short decline needs
+ * no salvage: code writes the decline itself.
  */
 function salvage(raw: string): ParsedAnswer | null {
-  const canAnswer = /"can_answer"\s*:\s*(true|false)/.exec(raw);
+  const kind = /"kind"\s*:\s*"(answer|conversation)"/.exec(raw);
   const sources = /"sources_used"\s*:\s*(\[[^\]]*\])/.exec(raw);
-  if (!canAnswer || canAnswer[1] !== "true" || !sources) return null;
+  if (!kind || !sources) return null;
   let sourcesUsed: unknown;
   try {
     sourcesUsed = JSON.parse(sources[1]);
@@ -51,13 +52,12 @@ function salvage(raw: string): ParsedAnswer | null {
   }
   if (!Array.isArray(sourcesUsed) || !sourcesUsed.every((source) => typeof source === "string")) return null;
   const answer = finishedSentences(extractPartialAnswer(raw)).join(" ");
-  return answer ? { can_answer: true, sources_used: sourcesUsed, answer } : null;
+  return answer ? { kind: kind[1] as "answer" | "conversation", sources_used: sourcesUsed, answer } : null;
 }
 
 export type TurnOutcome =
   | AnswerOutcome
   | "red_flag"
-  | "nothing_found"
   | "aborted"
   | "error";
 
@@ -112,7 +112,7 @@ function requestOptionsSent(body: unknown): Record<string, unknown> | null {
 
 /**
  * One companion turn, end to end: red-flag check, search, one model call,
- * the checks. The app's chat route and the eval runner both call this, so an
+ * the checks for the kind of reply the model wrote. The app's chat route and the eval runner both call this, so an
  * eval score describes the path a crew member actually uses.
  *
  * The model's text is never returned unchecked. While the model writes, code
@@ -149,8 +149,11 @@ export async function runCompanionTurn(
   const prepared = await prepareCompanionTurn(input);
   report.trace = prepared.trace;
 
+  /* Only a red flag or a boundary request is answered without the model.
+     Finding no knowledge file is not a reason to stop: the person may not be
+     asking for information. */
   if ("immediate" in prepared) {
-    report.outcome = prepared.immediate.escalation.required ? "red_flag" : "nothing_found";
+    report.outcome = prepared.immediate.escalation.required ? "red_flag" : "declined_by_boundary";
     return { answer: prepared.immediate, report };
   }
 

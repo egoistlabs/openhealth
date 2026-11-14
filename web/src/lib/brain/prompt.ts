@@ -33,7 +33,8 @@ export function buildAnswerMessages(input: AnswerPromptInput) {
       role: "user" as const,
       content: [
         "--- BEGIN SOURCES ---",
-        sourceBlocks.join("\n\n"),
+        /* Search found nothing: the model may only reply with conversation or a decline. */
+        sourceBlocks.length ? sourceBlocks.join("\n\n") : "(no sources for this message)",
         "--- END SOURCES ---",
         "",
         `TONE: ${input.tone === "direct" ? "direct" : "gentle"}`,

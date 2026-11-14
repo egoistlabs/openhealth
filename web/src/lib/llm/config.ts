@@ -63,10 +63,15 @@ export function modelSettings(): {
   maxOutputTokens: number;
   seed?: number;
 } {
+  /* Claude models can spend output tokens before the visible text starts, so
+     256 cut answers off mid-sentence and they fell back to the decline. The
+     length of the answer itself is enforced by code (three sentences), not by
+     this cap. */
+  const local = isLocalLlm();
   return {
     temperature: 0.2,
-    maxOutputTokens: 256,
-    ...(isLocalLlm() ? { seed: 42 } : {}),
+    maxOutputTokens: local ? 256 : 1024,
+    ...(local ? { seed: 42 } : {}),
   };
 }
 

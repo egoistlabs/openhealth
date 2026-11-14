@@ -139,7 +139,7 @@ Every change follows the same loop. Run the commands from the `web/` folder:
    model.
 4. **Evaluate** with `npm run evals`.
 5. **Release** with `npm run brain:release <intent> "what changed"`, only if red flags are
-   at 100%, declines at 95% or more, and no question that passed before now
+   at 100%, declines and boundaries at 95% or more, and no question that passed before now
    fails.
 
 If you work with an AI agent, three skills at the repo root carry these steps:

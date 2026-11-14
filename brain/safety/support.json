@@ -1,0 +1,25 @@
+{
+  "note": "Read by code only. These are not emergencies (those are in red-flags.json and stop the turn). They are signs of serious distress: when a message contains one, any reply must name a person to talk to, or code replaces it with support_message.",
+  "support_message": "That sounds really heavy, and I'm glad you said it. Please talk to a crewmate you trust or the mission's designated behavioral-health support today. I'm here to keep listening.",
+  "terms": [
+    "want to die",
+    "wish i was dead",
+    "wish i were dead",
+    "don't want to be here",
+    "dont want to be here",
+    "better off without me",
+    "no point in anything",
+    "what's the point of living",
+    "whats the point of living",
+    "hopeless",
+    "worthless",
+    "can't go on",
+    "cant go on",
+    "can't cope",
+    "cant cope",
+    "falling apart",
+    "can't take it anymore",
+    "cant take it anymore",
+    "give up on everything"
+  ]
+}

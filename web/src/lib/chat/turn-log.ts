@@ -15,10 +15,14 @@ import path from "node:path";
 export type TurnOutcome =
   /* code answered without the model */
   | "red_flag"
+  | "declined_by_boundary"
+  /* older log lines only: search found nothing and the model was not called */
   | "nothing_found"
   /* the model ran and code checked its output */
   | "answered"
+  | "conversed"
   | "answered_by_code"
+  | "support_by_code"
   | "declined_by_model"
   | "declined_by_audit"
   | "unparseable"
@@ -47,6 +51,10 @@ export type TurnEvent = {
   search_query: string | null;
   files_found: Array<{ id: string; score: number }>;
   red_flag_categories: string[];
+  /** Boundary requests in the message (role-play, rule override, a crewmate's words), from brain/safety/boundaries.json. Declined without the model. */
+  boundary_categories: string[];
+  /** Signs of serious distress in the message, from brain/safety/support.json. The reply had to name a person. */
+  support_terms: string[];
   /** The question was about the person's own numbers, so it needed no knowledge file. */
   numbers_question: boolean;
   /** The question asked how the person is doing, so code could always answer it. */
@@ -70,6 +78,7 @@ export type TurnEvent = {
   audit: TurnAudit[];
   verdict: {
     can_answer: boolean;
+    kind: string;
     message: string;
     sources: string[];
     escalation: boolean;
@@ -128,6 +137,8 @@ export function startTurn(fields: Partial<TurnEvent>): TurnLog {
     search_query: null,
     files_found: [],
     red_flag_categories: [],
+    boundary_categories: [],
+    support_terms: [],
     numbers_question: false,
     status_question: false,
     model: null,

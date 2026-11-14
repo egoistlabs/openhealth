@@ -110,6 +110,7 @@ function readConversation(value: unknown): Conversation | null {
 function toVerdict(answer: CompanionAnswer): CompanionVerdict {
   return {
     can_answer: answer.can_answer,
+    kind: answer.kind,
     message: answer.message,
     sources: answer.sources,
     escalation: answer.escalation,
@@ -139,6 +140,8 @@ function reportFields(report: TurnReport): Partial<TurnEvent> {
     search_query: report.trace?.searchQuery ?? null,
     files_found: report.trace?.found ?? [],
     red_flag_categories: report.trace?.redFlagCategories ?? [],
+    boundary_categories: report.trace?.boundaryCategories ?? [],
+    support_terms: report.trace?.supportTerms ?? [],
     numbers_question: report.trace?.numbersQuestion ?? false,
     status_question: report.trace?.statusQuestion ?? false,
     model: report.model,
@@ -246,6 +249,7 @@ export async function POST(request: NextRequest) {
       turn.set({
         verdict: {
           can_answer: verdict.can_answer,
+          kind: verdict.kind,
           message: verdict.message,
           sources: verdict.sources.map((source) => source.id),
           escalation: verdict.escalation.required,

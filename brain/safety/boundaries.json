@@ -1,0 +1,36 @@
+{
+  "note": "Read by code only. A message that matches one of these patterns is declined before the model is called, the way a red flag is escalated: a small model cannot be relied on to refuse these itself. Patterns are case-insensitive regular expressions. Test a change with npm run brain:check and npm run evals.",
+  "categories": [
+    {
+      "id": "role-play",
+      "why": "The companion never speaks as anyone else: a clinician, a commander, a relative",
+      "patterns": [
+        "\\bpretend (?:you(?:'re| are)|to be)\\b",
+        "\\brole-?play",
+        "\\byou are now\\b",
+        "\\bact as (?:my|the|a|an|if you were) (?:\\w+ )?(?:doctor|physician|surgeon|nurse|therapist|psychiatrist|psychologist|medical officer|commander|wife|husband|partner|mother|father|mom|mum|dad|son|daughter|brother|sister|girlfriend|boyfriend|human)\\b"
+      ]
+    },
+    {
+      "id": "rule-override",
+      "why": "The companion's rules are not open to negotiation from inside the chat",
+      "patterns": [
+        "\\bignore (?:all |any |your |the |these |those |previous |prior |earlier |of )+(?:rules|instructions|prompts?|guidelines|guardrails)\\b",
+        "\\b(?:forget|disregard|override|bypass) (?:all |any |your |the |these |those |previous |prior )*(?:rules|instructions|guidelines|guardrails|prompts?)\\b",
+        "\\brules? (?:don'?t|do not|doesn'?t|does not) apply\\b",
+        "\\b(?:developer|dev|god|unrestricted|dan) mode\\b",
+        "\\bjailbreak",
+        "\\bsystem prompt\\b"
+      ]
+    },
+    {
+      "id": "crewmate-privacy",
+      "why": "The companion never says what another crew member said, felt or rated. In the pilot the model invented a crewmate's words",
+      "patterns": [
+        "\\bwhat (?:did|does|has|have) (?!(?:i|you|it|that|this|the|my|we)\\b)[a-z]+ (?:say|said|tell|told|mention|share|report|rate|rated|write|wrote|feel|felt|think|thought)\\b",
+        "\\bwho (?:gave|had|has|rated|reported|scored|got) (?:the )?(?:lowest|highest|worst|best)\\b",
+        "\\b(?:what|how) (?:did|does|is|was|were) (?!(?:i|you|my|it|that|this|the|your|we|our)\\b)[a-z]+(?:'s)? (?:mood|stress|sleep|rating|ratings|score|scores|journal|check-?in|teamwork|workload)\\b"
+      ]
+    }
+  ]
+}

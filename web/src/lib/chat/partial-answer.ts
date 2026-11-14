@@ -1,5 +1,5 @@
 /**
- * The companion streams a JSON envelope (can_answer, answer, sources_used).
+ * The companion streams a JSON envelope (kind, sources_used, answer).
  * While it is still arriving, this pulls out the `answer` string field and
  * decodes it, so the UI can render words as they are generated.
  *

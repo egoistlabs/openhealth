@@ -8,6 +8,8 @@ import { z } from "zod";
 /** The server's checked answer for one companion turn. The only text the screen shows or speaks. */
 export const verdictSchema = z.object({
   can_answer: z.boolean(),
+  /** answer (from sources), conversation (no facts), support, decline or escalation (all three written by code). */
+  kind: z.enum(["answer", "conversation", "support", "decline", "escalation"]),
   message: z.string(),
   sources: z.array(
     z.object({

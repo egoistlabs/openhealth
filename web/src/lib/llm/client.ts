@@ -126,7 +126,10 @@ async function generateWithAnthropic<Result>(
           schema: jsonSchema(input.schema as JSONSchema7),
         }),
         temperature: input.temperature ?? 0.2,
-        maxOutputTokens: input.maxOutputTokens ?? 256,
+        /* A Claude model can spend output tokens before the visible JSON, so a
+           small-model cap cuts the object off. Each task's own validation
+           bounds the content, not this number. */
+        maxOutputTokens: Math.max(input.maxOutputTokens ?? 256, 1024),
         /* The loop below is the one retry, matching the Ollama path. */
         maxRetries: 0,
         abortSignal: AbortSignal.timeout(input.timeoutMs ?? 180_000),
