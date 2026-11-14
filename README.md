@@ -1,4 +1,4 @@
-# OpenHealth
+# Pedro
 
 A local-LLM companion for astronauts on long missions, built for the NASA Space Apps Challenge 2026.
 
@@ -24,7 +24,7 @@ Code will live at the repo root (for example `app/`) once the spec is locked.
 
 ## Prerequisites
 
-Before running OpenHealth, make sure you have:
+Before running Pedro, make sure you have:
 
 - [Node.js](https://nodejs.org/) installed.
 - [pnpm](https://pnpm.io/installation) installed.
@@ -162,7 +162,7 @@ Keep this terminal window open while using the application.
 
 **Important:** If Ollama is already running as a background service, you do not need to execute `ollama serve` again.
 
-## Running OpenHealth
+## Running Pedro
 
 Once Ollama and MedGemma are ready, you can start the Next.js application.
 
@@ -235,7 +235,7 @@ Make sure Ollama is running before testing AI conversations.
 
 ## Connecting Next.js to Ollama
 
-OpenHealth communicates with Ollama through its local REST API in the default mode. When `LOCAL_LLM=false`, the same pipeline calls the Anthropic API instead; see [Switching between Ollama and Claude](#switching-between-ollama-and-claude).
+Pedro communicates with Ollama through its local REST API in the default mode. When `LOCAL_LLM=false`, the same pipeline calls the Anthropic API instead; see [Switching between Ollama and Claude](#switching-between-ollama-and-claude).
 
 **Chat endpoint:**
 
@@ -306,7 +306,7 @@ ollama pull medgemma:4b
 
 ## Important Notes
 
-- OpenHealth runs AI inference locally through Ollama by default.
+- Pedro runs AI inference locally through Ollama by default.
 - No external LLM API key is required for the default setup.
 - Setting `LOCAL_LLM=false` switches inference to the Anthropic Claude API and sends prompt data off the machine.
 - Model performance depends on the machine's available RAM and hardware acceleration.

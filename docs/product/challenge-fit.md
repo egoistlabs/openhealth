@@ -1,6 +1,6 @@
 # Challenge fit
 
-How OpenHealth answers the challenge, point by point. For the pitch and the submission write-up.
+How Pedro answers the challenge, point by point. For the pitch and the submission write-up.
 
 Last updated: 14 Nov 2026. The challenge text is in [`context/challenge.md`](../../context/challenge.md). Story IDs refer to [`user-stories.md`](user-stories.md). Suites refer to [`docs/tech-spec/eval-design.md`](../tech-spec/eval-design.md).
 

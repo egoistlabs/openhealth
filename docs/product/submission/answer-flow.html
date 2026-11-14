@@ -1,0 +1,57 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  html, body { margin: 0; background: #ffffff; font-family: "Helvetica Neue", Arial, sans-serif; }
+  #wrap { display: inline-block; padding: 32px 40px 20px; }
+  h1 { font-size: 22px; margin: 0 0 4px; color: #111827; }
+  .sub { font-size: 14px; color: #4b5563; margin: 0 0 18px; }
+  .legend { display: flex; gap: 18px; font-size: 13px; color: #374151; margin-bottom: 8px; }
+  .legend span::before { content: ""; display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 6px; vertical-align: -2px; border: 1.5px solid var(--b); background: var(--f); }
+  .foot { font-size: 11px; color: #6b7280; margin-top: 6px; }
+</style>
+</head>
+<body>
+<div id="wrap">
+  <h1>What happens when you ask Pedro a question</h1>
+  <p class="sub">Code does the maths and the safety checks. The AI model only writes the words, and code checks them before you see them.</p>
+  <div class="legend">
+    <span style="--f:#e0ecff;--b:#2563eb">Code</span>
+    <span style="--f:#fff1d6;--b:#d97706">AI model (MedGemma 4B, on the laptop)</span>
+    <span style="--f:#fde2e2;--b:#dc2626">Stops early: the model is never called</span>
+    <span style="--f:#dcfce7;--b:#16a34a">What you see and hear</span>
+  </div>
+  <pre class="mermaid">
+flowchart TD
+  Q(["You ask or say something"]) --> S1["Step 1 · Red-flag check"]
+  S1 -- "emergency words" --> E["Fixed emergency message"]
+  S1 --> S2["Step 2 · Boundary check"]
+  S2 -- "role-play, rule override,<br/>a crewmate's data" --> D["Fixed decline"]
+  S2 --> S3["Step 3 · Distress check"]
+  S3 --> S4["Step 4 · Gather sources"]
+  S4 --> S5["Step 5 · Write the reply"]
+  S5 --> S6["Step 6 · Check the reply"]
+  S6 -- "passes" --> S7(["Step 7 · Show and speak,<br/>with sources"])
+  S6 -- "fails" --> F["Safe reply written by code"]
+  F --> S7
+
+  classDef code fill:#e0ecff,stroke:#2563eb,stroke-width:1.5px,color:#111827;
+  classDef model fill:#fff1d6,stroke:#d97706,stroke-width:1.5px,color:#111827;
+  classDef stop fill:#fde2e2,stroke:#dc2626,stroke-width:1.5px,color:#111827;
+  classDef out fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#111827;
+  class S1,S2,S3,S4,S6,F code;
+  class S5 model;
+  class E,D stop;
+  class Q,S7 out;
+</pre>
+  <p class="foot">SI-generated diagram (Claude Code), drawn from Pedro's own code</p>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11.4.1/dist/mermaid.min.js"></script>
+<script>
+  mermaid.initialize({ startOnLoad: false, theme: "base", flowchart: { htmlLabels: true, curve: "basis", nodeSpacing: 36, rankSpacing: 34 },
+    themeVariables: { fontFamily: "Helvetica Neue, Arial, sans-serif", fontSize: "15px", lineColor: "#6b7280", edgeLabelBackground: "#ffffff" } });
+  mermaid.run().then(() => { const r=document.getElementById("wrap").getBoundingClientRect(); document.body.setAttribute("data-size", Math.ceil(r.width)+"x"+Math.ceil(r.height)); });
+</script>
+</body>
+</html>
