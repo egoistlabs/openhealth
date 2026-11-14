@@ -23,6 +23,32 @@ export type CheckinParseResult = {
   question: string | null;
 };
 
+/** The question the companion has open. The wording matches what it says in the check-in. */
+export const CHECKIN_QUESTIONS = {
+  sleep: {
+    fields: ["sleep_time", "wake_time"],
+    ask: "When did you fall asleep, and when did you wake up?",
+  },
+  mood: { fields: ["mood"], ask: "How's your mood today, 1 to 5?" },
+  workload: {
+    fields: ["workload"],
+    ask: "How heavy was today, 1 to 5? Count both workload and stress.",
+  },
+  teamwork: {
+    fields: ["teamwork"],
+    ask: "How well did the crew work together, 1 to 5?",
+  },
+  shared_meal: { fields: ["shared_meal"], ask: "Did you eat with anyone today?" },
+} as const satisfies Record<string, { fields: readonly (keyof CheckinFields)[]; ask: string }>;
+export type CheckinQuestion = keyof typeof CHECKIN_QUESTIONS;
+
+export type CheckinParseContext = {
+  /** The question the answer replies to. Without it, the answer is read as a free check-in. */
+  asked?: CheckinQuestion;
+  /** The crew member's usual value for that question, in words ("mood 4"). */
+  usual?: string;
+};
+
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 const RATING_FIELDS = ["mood", "workload", "teamwork"] as const;
 const RATING_LABELS: Record<(typeof RATING_FIELDS)[number], string> = {
@@ -66,11 +92,51 @@ type RawCheckin = {
   shared_meal: boolean | null;
 };
 
-function validateRaw(value: unknown): RawCheckin | null {
+/**
+ * With a question open the model is asked for less: whether the question was
+ * answered at all, then only that question's fields. A small model decides
+ * "did they answer?" first, and has no other fields to fill by mistake.
+ */
+function askedSchema(fields: readonly string[]) {
+  const properties: Record<string, unknown> = {
+    answered: {
+      type: "boolean",
+      description: "false if they did not answer the question asked",
+    },
+  };
+  for (const field of fields) {
+    properties[field] =
+      CHECKIN_SCHEMA.properties[field as keyof typeof CHECKIN_SCHEMA.properties];
+  }
+  return {
+    type: "object",
+    properties,
+    required: ["answered", ...fields],
+    additionalProperties: false,
+  };
+}
+
+/** The person pointed at their own normal ("same as usual", "later than normal"). */
+const USUAL_PATTERN = /\b(usual|usually|normal|normally|same|typical|typically|regular|always)\b/i;
+
+function validateRaw(
+  value: unknown,
+  askedFields?: readonly string[],
+): RawCheckin | null {
   if (typeof value !== "object" || value === null) return null;
-  const record = value as Record<string, unknown>;
+  let record = value as Record<string, unknown>;
+  if (askedFields) {
+    if (typeof record.answered !== "boolean") return null;
+    if (Object.keys(record).some((key) => key !== "answered" && !askedFields.includes(key))) return null;
+    if (askedFields.some((key) => !(key in record))) return null;
+    /* not answered: nothing is kept, whatever else the model wrote */
+    record = record.answered
+      ? Object.fromEntries(askedFields.map((key) => [key, record[key]]))
+      : {};
+  }
   const allowed = Object.keys(CHECKIN_SCHEMA.properties);
   if (Object.keys(record).some((key) => !allowed.includes(key))) return null;
+  record = { ...Object.fromEntries(allowed.map((key) => [key, null])), ...record };
 
   const timeOk = (candidate: unknown) =>
     candidate === null || typeof candidate === "string";
@@ -112,23 +178,32 @@ function clarificationQuestion(unclear: string[], impossible: string[]): string 
 }
 
 /**
- * C3: turn a spoken or typed check-in answer into B1 numbers. Range checking is
- * done here in code; the model only extracts what was explicitly said.
+ * C3: turn a spoken or typed check-in answer into B1 numbers. The model reads
+ * the answer the way a person would ("pretty good" is a mood of 4), helped by
+ * the question that was asked and the crew member's usual value. Range checking
+ * is done here in code, and the app reads the value back before it is saved.
  */
 export async function parseCheckinAnswer(
   text: string,
+  context: CheckinParseContext = {},
 ): Promise<CheckinParseResult> {
+  const asked = context.asked ? CHECKIN_QUESTIONS[context.asked] : null;
+  const lead = asked
+    ? `QUESTION ASKED: ${asked.ask}\n` +
+      /* sent only when they refer to it, so the model cannot fall back on it */
+      (context.usual && USUAL_PATTERN.test(text) ? `THEIR USUAL: ${context.usual}\n` : "")
+    : "";
   const instructions = (await loadStage("checkin-parse")).context.join("\n\n");
   const { data } = await generateJson({
     messages: [
       { role: "system", content: instructions },
-      { role: "user", content: `CHECK-IN ANSWER:\n${text}` },
+      { role: "user", content: `${lead}CHECK-IN ANSWER:\n${text}` },
     ],
-    schema: CHECKIN_SCHEMA,
-    validate: validateRaw,
+    schema: asked ? askedSchema(asked.fields) : CHECKIN_SCHEMA,
+    validate: (value) => validateRaw(value, asked?.fields),
     retryHint:
       "Your previous response was not valid JSON for the check-in schema. " +
-      "Return every field, using null when the answer did not state it.",
+      "Return every field asked for, using null when the answer says nothing about it.",
     temperature: 0,
     maxOutputTokens: 200,
   });
@@ -136,13 +211,16 @@ export async function parseCheckinAnswer(
   const fields: CheckinFields = {};
   const unclear: string[] = [];
   const impossible: string[] = [];
+  /* With a question open, only its own fields can be missing or wrong. */
+  const wanted = (key: keyof CheckinFields) =>
+    !asked || (asked.fields as readonly string[]).includes(key);
 
   const checkTime = (value: string | null, label: string, key: "sleep_time" | "wake_time") => {
     if (value === null) {
-      unclear.push(label);
+      if (wanted(key)) unclear.push(label);
     } else if (TIME_PATTERN.test(value)) {
       fields[key] = value;
-    } else {
+    } else if (wanted(key)) {
       impossible.push(`${label} (use 24-hour HH:MM)`);
     }
   };
@@ -152,16 +230,16 @@ export async function parseCheckinAnswer(
   for (const field of RATING_FIELDS) {
     const value = data[field];
     if (value === null) {
-      unclear.push(`your ${RATING_LABELS[field]} rating (1 to 5)`);
+      if (wanted(field)) unclear.push(`your ${RATING_LABELS[field]} rating (1 to 5)`);
     } else if (value >= 1 && value <= 5) {
       fields[field] = value;
-    } else {
+    } else if (wanted(field)) {
       impossible.push(`your ${RATING_LABELS[field]} rating (1 to 5)`);
     }
   }
 
   if (data.shared_meal === null) {
-    unclear.push("whether you shared a meal");
+    if (wanted("shared_meal")) unclear.push("whether you shared a meal");
   } else {
     fields.shared_meal = data.shared_meal;
   }

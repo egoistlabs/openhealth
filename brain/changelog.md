@@ -13,3 +13,10 @@
 - Files: edited stages/04-answer/CONTEXT.md, edited stages/04-answer/references/prompt.md
 - Evals: answerable 27/30, decline 11/11, red flag 5/5
 - Fingerprint: 3b46fe0ed727
+
+## v3.0.0 (change), 2026-11-14
+
+- Pedro works out a check-in answer from what the person said: the parser is given the question asked and their usual value, reads plain words onto the 1 to 5 scales, and keeps nothing when the question was not answered
+- Files: edited identity/companion.md, edited stages/01-checkin-parse/CONTEXT.md, edited stages/01-checkin-parse/references/prompt.md
+- Evals: answerable 25/30, decline 11/11, red flag 5/5
+- Fingerprint: 6cdbc9d8b050

@@ -43,7 +43,7 @@ export function CheckinPedro({ line, voiceOn, canListen, onHeard }: {
       <VoiceState v={v} inCheckin />
       {!canListen ? null : voiceOn ? (
         <HoldButton ctx="checkin" quiet live enabled={!busy} setV={setV} label={`Hold to tell ${COMPANION_NAME}`}
-          tip="Answer the question on screen, e.g. “slept at 1:40, woke at 7:55” or “mood 4”."
+          tip="Answer in your own words, e.g. “asleep around midnight, up at seven” or “pretty good today”."
           onStart={() => vega.current?.stop()}
           onPhrase={async (p) => {
             setBusy(true);

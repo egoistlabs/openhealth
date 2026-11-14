@@ -1,18 +1,33 @@
 import { NextRequest, NextResponse } from "next/server";
-import { parseCheckinAnswer } from "@/lib/brain/tasks/checkin";
+import {
+  CHECKIN_QUESTIONS,
+  parseCheckinAnswer,
+  type CheckinQuestion,
+} from "@/lib/brain/tasks/checkin";
 import { providerHint } from "@/lib/llm/config";
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 const MAX_TEXT_LENGTH = 2_000;
+const MAX_USUAL_LENGTH = 80;
 
 export async function POST(request: NextRequest) {
   try {
     const body: unknown = await request.json();
-    const text =
+    const record =
       typeof body === "object" && body !== null
-        ? (body as Record<string, unknown>).text
+        ? (body as Record<string, unknown>)
+        : {};
+    const text = record.text;
+    /* optional: the question the companion has open, and the person's usual value for it */
+    const asked =
+      typeof record.asked === "string" && Object.hasOwn(CHECKIN_QUESTIONS, record.asked)
+        ? (record.asked as CheckinQuestion)
+        : undefined;
+    const usual =
+      asked && typeof record.usual === "string"
+        ? record.usual.replace(/\s+/g, " ").trim().slice(0, MAX_USUAL_LENGTH) || undefined
         : undefined;
 
     if (
@@ -26,7 +41,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await parseCheckinAnswer(text.trim());
+    const result = await parseCheckinAnswer(text.trim(), { asked, usual });
     return NextResponse.json(
       { success: true, ...result },
       { headers: { "Cache-Control": "no-store" } },

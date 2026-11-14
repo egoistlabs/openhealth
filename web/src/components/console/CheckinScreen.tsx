@@ -29,6 +29,9 @@ const ASK: Record<(typeof STEPS)[number], string> = {
   game: "Optional: a quick reaction game. Press Space when the field turns green. Or skip it.",
   review: "Here is today against your normal. Check it, then submit.",
 };
+/* the name the check-in parser has for each step's question (lib/brain/tasks/checkin.ts) */
+const ASKED: Partial<Record<Step, string>> = { sleep: "sleep", mood: "mood", load: "workload", team: "teamwork", meals: "shared_meal" };
+const NUMBER_WORDS = ["", "one", "two", "three", "four", "five"];
 /* answers from /api/ai/checkin-parse (lib/brain/tasks/checkin.ts) */
 type Parsed = { sleep_time?: string; wake_time?: string; mood?: number; workload?: number; teamwork?: number; shared_meal?: boolean };
 
@@ -125,13 +128,28 @@ export function CheckinScreen({ step }: { step?: string }) {
     router.push(ROUTE.home);
   };
 
-  /* voice through Pedro, one question at a time: the transcript goes to the check-in parser and only the
-     answer to the open step is used (other things the person mentions are ignored). Pedro reads it back; it
-     is saved like a tap, when the person presses Next. While Pedro works, the step is locked. */
+  /* the person's normal for a step, in words, so "same as usual" or "a bit worse than normal" can be worked out */
+  const usualFor = (at: Step): string | undefined => {
+    if (at === "sleep") {
+      const prev = Array.from({ length: 14 }, (_, n) => day(s.me, P - 14 + n)).filter((d): d is Day => d != null);
+      const nOn = median(prev.map((d) => d.onset)), nWk = median(prev.map((d) => d.wake));
+      return nOn != null && nWk != null ? `asleep ${hm(nOn)}, woke ${hm(nWk)}` : undefined;
+    }
+    if (at === "mood" || at === "load" || at === "team") {
+      const b = baseline(s.me, at, P);
+      return b ? `${LABEL[at].toLowerCase()} ${Math.round(b.med)}` : undefined;
+    }
+    return undefined;
+  };
+
+  /* voice through Pedro, one question at a time: the transcript goes to the check-in parser with the open
+     question and the person's normal, so a loose answer ("pretty good", "same as usual") still lands on a
+     value. Only the answer to the open step is used. Pedro reads it back; it is saved like a tap, when the
+     person presses Next. While Pedro works, the step is locked. */
   const apply = async (text: string, at: Step) => {
     let f: Parsed | null = null;
     try {
-      const res = await fetch("/api/ai/checkin-parse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
+      const res = await fetch("/api/ai/checkin-parse", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text, asked: ASKED[at], usual: usualFor(at) }) });
       if (res.ok) f = ((await res.json()) as { fields?: Parsed }).fields ?? null;
     } catch { /* offline: handled below */ }
     if (!f) { say("I couldn't work that out just now. Please tap your answer instead."); return; }
@@ -158,7 +176,10 @@ export function CheckinScreen({ step }: { step?: string }) {
       delete skipped[at];
       return { ...p, vals: { ...p.vals, ...patch }, skipped, pick: 0 };
     });
-    say(`Got it: ${got}. Press Next to save it, or tap to change it.`);
+    /* a rating the person never said as a number is Pedro's reading of their words: say so */
+    const n = at === "mood" ? patch.mood : at === "load" ? patch.load : at === "team" ? patch.team : null;
+    const read = n != null && !new RegExp(`\\b(${n}|${NUMBER_WORDS[n]})\\b`, "i").test(text);
+    say(read ? `That sounds like ${got} out of 5. Press Next to save it, or tap to change it.` : `Got it: ${got}. Press Next to save it, or tap to change it.`);
   };
   const hear = async (text: string) => {
     setHearing(true);
