@@ -14,7 +14,7 @@ import { ReactionGame } from "./ReactionGame";
 import { saveCheckin } from "@/lib/console/store";
 import { ROUTE, ReplayNote } from "./Shell";
 import { CheckinPedro, type PedroLine } from "./CheckinPedro";
-import { BodyMap, needsNote, type PainMark } from "./BodyMap";
+import { BodyMap, needsDetails, type PainMark } from "./BodyMap";
 
 const STEPS = ["sleep", "body", "mood", "load", "team", "meals", "game", "review"] as const;
 const LABEL: Record<(typeof STEPS)[number], string> = { sleep: "Sleep", body: "Body", mood: "Mood", load: "Day load", team: "Teamwork", meals: "Shared meals", game: "Reaction game", review: "Review" };
@@ -91,7 +91,7 @@ export function CheckinScreen({ step }: { step?: string }) {
 
   const k = STEPS[ci.step], i = ci.step;
   const vals = ci.vals;
-  const answered = (key: Step) => key === "sleep" ? vals.onset != null && vals.wake != null : key === "body" ? vals.noPain || (vals.pain.length > 0 && !vals.pain.some(needsNote)) : key === "game" || key === "review" ? true : vals[key as "mood"] != null;
+  const answered = (key: Step) => key === "sleep" ? vals.onset != null && vals.wake != null : key === "body" ? vals.noPain || (vals.pain.length > 0 && !vals.pain.some(needsDetails)) : key === "game" || key === "review" ? true : vals[key as "mood"] != null;
   const setVal = (patch: Partial<Vals>, clear?: string) => setCi((p) => {
     const skipped = { ...p.skipped };
     if (clear) delete skipped[clear];
@@ -117,7 +117,7 @@ export function CheckinScreen({ step }: { step?: string }) {
     setToday(s.me, today);
     const flags = c.flagsFor();
     const added: LogEvent[] = [{ sol: P, min: clockMin, type: "checkin", sev: "info", code: "CI-01", text: "You completed your check-in." }];
-    if (!ci.skipped.body && vals.pain.length) added.push({ sol: P, min: clockMin - 2, type: "checkin", sev: "info", code: "PN-01", text: `Pain logged: ${vals.pain.map((p) => `${p.region.toLowerCase()} ${p.level}/10 (${p.note?.trim()})`).join(", ")}.`, pain: vals.pain });
+    if (!ci.skipped.body && vals.pain.length) added.push({ sol: P, min: clockMin - 2, type: "checkin", sev: "info", code: "PN-01", text: `Pain logged: ${vals.pain.map((p) => `${p.region.toLowerCase()} ${p.level}/10${p.kind ? `, ${p.kind.toLowerCase()}` : ""} (${p.note?.trim()})`).join(", ")}.`, pain: vals.pain });
     if (vals.rt != null) added.push({ sol: P, min: clockMin - 1, type: "tap", sev: "info", code: "PF-02", text: `Your reaction test median was ${vals.rt} ms.` });
     // kept on this device, so it is still there after a reload (lib/console/store.ts)
     const stored = saveCheckin({ id: s.me, sol: P, savedAt: new Date().toISOString(), day: today, events: added });
@@ -315,11 +315,11 @@ export function CheckinScreen({ step }: { step?: string }) {
   const painHistory: PainMark[] = (s.extra[s.me] || []).filter((e) => e.code === "PN-01" && e.sol >= P - 14 && e.sol < P).flatMap((e) => e.pain ?? []);
   const stepBody = () => <>
     <h1 className="ci__q focus-visible:outline-none" ref={qRef} tabIndex={-1}>Anything sore or aching today?</h1>
-    <p className="ci__hint">Drag to turn the body and tap the muscle or bone that hurts, or pick an area below. Rate it 1 to 10 in the panel. An amber glow means it hurt on earlier sols.</p>
+    <p className="ci__hint">Drag to turn the body and tap the spot: on the skin for a rash, bite or cut, or switch Skin off to tap the muscle or bone that hurts. Rate it 1 to 10 in the panel. An amber glow means it was marked on earlier sols.</p>
     <BodyMap value={vals.pain} history={painHistory} noPain={vals.noPain}
       onChange={(pain) => setVal({ pain, noPain: false }, "body")}
       onNoPain={() => setVal({ pain: [], noPain: true }, "body")} />
-    {vals.pain.some(needsNote) ? <p className="ci__hint" role="status" style={{ color: "#F2701D" }}>Add when it hurts for {vals.pain.filter(needsNote).map((p) => p.region).join(", ")} before you continue.</p> : null}
+    {vals.pain.some(needsDetails) ? <p className="ci__hint" role="status" style={{ color: "#F2701D" }}>Add the details for {vals.pain.filter(needsDetails).map((p) => p.region).join(", ")} before you continue.</p> : null}
   </>;
 
   const stepRating = (key: "mood" | "load" | "team") => {
@@ -376,7 +376,7 @@ export function CheckinScreen({ step }: { step?: string }) {
     const sh = c.shared(s.me);
     return <>
       <h1 className="ci__q focus-visible:outline-none" ref={qRef} tabIndex={-1}>Here is today, against your own normal.</h1>
-      <p className="small"><b>Pain:</b> {ci.skipped.body ? <span className="t2">Skipped</span> : vals.pain.length ? vals.pain.map((p) => `${p.region} ${p.level}/10, ${p.note?.trim()}`).join("; ") : <span className="t2">None today</span>}</p>
+      <p className="small"><b>Pain:</b> {ci.skipped.body ? <span className="t2">Skipped</span> : vals.pain.length ? vals.pain.map((p) => `${p.region} ${p.level}/10${p.kind ? `, ${p.kind}` : ""}, ${p.note?.trim()}`).join("; ") : <span className="t2">None today</span>}</p>
       <p className="ci__hint">Submitting writes today to your baseline log. Sharing: {sh.length ? `${sh.length} measures as aggregates` : "private"}. Simulated data.</p>
       <div className="tscroll">
         <table className="sumt">

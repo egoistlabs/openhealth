@@ -24,16 +24,16 @@ const CAMS = {
 };
 const dot = (a, b) => a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
 
-export function renderViews({ bones, muscles, extra = [] }, dir, size = 700) {
+export function renderViews({ bones, muscles, extra = [] }, dir, { size = 700, prefix = "head", centerZ = 1530, windowMm = 300 } = {}) {
   const files = [];
   const lists = [
     ...bones.map((m) => ({ m, col: [205, 196, 170] })),
     ...extra.map((m) => ({ m, col: [150, 80, 70] })),
-    ...muscles.map((m) => ({ m, col: m.approx ? [235, 70, 60] : [190, 60, 140] })),
+    ...muscles.map((m) => ({ m, col: m.col ?? (m.approx ? [235, 70, 60] : [190, 60, 140]) })),
   ];
   for (const [name, cam] of Object.entries(CAMS)) {
     const zb = new Float32Array(size * size).fill(-Infinity), img = Buffer.alloc(size * size * 3, 18);
-    const cx = 0, cz = 1530, scale = size / 300; // ~300 mm window around the head and neck
+    const cx = 0, cz = centerZ, scale = size / windowMm;
     const toScreen = (p) => [size / 2 + (dot(p, cam.r) - dot([cx, -90, cz], cam.r)) * scale, size / 2 - (dot(p, cam.u) - cz) * scale, dot(p, cam.f)];
     for (const { m, col } of lists) {
       const P = m.positions, I = m.indices;
@@ -59,7 +59,7 @@ export function renderViews({ bones, muscles, extra = [] }, dir, size = 700) {
         }
       }
     }
-    const file = join(dir, `head-${name}.png`);
+    const file = join(dir, `${prefix}-${name}.png`);
     writeFileSync(file, png(size, size, img));
     files.push(file);
   }

@@ -3,12 +3,13 @@
 //   2. approximate face muscles (masseter, temporalis, frontalis, occipitalis, orbicularis oculi/oris,
 //      zygomaticus major, mentalis), shaped as thin tapered layers over the BodyParts3D skull, because
 //      BodyParts3D has no facial or jaw muscles.
-// Outputs public/somakine-ext/head-neck.glb and src/lib/console/body/head-neck-extension.json.
+// Also packs the BodyParts3D whole-body skin (FJ2810) as its own asset.
+// Outputs public/somakine-ext/head-neck.glb, public/somakine-ext/skin.glb and src/lib/console/body/head-neck-extension.json.
 //
 // Usage: node scripts/build-head-neck-extension.mjs --src <folder of BodyParts3D isa OBJ files> [--debug <folder>]
 // The OBJ files come from isa_BP3D_4.0_obj_99.zip (https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html).
 import { createHash } from "node:crypto";
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { readGlbMeshes, readObj, vertexNormals, writeGlb } from "./lib/glb.mjs";
@@ -24,6 +25,7 @@ const pack = JSON.parse(readFileSync(join(PACK_DIR, "pack.json"), "utf8"));
 const NS = "openhealth";
 const REGION = "somakine:region:head-neck";
 const OUT_GLB = join(web, "public", "somakine-ext", "head-neck.glb");
+const OUT_SKIN = join(web, "public", "somakine-ext", "skin.glb");
 const OUT_JSON = join(web, "src", "lib", "console", "body", "head-neck-extension.json");
 
 /* ---------- skull from the base pack (raw BodyParts3D mm: +X = person's left, -Y = front, +Z = up) ---------- */
@@ -307,12 +309,149 @@ const glb = writeGlb({ sceneName: `${NS}-head-neck`, rootNode: { name: "BodyPart
 mkdirSync(dirname(OUT_GLB), { recursive: true });
 writeFileSync(OUT_GLB, glb);
 
+/* ---------- skin (BodyParts3D FJ2810), cut into body areas so a tap can log "left forearm skin" ----------
+   BodyParts3D's skin is one whole-body mesh. Each skin triangle is given the area of the nearest bone,
+   split front/back or by height where one bone spans several areas, and left/right by side. Every area is
+   its own structure in its own region (so the area zooms skip the skin). */
+const SKIN_FJ = "FJ2810", SKIN_ASSET = `somakine:asset:${NS}:skin`, SKIN_REGION = `somakine:region:${NS}-skin`;
+const SKIN_MAT = { pbrMetallicRoughness: { baseColorFactor: [0.87, 0.69, 0.58, 1], metallicFactor: 0, roughnessFactor: 0.85 }, doubleSided: true };
+const skinObj = readObj(readFileSync(join(SRC, `${SKIN_FJ}.obj`), "utf8"));
+
+/* bone vertices of the whole base pack, keyed by bone slug, in a 20 mm spatial hash */
+const boneType = new Map(pack.structures.map((s) => [s.id.replace("somakine:structure:", ""), s.type]));
+const boneSlugs = [], bonePts = [];
+for (const f of readdirSync(join(PACK_DIR, "assets", "bodyparts3d")).filter((f) => !f.startsWith("supplement"))) {
+  for (const m of readGlbMeshes(join(PACK_DIR, "assets", "bodyparts3d", f)).meshes) {
+    const slug = m.name.split(":")[1];
+    if (boneType.get(slug) !== "bone") continue;
+    const si = boneSlugs.push(slug) - 1;
+    for (let i = 0; i < m.positions.length; i += 9) bonePts.push(m.positions[i], m.positions[i + 1], m.positions[i + 2], si);
+  }
+}
+const HASH = 20, hash = new Map();
+for (let i = 0; i < bonePts.length; i += 4) {
+  const k = `${Math.floor(bonePts[i] / HASH)},${Math.floor(bonePts[i + 1] / HASH)},${Math.floor(bonePts[i + 2] / HASH)}`;
+  (hash.get(k) ?? hash.set(k, []).get(k)).push(i);
+}
+function nearestBone(p) {
+  const cx = Math.floor(p[0] / HASH), cy = Math.floor(p[1] / HASH), cz = Math.floor(p[2] / HASH);
+  let best = Infinity, bi = -1;
+  for (let r = 0; r < 14; r++) {
+    for (let dx = -r; dx <= r; dx++) for (let dy = -r; dy <= r; dy++) for (let dz = -r; dz <= r; dz++) {
+      if (Math.max(Math.abs(dx), Math.abs(dy), Math.abs(dz)) !== r) continue;
+      for (const i of hash.get(`${cx + dx},${cy + dy},${cz + dz}`) ?? []) {
+        const d = (bonePts[i] - p[0]) ** 2 + (bonePts[i + 1] - p[1]) ** 2 + (bonePts[i + 2] - p[2]) ** 2;
+        if (d < best) { best = d; bi = i; }
+      }
+    }
+    if (bi >= 0 && Math.sqrt(best) < (r - 0.5) * HASH) break; // nothing closer can be in a further ring
+  }
+  return bi < 0 ? null : { slug: boneSlugs[bonePts[bi + 3]], at: [bonePts[bi], bonePts[bi + 1], bonePts[bi + 2]] };
+}
+
+/* area of a skin point: nearest bone, then front/back (out = direction from the bone to the skin; -Y is front) */
+const SKIN_AREAS = {
+  forehead: ["Forehead skin", "额部皮肤"], scalp: ["Scalp", "头皮"], temple: ["Temple and ear skin", "颞部和耳部皮肤"], face: ["Face skin", "面部皮肤"],
+  jaw: ["Jaw and chin skin", "下颌和颏部皮肤"], "neck-front": ["Front of neck skin", "颈前皮肤"], "neck-back": ["Back of neck skin", "颈后皮肤"],
+  chest: ["Chest skin", "胸部皮肤"], abdomen: ["Abdomen skin", "腹部皮肤"], "upper-back": ["Upper back skin", "上背部皮肤"], "lower-back": ["Lower back skin", "下背部皮肤"],
+  buttock: ["Buttock skin", "臀部皮肤"], hip: ["Hip skin", "髋部皮肤"], groin: ["Groin skin", "腹股沟皮肤"], shoulder: ["Shoulder skin", "肩部皮肤"],
+  "upper-arm": ["Upper arm skin", "上臂皮肤"], elbow: ["Elbow skin", "肘部皮肤"], forearm: ["Forearm skin", "前臂皮肤"], hand: ["Hand skin", "手部皮肤"],
+  thigh: ["Thigh skin", "大腿皮肤"], knee: ["Knee skin", "膝部皮肤"], shin: ["Shin skin", "胫前皮肤"], calf: ["Calf skin", "小腿后侧皮肤"], foot: ["Ankle and foot skin", "踝和足部皮肤"],
+};
+const Z_CHEST = 1130; // roughly the bottom of the sternum: chest/upper back above, abdomen/lower back below
+function skinArea(p) {
+  const nb = nearestBone(p);
+  if (!nb) return null;
+  const s = nb.slug, z = p[2];
+  const out = [p[0] - nb.at[0], p[1] - nb.at[1], p[2] - nb.at[2]], ol = Math.hypot(...out) || 1;
+  const front = out[1] / ol < -0.15, back = out[1] / ol > 0.15, lateral = Math.abs(out[0] / ol) > 0.75;
+  if (s === "frontal-bone") return front && z < 1615 ? "forehead" : "scalp";
+  if (/parietal|occiput/.test(s)) return "scalp";
+  if (/temporal-bone|sphenoid/.test(s)) return "temple";
+  if (/zygomatic|maxilla|nasal|lacrimal|ethmoid|vomer|palatine|concha/.test(s)) return "face";
+  if (s === "mandible") return "jaw";
+  if (/cervical|atlas|axis|hyoid/.test(s)) return back ? "neck-back" : "neck-front";
+  if (s === "clavicle") return back ? "upper-back" : z > 1330 && lateral ? "shoulder" : "chest";
+  if (s === "scapula") return lateral && z > 1290 ? "shoulder" : "upper-back";
+  if (/rib|thoracic/.test(s)) return back ? (z > Z_CHEST ? "upper-back" : "lower-back") : z > Z_CHEST ? "chest" : "abdomen";
+  if (/lumbar/.test(s)) return back ? "lower-back" : "abdomen";
+  if (s === "sacrum") return z > 880 ? "lower-back" : "buttock";
+  if (s === "hip-bone") return back ? (z > 900 ? "lower-back" : "buttock") : lateral ? "hip" : z > 870 ? "abdomen" : "groin";
+  if (s === "femur") return back && z > 760 ? "buttock" : lateral && z > 790 ? "hip" : front && z > 790 ? "groin" : "thigh";
+  if (s === "patella") return "knee";
+  if (/tibia|fibula/.test(s)) return z > 330 ? "knee" : z < 20 ? "foot" : back ? "calf" : "shin";
+  if (s === "humerus") return z > 1270 ? "shoulder" : z < 1060 ? "elbow" : "upper-arm";
+  if (/ulna|radius/.test(s)) return z > 1005 ? "elbow" : "forearm";
+  if (/carp|metacarp|phalanx-of-(thumb|index|middle-finger|ring|little-finger)|scaphoid|lunate|triquetr|pisiform|trapez|capitate|hamate/.test(s)) return "hand";
+  return "foot";
+}
+
+/* split the skin triangles into area + side meshes */
+const SP = skinObj.positions, SI = skinObj.indices, buckets = new Map();
+const nTri = SI.length / 3, triArea = new Array(nTri), triCentre = new Array(nTri);
+for (let t = 0; t < nTri; t++) {
+  triCentre[t] = [0, 1, 2].map((k) => (SP[SI[t * 3] * 3 + k] + SP[SI[t * 3 + 1] * 3 + k] + SP[SI[t * 3 + 2] * 3 + k]) / 3);
+  triArea[t] = skinArea(triCentre[t]);
+}
+/* majority filter over neighbouring triangles, so borders are clean and stray specks join their surroundings */
+const vertTris = Array.from({ length: SP.length / 3 }, () => []);
+for (let t = 0; t < nTri; t++) for (let k = 0; k < 3; k++) vertTris[SI[t * 3 + k]].push(t);
+for (let it = 0; it < 8; it++) {
+  const next = triArea.slice();
+  for (let t = 0; t < nTri; t++) {
+    const votes = new Map();
+    for (let k = 0; k < 3; k++) for (const u of vertTris[SI[t * 3 + k]]) if (triArea[u]) votes.set(triArea[u], (votes.get(triArea[u]) ?? 0) + 1);
+    let best = triArea[t], bv = -1;
+    for (const [a, v] of votes) if (v > bv) { best = a; bv = v; }
+    next[t] = best;
+  }
+  for (let t = 0; t < nTri; t++) triArea[t] = next[t];
+}
+for (let t = 0; t < nTri; t++) {
+  if (!triArea[t]) continue;
+  const key = `${triArea[t]}|${triCentre[t][0] >= 0 ? "left" : "right"}`;
+  (buckets.get(key) ?? buckets.set(key, []).get(key)).push(t * 3);
+}
+const zRange = (key) => { const zs = (buckets.get(key) ?? []).map((t) => triCentre[t / 3][2]); return zs.length ? `${Math.round(Math.min(...zs))}..${Math.round(Math.max(...zs))}` : "-"; };
+console.log("skin z ranges (left):", Object.keys(SKIN_AREAS).map((a) => `${a} ${zRange(`${a}|left`)}`).join(", "));
+const skinGroups = [];
+let skinVerts = 0;
+for (const area of Object.keys(SKIN_AREAS)) {
+  const slug = `skin-${area}`, sid = `somakine:structure:${NS}-${slug}`, group = { name: `${NS}:${slug}`, extras: { entityId: `${NS}:${slug}`, type: "skin", source: "BodyParts3D 4.0", selectable: true, context: false }, meshes: [] };
+  const ids = [];
+  for (const side of ["left", "right"]) {
+    const tris = buckets.get(`${area}|${side}`);
+    if (!tris?.length) continue;
+    const remap = new Map(), pos = [], idx = [];
+    for (const t of tris) for (let k = 0; k < 3; k++) {
+      const vi = SI[t + k];
+      if (!remap.has(vi)) { remap.set(vi, pos.length / 3); pos.push(SP[vi * 3], SP[vi * 3 + 1], SP[vi * 3 + 2]); }
+      idx.push(remap.get(vi));
+    }
+    const positions = Float32Array.from(pos), indices = Uint32Array.from(idx), name = `${NS}:${slug}:${side}:isa:${SKIN_FJ}`;
+    group.meshes.push({ name, material: 0, positions, indices, normals: vertexNormals(positions, indices), col: undefined });
+    skinVerts += positions.length / 3;
+    const iid = `somakine:instance:${NS}-${slug}-${side}`;
+    instances.push({ id: iid, assetId: SKIN_ASSET, laterality: side, selector: { kind: "node-name", value: name } });
+    ids.push(iid);
+  }
+  if (!ids.length) continue;
+  skinGroups.push(group);
+  structures.push({ id: sid, type: "skin", laterality: "paired", regionIds: [SKIN_REGION], externalIds: { fma: "FMA7163", bodyParts3D: "BP9115" }, sourceIds: [SRC_REAL], reviewState: "unreviewed", groups: ["skin-area"] });
+  representations.push({ id: `somakine:representation:${NS}-${slug}`, structureId: sid, mode: "direct", instanceIds: ids, contextStructureIds: [], sourceIds: [SRC_REAL], reviewState: "unreviewed" });
+  en[sid] = SKIN_AREAS[area][0]; zh[sid] = SKIN_AREAS[area][1];
+}
+en[SKIN_REGION] = "Skin"; zh[SKIN_REGION] = "皮肤";
+const skinGlb = writeGlb({ sceneName: `${NS}-skin`, rootNode: { name: "BodyParts3D", rotation: root.rotation, scale: root.scale }, materials: [SKIN_MAT], groups: skinGroups });
+writeFileSync(OUT_SKIN, skinGlb);
+
+
 const extension = {
   schemaVersion: pack.schemaVersion,
   id: `${NS}-head-neck`,
   version: "1.0.0",
-  title: "OpenHealth head and neck muscles",
-  description: "Jaw and neck muscles from BodyParts3D 4.0, plus approximate face muscles shaped over the BodyParts3D skull (BodyParts3D has no facial or jaw muscles).",
+  title: "OpenHealth head and neck muscles and skin",
+  description: "Jaw and neck muscles and the whole-body skin from BodyParts3D 4.0, plus approximate face muscles shaped over the BodyParts3D skull (BodyParts3D has no facial or jaw muscles).",
   createdAt: new Date().toISOString(),
   namespace: NS,
   targetPack: { id: pack.id, version: pack.version },
@@ -321,10 +460,11 @@ const extension = {
     { id: SRC_APPROX, title: "OpenHealth approximate face muscles over the BodyParts3D 4.0 skull", version: "1.0.0", url: "https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html", retrievedAt: "2026-11-15T00:00:00Z" },
   ],
   licenses: [{ id: LIC, name: "Creative Commons Attribution 4.0 International", url: "https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html", attribution: "BodyParts3D, © The Database Center for Life Science licensed under CC Attribution 4.0 International. Face muscle shapes are OpenHealth approximations derived from the BodyParts3D skull.", redistribution: "attribution" }],
-  regions: [],
+  regions: [{ id: SKIN_REGION, order: 1, sourceIds: [SRC_REAL] }],
   structures,
   relations: [],
-  assets: [{ id: ASSET, kind: "gltf", uri: "head-neck.glb", mediaType: "model/gltf-binary", sha256: createHash("sha256").update(glb).digest("hex"), bytes: glb.length, geometry: { vertices: vertexCount, gpuBytes: vertexCount * 24 }, sourceIds: [SRC_REAL, SRC_APPROX], licenseId: LIC }],
+  assets: [{ id: ASSET, kind: "gltf", uri: "head-neck.glb", mediaType: "model/gltf-binary", sha256: createHash("sha256").update(glb).digest("hex"), bytes: glb.length, geometry: { vertices: vertexCount, gpuBytes: vertexCount * 24 }, sourceIds: [SRC_REAL, SRC_APPROX], licenseId: LIC },
+    { id: SKIN_ASSET, kind: "gltf", uri: "skin.glb", mediaType: "model/gltf-binary", sha256: createHash("sha256").update(skinGlb).digest("hex"), bytes: skinGlb.length, geometry: { vertices: skinVerts, gpuBytes: skinVerts * 24 }, sourceIds: [SRC_REAL], licenseId: LIC }],
   meshInstances: instances,
   representations,
   locales: [{ locale: "en", labels: en, aliases: {} }, { locale: "zh-CN", labels: zh, aliases: {} }],
@@ -332,11 +472,20 @@ const extension = {
 };
 mkdirSync(dirname(OUT_JSON), { recursive: true });
 writeFileSync(OUT_JSON, JSON.stringify(extension, null, 1) + "\n");
-console.log(`wrote ${OUT_GLB} (${(glb.length / 1e6).toFixed(2)} MB, ${vertexCount} vertices, ${structures.length} muscles)`);
+console.log(`wrote ${OUT_GLB} (${(glb.length / 1e6).toFixed(2)} MB, ${vertexCount} vertices, ${structures.filter((s) => s.type === "muscle").length} muscles)`);
+console.log(`wrote ${OUT_SKIN} (${(skinGlb.length / 1e6).toFixed(2)} MB, ${skinVerts} vertices)`);
 console.log(`wrote ${OUT_JSON}`);
 
 if (DEBUG) {
   mkdirSync(DEBUG, { recursive: true });
   const muscles = groups.flatMap((g) => g.meshes.map((m) => ({ ...m, approx: g.extras.source.startsWith("OpenHealth") })));
   for (const f of renderViews({ bones: head.meshes.filter((m) => !/sternocleidomastoid/.test(m.name)), muscles, extra: bone(/sternocleidomastoid/) }, DEBUG)) console.log("debug view:", f);
+}
+
+if (DEBUG) {
+  /* every skin area in its own colour, whole body */
+  /* a distinct hue per area (golden-angle steps), a lighter shade for the right side */
+  const hsl = (h, l) => { const f = (n) => { const k = (n + h / 30) % 12, a = 0.6 * Math.min(l, 1 - l); return Math.round(255 * (l - a * Math.max(-1, Math.min(k - 3, 9 - k, 1)))); }; return [f(0), f(8), f(4)]; };
+  const skinMeshes = skinGroups.flatMap((g, gi) => g.meshes.map((m, mi) => ({ ...m, col: hsl((gi * 137.5) % 360, mi ? 0.68 : 0.5) })));
+  for (const f of renderViews({ bones: [], muscles: skinMeshes }, DEBUG, { size: 900, prefix: "skin", centerZ: 790, windowMm: 1800 })) console.log("debug view:", f);
 }

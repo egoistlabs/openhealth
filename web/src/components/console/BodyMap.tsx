@@ -17,10 +17,13 @@ import { BODY_PACK as PACK, isApproximate } from "@/lib/console/body/pack";
 const BodyModel = dynamic(() => import("./BodyModel"), { ssr: false });
 
 export type View = "front" | "back" | "side";
-/* note: when the pain happens (e.g. "during treadmill"); required before the check-in moves on */
-export type PainMark = { id: string; view: View; x: number; y: number; region: string; level: number; note?: string };
-export const needsNote = (p: PainMark) => !p.note?.trim();
+/* note: when the pain happens (e.g. "during treadmill"); kind: what a skin problem is (rash, bite…).
+   The note is required for every mark, and the kind for skin marks, before the check-in moves on. */
+export type PainMark = { id: string; view: View; x: number; y: number; region: string; level: number; note?: string; kind?: string };
+export const isSkinMark = (p: PainMark) => p.id.includes(":openhealth-skin-");
+export const needsDetails = (p: PainMark) => !p.note?.trim() || (isSkinMark(p) && !p.kind);
 const WHEN = ["During exercise", "At rest", "When moving", "After waking", "During EVA or suit work", "All the time"];
+const SKIN_KINDS = ["Rash", "Bite or sting", "Cut or scrape", "Bruise", "Burn", "Itch", "Dry or cracked", "Blister", "Swelling", "Other"];
 
 /* ---------- catalogue built from the data pack ---------- */
 type Side = "left" | "right" | null;
@@ -28,7 +31,9 @@ type Part = { key: string; id: string; side: Side; label: string; name: string; 
 
 const EN = PACK.locales.find((l) => l.locale === "en")?.labels ?? {};
 const MODE = new Map(PACK.representations.map((r) => [r.structureId, r.mode]));
-const REGIONS = [...PACK.regions].sort((a, b) => a.order - b.order).map((r) => ({ id: r.id, name: EN[r.id] ?? r.id }));
+/* area buttons: Skin first (crew mostly log skin problems), then the body regions in pack order */
+const isSkinRegion = (id: string) => id.endsWith("-skin");
+const REGIONS = [...PACK.regions].sort((a, b) => Number(isSkinRegion(b.id)) - Number(isSkinRegion(a.id)) || a.order - b.order).map((r) => ({ id: r.id, name: EN[r.id] ?? r.id }));
 const regionName = (id: RegionId) => REGIONS.find((r) => r.id === id)?.name ?? "";
 
 const keyOf = (id: string, side: Side) => `${id}#${side ?? "mid"}`;
@@ -49,7 +54,7 @@ for (const [slug, name] of [["head", "Head (general, headache)"]] as const) {
   PARTS.set(key, { key, id: `area:${slug}`, side: null, name, label: name, region: "somakine:region:head-neck", type: "area", onModel: false });
 }
 /* what each region's list offers: muscles and tendons, then off-model areas */
-const LISTABLE = new Set<Part["type"]>(["muscle", "tendon", "area"]);
+const LISTABLE = new Set<Part["type"]>(["muscle", "tendon", "area", "skin"]);
 const regionParts = (region: RegionId) =>
   [...PARTS.values()].filter((p) => p.region === region && LISTABLE.has(p.type))
     .sort((a, b) => Number(b.onModel) - Number(a.onModel) || a.name.localeCompare(b.name) || (a.side ?? "").localeCompare(b.side ?? ""));
@@ -88,6 +93,8 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
   const [focus, setFocus] = useState<string | null>(null);
   const [group, setGroup] = useState<RegionId | null>(null);
   const [layers, setLayers] = useState<Record<string, boolean>>({ Muscles: true, Bones: true, "Joints & ligaments": true });
+  /* skin on (default): taps mark skin areas; off: taps reach the muscles and bones */
+  const [skinOn, setSkinOn] = useState(true);
 
   const byKey = useMemo(() => new Map(value.map((p) => [p.id, p])), [value]);
   const pastCount = useCallback((key: string) => history.filter((h) => h.id === key).length, [history]);
@@ -100,6 +107,7 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
   const remove = (key: string) => onChange(value.filter((p) => p.id !== key));
   const setLevel = (key: string, level: number) => onChange(value.map((p) => (p.id === key ? { ...p, level } : p)));
   const setNote = (key: string, note: string) => onChange(value.map((p) => (p.id === key ? { ...p, note } : p)));
+  const setKind = (key: string, kind: string) => onChange(value.map((p) => (p.id === key ? { ...p, kind } : p)));
   const addWhen = (key: string, when: string) => {
     const cur = byKey.get(key)?.note?.trim() ?? "";
     if (cur.toLowerCase().includes(when.toLowerCase())) return;
@@ -146,14 +154,19 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
     styled.current = new Set(want.keys());
   }, [ready, value, history]);
 
-  const toggleLayer = (name: string) => {
-    const on = !layers[name];
-    setLayers((l) => ({ ...l, [name]: on }));
-    LAYERS.find(([n]) => n === name)![1].forEach((t) => viewer.current?.setLayerVisibility(t, on));
-  };
+  /* layer and skin visibility; re-applied after area changes, since "Whole body" shows everything again */
+  useEffect(() => {
+    const v = viewer.current;
+    if (!ready || !v) return;
+    for (const [name, types] of LAYERS) types.forEach((t) => v.setLayerVisibility(t, layers[name]));
+    v.setLayerVisibility("skin", skinOn);
+  }, [ready, layers, skinOn, group]);
+
+  const toggleLayer = (name: string) => setLayers((l) => ({ ...l, [name]: !l[name] }));
   /* area buttons zoom the model to that area and open its list; "Whole body" goes back to the full figure */
   const openRegion = (id: RegionId | null) => {
     setGroup(id); setFocus(null);
+    if (id && isSkinRegion(id)) setSkinOn(true);
     if (id) viewer.current?.focusRegion(id); else viewer.current?.showBody();
   };
 
@@ -170,7 +183,7 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
       <div style={S.pIn}>
         <div style={S.pHead}>
           <div>
-            <p style={S.pKicker}>{regionName(focusPart.region)}{focusPart.type !== "area" ? ` · ${focusPart.type}` : ""}</p>
+            <p style={S.pKicker}>{regionName(focusPart.region)}{focusPart.type !== "area" && focusPart.type !== "skin" ? ` · ${focusPart.type}` : ""}</p>
             <h3 style={S.pTitle}>{focusPart.label}</h3>
           </div>
           <button type="button" className="ta ta--quiet" onClick={() => setFocus(null)} aria-label="Close part">×</button>
@@ -179,7 +192,7 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
         {isApproximate(focusPart.id) ? <p style={{ ...S.pPast, color: "var(--c-text-3)" }}>Approximate shape: placed over the skull, not a scanned muscle.</p> : null}
         <p style={{ ...S.pPast, color: past ? PAST : "var(--c-text-3)" }}>{past ? `Hurt here on ${past} of the last 14 sols.` : "No pain logged here in the last 14 sols."}</p>
         {focusMark ? <>
-          <span style={S.pLabel}>How bad is it now? <b style={{ color: sevColour(focusMark.level) }}>{focusMark.level}/10</b></span>
+          <span style={S.pLabel}>{isSkinMark(focusMark) ? "How much does it bother you?" : "How bad is it now?"} <b style={{ color: sevColour(focusMark.level) }}>{focusMark.level}/10</b></span>
           <div role="radiogroup" aria-label={`${focusPart.label}, pain 1 to 10`} style={S.levelsBig}>
             {Array.from({ length: 10 }, (_, k) => k + 1).map((n) => (
               <button key={n} type="button" role="radio" aria-checked={focusMark.level === n} onClick={() => setLevel(focus, n)}
@@ -187,8 +200,17 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
             ))}
           </div>
           <div style={S.scale}><span>Barely there</span><span>Distracting</span><span>Worst</span></div>
+          {isSkinMark(focusMark) ? <>
+            <span style={S.pLabel}>What is it? <b style={{ color: focusMark.kind ? "var(--c-text-3)" : "#F2701D" }}>{focusMark.kind ? "Added" : "Required"}</b></span>
+            <div style={S.when} role="radiogroup" aria-label="What is it">
+              {SKIN_KINDS.map((k) => (
+                <button key={k} type="button" role="radio" aria-checked={focusMark.kind === k} onClick={() => setKind(focus, k)}
+                  style={{ ...S.whenChip, ...(focusMark.kind === k ? { borderColor: "var(--c-action)", color: "var(--c-text)", background: "rgb(111 168 160 / .15)" } : null) }}>{k}</button>
+              ))}
+            </div>
+          </> : null}
           <label style={S.pLabel} htmlFor={`pain-note-${focus}`}>
-            When does it hurt? <b style={{ color: needsNote(focusMark) ? "#F2701D" : "var(--c-text-3)" }}>{needsNote(focusMark) ? "Required" : "Added"}</b>
+            {isSkinMark(focusMark) ? "When did it start or when does it bother you?" : "When does it hurt?"} <b style={{ color: !focusMark.note?.trim() ? "#F2701D" : "var(--c-text-3)" }}>{!focusMark.note?.trim() ? "Required" : "Added"}</b>
           </label>
           <div style={S.when}>
             {WHEN.map((w) => (
@@ -197,8 +219,8 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
           </div>
           <textarea id={`pain-note-${focus}`} value={focusMark.note ?? ""} onChange={(e) => setNote(focus, e.target.value)} rows={2} maxLength={240}
             placeholder="e.g. sharp when I lift my arm, started after the treadmill session"
-            aria-required="true" aria-invalid={needsNote(focusMark)}
-            style={{ ...S.note, borderColor: needsNote(focusMark) ? "#F2701D" : "var(--c-hair-strong)" }} />
+            aria-required="true" aria-invalid={!focusMark.note?.trim()}
+            style={{ ...S.note, borderColor: !focusMark.note?.trim() ? "#F2701D" : "var(--c-hair-strong)" }} />
           <button type="button" className="ta" onClick={() => { remove(focus); setFocus(null); }} style={{ justifySelf: "start", fontSize: 12 }}>Remove this part</button>
         </> : <button type="button" className="btn-primary" onClick={() => add(focus)}>Mark as painful</button>}
         {tip ? <p style={S.tip}>{tip}</p> : null}
@@ -238,7 +260,7 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
                 style={{ ...S.gItem, borderColor: sevColour(p.level) }}>
                 <span style={{ ...S.dot, background: sevColour(p.level) }} />
                 <span style={{ flex: 1, textAlign: "left" }}>{p.region}
-                  <span style={{ display: "block", fontSize: 11, color: needsNote(p) ? "#F2701D" : "var(--c-text-3)" }}>{needsNote(p) ? "Add when it hurts" : p.note}</span>
+                  <span style={{ display: "block", fontSize: 11, color: needsDetails(p) ? "#F2701D" : "var(--c-text-3)" }}>{needsDetails(p) ? (isSkinMark(p) && !p.kind ? "Add what it is" : "Add when it hurts") : [p.kind, p.note].filter(Boolean).join(" · ")}</span>
                 </span>
                 <span className="num" style={{ fontSize: 11 }}>{p.level}/10</span>
               </button>
@@ -275,6 +297,8 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
               <button key={name} type="button" aria-pressed={layers[name]} onClick={() => toggleLayer(name)} disabled={!ready}
                 style={{ ...S.tool, ...(layers[name] ? S.toolOn : null) }}>{name}</button>
             ))}
+            <button type="button" aria-pressed={skinOn} onClick={() => setSkinOn((s) => !s)} disabled={!ready}
+              style={{ ...S.tool, ...(skinOn ? S.toolOn : null) }}>Skin</button>
             <button type="button" onClick={() => { openRegion(null); viewer.current?.resetView(); }} disabled={!ready} style={{ ...S.tool, marginLeft: "auto" }}>Reset view</button>
           </div>
           <div style={S.stage} aria-busy={!ready}>

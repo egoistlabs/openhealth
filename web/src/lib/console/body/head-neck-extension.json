@@ -2,9 +2,9 @@
  "schemaVersion": "0.1.0",
  "id": "openhealth-head-neck",
  "version": "1.0.0",
- "title": "OpenHealth head and neck muscles",
- "description": "Jaw and neck muscles from BodyParts3D 4.0, plus approximate face muscles shaped over the BodyParts3D skull (BodyParts3D has no facial or jaw muscles).",
- "createdAt": "2026-11-14T17:14:09.165Z",
+ "title": "OpenHealth head and neck muscles and skin",
+ "description": "Jaw and neck muscles and the whole-body skin from BodyParts3D 4.0, plus approximate face muscles shaped over the BodyParts3D skull (BodyParts3D has no facial or jaw muscles).",
+ "createdAt": "2026-11-14T17:26:03.931Z",
  "namespace": "openhealth",
  "targetPack": {
   "id": "somakine-bodyparts3d-musculoskeletal",
@@ -35,7 +35,15 @@
    "redistribution": "attribution"
   }
  ],
- "regions": [],
+ "regions": [
+  {
+   "id": "somakine:region:openhealth-skin",
+   "order": 1,
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ]
+  }
+ ],
  "structures": [
   {
    "id": "somakine:structure:openhealth-masseter",
@@ -457,6 +465,462 @@
    "groups": [
     "head-neck"
    ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-forehead",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-scalp",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-temple",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-face",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-jaw",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-neck-front",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-neck-back",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-chest",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-abdomen",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-upper-back",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-lower-back",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-buttock",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-hip",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-groin",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-shoulder",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-upper-arm",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-elbow",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-forearm",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-hand",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-thigh",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-knee",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-shin",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-calf",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-skin-foot",
+   "type": "skin",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:openhealth-skin"
+   ],
+   "externalIds": {
+    "fma": "FMA7163",
+    "bodyParts3D": "BP9115"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "skin-area"
+   ]
   }
  ],
  "relations": [],
@@ -475,6 +939,22 @@
    "sourceIds": [
     "openhealth-bodyparts3d-4",
     "openhealth-face-approximation"
+   ],
+   "licenseId": "openhealth-CC-BY-4.0"
+  },
+  {
+   "id": "somakine:asset:openhealth:skin",
+   "kind": "gltf",
+   "uri": "skin.glb",
+   "mediaType": "model/gltf-binary",
+   "sha256": "c02b929a1ea996bd5240c2cc371912a61605bcf9cbffb6b5073ed351e18be3ac",
+   "bytes": 5107236,
+   "geometry": {
+    "vertices": 109442,
+    "gpuBytes": 2626608
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
    ],
    "licenseId": "openhealth-CC-BY-4.0"
   }
@@ -902,6 +1382,438 @@
     "kind": "node-name",
     "value": "openhealth:omohyoid:right:isa:FJ1586"
    }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-forehead-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-forehead:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-forehead-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-forehead:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-scalp-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-scalp:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-scalp-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-scalp:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-temple-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-temple:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-temple-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-temple:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-face-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-face:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-face-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-face:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-jaw-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-jaw:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-jaw-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-jaw:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-neck-front-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-neck-front:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-neck-front-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-neck-front:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-neck-back-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-neck-back:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-neck-back-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-neck-back:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-chest-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-chest:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-chest-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-chest:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-abdomen-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-abdomen:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-abdomen-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-abdomen:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-upper-back-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-upper-back:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-upper-back-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-upper-back:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-lower-back-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-lower-back:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-lower-back-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-lower-back:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-buttock-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-buttock:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-buttock-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-buttock:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-hip-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-hip:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-hip-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-hip:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-groin-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-groin:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-groin-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-groin:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-shoulder-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-shoulder:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-shoulder-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-shoulder:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-upper-arm-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-upper-arm:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-upper-arm-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-upper-arm:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-elbow-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-elbow:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-elbow-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-elbow:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-forearm-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-forearm:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-forearm-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-forearm:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-hand-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-hand:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-hand-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-hand:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-thigh-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-thigh:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-thigh-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-thigh:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-knee-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-knee:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-knee-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-knee:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-shin-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-shin:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-shin-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-shin:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-calf-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-calf:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-calf-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-calf:right:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-foot-left",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-foot:left:isa:FJ2810"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-skin-foot-right",
+   "assetId": "somakine:asset:openhealth:skin",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:skin-foot:right:isa:FJ2810"
+   }
   }
  ],
  "representations": [
@@ -1227,6 +2139,342 @@
     "openhealth-bodyparts3d-4"
    ],
    "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-forehead",
+   "structureId": "somakine:structure:openhealth-skin-forehead",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-forehead-left",
+    "somakine:instance:openhealth-skin-forehead-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-scalp",
+   "structureId": "somakine:structure:openhealth-skin-scalp",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-scalp-left",
+    "somakine:instance:openhealth-skin-scalp-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-temple",
+   "structureId": "somakine:structure:openhealth-skin-temple",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-temple-left",
+    "somakine:instance:openhealth-skin-temple-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-face",
+   "structureId": "somakine:structure:openhealth-skin-face",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-face-left",
+    "somakine:instance:openhealth-skin-face-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-jaw",
+   "structureId": "somakine:structure:openhealth-skin-jaw",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-jaw-left",
+    "somakine:instance:openhealth-skin-jaw-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-neck-front",
+   "structureId": "somakine:structure:openhealth-skin-neck-front",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-neck-front-left",
+    "somakine:instance:openhealth-skin-neck-front-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-neck-back",
+   "structureId": "somakine:structure:openhealth-skin-neck-back",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-neck-back-left",
+    "somakine:instance:openhealth-skin-neck-back-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-chest",
+   "structureId": "somakine:structure:openhealth-skin-chest",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-chest-left",
+    "somakine:instance:openhealth-skin-chest-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-abdomen",
+   "structureId": "somakine:structure:openhealth-skin-abdomen",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-abdomen-left",
+    "somakine:instance:openhealth-skin-abdomen-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-upper-back",
+   "structureId": "somakine:structure:openhealth-skin-upper-back",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-upper-back-left",
+    "somakine:instance:openhealth-skin-upper-back-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-lower-back",
+   "structureId": "somakine:structure:openhealth-skin-lower-back",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-lower-back-left",
+    "somakine:instance:openhealth-skin-lower-back-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-buttock",
+   "structureId": "somakine:structure:openhealth-skin-buttock",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-buttock-left",
+    "somakine:instance:openhealth-skin-buttock-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-hip",
+   "structureId": "somakine:structure:openhealth-skin-hip",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-hip-left",
+    "somakine:instance:openhealth-skin-hip-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-groin",
+   "structureId": "somakine:structure:openhealth-skin-groin",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-groin-left",
+    "somakine:instance:openhealth-skin-groin-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-shoulder",
+   "structureId": "somakine:structure:openhealth-skin-shoulder",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-shoulder-left",
+    "somakine:instance:openhealth-skin-shoulder-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-upper-arm",
+   "structureId": "somakine:structure:openhealth-skin-upper-arm",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-upper-arm-left",
+    "somakine:instance:openhealth-skin-upper-arm-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-elbow",
+   "structureId": "somakine:structure:openhealth-skin-elbow",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-elbow-left",
+    "somakine:instance:openhealth-skin-elbow-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-forearm",
+   "structureId": "somakine:structure:openhealth-skin-forearm",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-forearm-left",
+    "somakine:instance:openhealth-skin-forearm-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-hand",
+   "structureId": "somakine:structure:openhealth-skin-hand",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-hand-left",
+    "somakine:instance:openhealth-skin-hand-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-thigh",
+   "structureId": "somakine:structure:openhealth-skin-thigh",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-thigh-left",
+    "somakine:instance:openhealth-skin-thigh-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-knee",
+   "structureId": "somakine:structure:openhealth-skin-knee",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-knee-left",
+    "somakine:instance:openhealth-skin-knee-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-shin",
+   "structureId": "somakine:structure:openhealth-skin-shin",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-shin-left",
+    "somakine:instance:openhealth-skin-shin-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-calf",
+   "structureId": "somakine:structure:openhealth-skin-calf",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-calf-left",
+    "somakine:instance:openhealth-skin-calf-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-skin-foot",
+   "structureId": "somakine:structure:openhealth-skin-foot",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-skin-foot-left",
+    "somakine:instance:openhealth-skin-foot-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "unreviewed"
   }
  ],
  "locales": [
@@ -1255,7 +2503,32 @@
     "somakine:structure:openhealth-obliquus-capitis-superior": "Obliquus capitis superior",
     "somakine:structure:openhealth-obliquus-capitis-inferior": "Obliquus capitis inferior",
     "somakine:structure:openhealth-sternohyoid": "Sternohyoid",
-    "somakine:structure:openhealth-omohyoid": "Omohyoid"
+    "somakine:structure:openhealth-omohyoid": "Omohyoid",
+    "somakine:structure:openhealth-skin-forehead": "Forehead skin",
+    "somakine:structure:openhealth-skin-scalp": "Scalp",
+    "somakine:structure:openhealth-skin-temple": "Temple and ear skin",
+    "somakine:structure:openhealth-skin-face": "Face skin",
+    "somakine:structure:openhealth-skin-jaw": "Jaw and chin skin",
+    "somakine:structure:openhealth-skin-neck-front": "Front of neck skin",
+    "somakine:structure:openhealth-skin-neck-back": "Back of neck skin",
+    "somakine:structure:openhealth-skin-chest": "Chest skin",
+    "somakine:structure:openhealth-skin-abdomen": "Abdomen skin",
+    "somakine:structure:openhealth-skin-upper-back": "Upper back skin",
+    "somakine:structure:openhealth-skin-lower-back": "Lower back skin",
+    "somakine:structure:openhealth-skin-buttock": "Buttock skin",
+    "somakine:structure:openhealth-skin-hip": "Hip skin",
+    "somakine:structure:openhealth-skin-groin": "Groin skin",
+    "somakine:structure:openhealth-skin-shoulder": "Shoulder skin",
+    "somakine:structure:openhealth-skin-upper-arm": "Upper arm skin",
+    "somakine:structure:openhealth-skin-elbow": "Elbow skin",
+    "somakine:structure:openhealth-skin-forearm": "Forearm skin",
+    "somakine:structure:openhealth-skin-hand": "Hand skin",
+    "somakine:structure:openhealth-skin-thigh": "Thigh skin",
+    "somakine:structure:openhealth-skin-knee": "Knee skin",
+    "somakine:structure:openhealth-skin-shin": "Shin skin",
+    "somakine:structure:openhealth-skin-calf": "Calf skin",
+    "somakine:structure:openhealth-skin-foot": "Ankle and foot skin",
+    "somakine:region:openhealth-skin": "Skin"
    },
    "aliases": {}
   },
@@ -1284,7 +2557,32 @@
     "somakine:structure:openhealth-obliquus-capitis-superior": "头上斜肌",
     "somakine:structure:openhealth-obliquus-capitis-inferior": "头下斜肌",
     "somakine:structure:openhealth-sternohyoid": "胸骨舌骨肌",
-    "somakine:structure:openhealth-omohyoid": "肩胛舌骨肌"
+    "somakine:structure:openhealth-omohyoid": "肩胛舌骨肌",
+    "somakine:structure:openhealth-skin-forehead": "额部皮肤",
+    "somakine:structure:openhealth-skin-scalp": "头皮",
+    "somakine:structure:openhealth-skin-temple": "颞部和耳部皮肤",
+    "somakine:structure:openhealth-skin-face": "面部皮肤",
+    "somakine:structure:openhealth-skin-jaw": "下颌和颏部皮肤",
+    "somakine:structure:openhealth-skin-neck-front": "颈前皮肤",
+    "somakine:structure:openhealth-skin-neck-back": "颈后皮肤",
+    "somakine:structure:openhealth-skin-chest": "胸部皮肤",
+    "somakine:structure:openhealth-skin-abdomen": "腹部皮肤",
+    "somakine:structure:openhealth-skin-upper-back": "上背部皮肤",
+    "somakine:structure:openhealth-skin-lower-back": "下背部皮肤",
+    "somakine:structure:openhealth-skin-buttock": "臀部皮肤",
+    "somakine:structure:openhealth-skin-hip": "髋部皮肤",
+    "somakine:structure:openhealth-skin-groin": "腹股沟皮肤",
+    "somakine:structure:openhealth-skin-shoulder": "肩部皮肤",
+    "somakine:structure:openhealth-skin-upper-arm": "上臂皮肤",
+    "somakine:structure:openhealth-skin-elbow": "肘部皮肤",
+    "somakine:structure:openhealth-skin-forearm": "前臂皮肤",
+    "somakine:structure:openhealth-skin-hand": "手部皮肤",
+    "somakine:structure:openhealth-skin-thigh": "大腿皮肤",
+    "somakine:structure:openhealth-skin-knee": "膝部皮肤",
+    "somakine:structure:openhealth-skin-shin": "胫前皮肤",
+    "somakine:structure:openhealth-skin-calf": "小腿后侧皮肤",
+    "somakine:structure:openhealth-skin-foot": "踝和足部皮肤",
+    "somakine:region:openhealth-skin": "皮肤"
    },
    "aliases": {}
   }

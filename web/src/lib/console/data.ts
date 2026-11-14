@@ -75,7 +75,7 @@ export type LogEvent = {
   text: string;
   key?: MeasureKey;
   /** pain pins from the check-in body map (code PN-01) */
-  pain?: Array<{ id: string; view: "front" | "back" | "side"; x: number; y: number; region: string; level: number; note?: string }>;
+  pain?: Array<{ id: string; view: "front" | "back" | "side"; x: number; y: number; region: string; level: number; note?: string; kind?: string }>;
 };
 
 export type JournalEntry = { sol: number; min: number; text: string; obs?: string };
