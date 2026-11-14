@@ -8,6 +8,7 @@
         "\\bpretend (?:you(?:'re| are)|to be)\\b",
         "\\brole-?play",
         "\\byou are now\\b",
+        "\\b(?:talk|speak|act|respond) (?:to me )?(?:like|as if|as though) you(?:'re| are| were)\\b",
         "\\bact as (?:my|the|a|an|if you were) (?:\\w+ )?(?:doctor|physician|surgeon|nurse|therapist|psychiatrist|psychologist|medical officer|commander|wife|husband|partner|mother|father|mom|mum|dad|son|daughter|brother|sister|girlfriend|boyfriend|human)\\b"
       ]
     },

@@ -144,6 +144,7 @@ function reportFields(report: TurnReport): Partial<TurnEvent> {
     support_terms: report.trace?.supportTerms ?? [],
     numbers_question: report.trace?.numbersQuestion ?? false,
     status_question: report.trace?.statusQuestion ?? false,
+    safety_classifier: report.trace?.classifier ?? null,
     model: report.model,
     model_called: report.modelCalled,
     options: report.options,
