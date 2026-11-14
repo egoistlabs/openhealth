@@ -277,11 +277,11 @@ function Reply({ row, live, progress }: { row?: ConvoRow; live: boolean; progres
   const plain = live || row.escalation || row.noAnswer || row.stopped;
   const [lead, rest] = plain ? [row.text ?? "", ""] : splitLead(row.text ?? "");
   return (
-    <div className="grid max-h-[38vh] w-full max-w-[min(94%,88ch)] justify-items-center gap-3 overflow-y-auto text-center">
+    <div className="grid max-h-[38vh] w-full max-w-[min(94%,88ch)] auto-rows-max content-start justify-items-center gap-3 overflow-y-auto text-center">
       {row.escalation ? <EscalationNotice /> : null}
       {row.noAnswer && !live ? <p className="label">Not on board</p> : null}
       {row.stopped ? <p className="label">Stopped</p> : null}
-      <p className="stage__reply line-clamp-none max-w-none min-h-0">
+      <p className="reply__lead">
         {lead}{live ? <span className="caret" aria-hidden="true" /> : null}
       </p>
       {rest ? <p className="text-text-2">{rest}</p> : null}

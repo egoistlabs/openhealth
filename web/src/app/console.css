@@ -556,6 +556,8 @@ svg .miss { stroke: var(--c-text-3); stroke-width: var(--bw); }
 .stage { position: relative; flex: 1 1 auto; min-height: 0; container-type: size; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--s-4); padding: var(--s-12) var(--s-6) var(--s-6); }
 .stage__tools { position: absolute; top: var(--s-4); right: var(--s-6); display: flex; align-items: baseline; gap: var(--s-4); }
 .stage .avatar { width: min(var(--orb-lg), 72cqh, 80cqw); height: auto; aspect-ratio: 1 / 1; border: 0; background: transparent; flex: none; }
+/* the answer's first sentence above its details: full height, never clamped, so nothing below can slide under it */
+.reply__lead { max-width: 56ch; color: var(--c-text); font-size: var(--fs-lead); line-height: var(--lh-lead); text-wrap: balance; }
 .stage__reply { max-width: 56ch; text-align: center; color: var(--c-text); font-size: var(--fs-lead); line-height: var(--lh-lead); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: calc(var(--lh-lead) * 2); }
 .stage .settings { width: min(100%, calc(var(--side-w) * 1.8)); max-height: 100%; overflow-y: auto; align-self: center; }
 
