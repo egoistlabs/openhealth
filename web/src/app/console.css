@@ -638,7 +638,6 @@ button.nav__a { width: 100%; }
   .nav__group { margin-left: var(--s-4); border-left: 0; }
 }
 
-/* =====================================================================
 .th-sw__chip[data-chip="console"]  { --a: #0C0D0E; --b: #E6EDF0; --c: #6FA8A0; }
 .th-sw__chip[data-chip="clinic"]   { --a: #F4F6F5; --b: #16201B; --c: #2E7D6B; }
 
@@ -790,3 +789,40 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
   .cstage .chat { width: auto; margin: 0; }
 }
 
+
+/* Blueprint look: the dot background (components/ui/dot-pattern, rendered in Shell) shows through the shell.
+   The page area is clear; header, rail and panels are frosted so text stays readable over the dots. */
+:root[data-theme="blueprint"] body,
+:root[data-theme="blueprint"] .main { background: transparent; }
+:root[data-theme="blueprint"] .hdr,
+:root[data-theme="blueprint"] .nav,
+:root[data-theme="blueprint"] .log,
+:root[data-theme="blueprint"] .drawer { background: color-mix(in srgb, var(--c-bg) 78%, transparent); backdrop-filter: blur(6px); }
+.th-sw__chip[data-chip="blueprint"] { --a: #0B2340; --b: #EAF1FF; --c: #8FB0FF; }
+/* The header holds the demo menu popover. A frosted header (backdrop-filter) makes its own stacking
+   context, so lift the whole header above the page, or the page paints over the open menu. */
+.hdr { position: relative; z-index: 30; }
+
+/* Console layout (Home, Crew): a title bar, then sections of main column + margin column (.sec). */
+.pbar { display: flex; align-items: center; justify-content: space-between; gap: var(--s-4); min-height: calc(var(--s-12) + var(--s-6)); padding: var(--s-3) var(--s-6); border-bottom: var(--bw) solid var(--c-hair); }
+.pbar__t { font: var(--fw-regular) var(--fs-title) / var(--lh-title) var(--f-display); letter-spacing: var(--tr-display); }
+.pbar__r { color: var(--c-text-2); }
+.pnote { padding: var(--s-3) var(--s-6); border-bottom: var(--bw) solid var(--c-hair); color: var(--c-text-2); }
+.sec-t--rule { padding-bottom: var(--s-3); border-bottom: var(--bw) solid var(--c-hair); }
+
+/* who: name, role, status rule, sharing and the one primary button */
+.idn { display: grid; gap: var(--s-3); justify-items: start; }
+.idn__name { font: var(--fw-regular) var(--fs-readout) / var(--lh-readout) var(--f-display); letter-spacing: var(--tr-display); }
+.idn__meta { display: flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); color: var(--c-text-2); margin-top: calc(-1 * var(--s-2)); }
+.idn__status { width: min(100%, calc(var(--side-w) * 1.5)); margin-top: var(--s-2); }
+.idn__status .srule__note { font-weight: var(--fw-regular); }
+.idn__row { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-1) var(--s-3); }
+.idn__cta { margin-top: var(--s-1); }
+
+.today-sum { padding-bottom: var(--s-3); }
+.prompts { display: grid; gap: var(--s-2); }
+.prompts li { display: grid; grid-template-columns: var(--s-3) minmax(0, 1fr); gap: var(--s-2); align-items: baseline; }
+@media (max-width: 959px) {
+  .pbar, .pnote { padding-left: var(--s-4); padding-right: var(--s-4); }
+  .pbar { flex-wrap: wrap; }
+}

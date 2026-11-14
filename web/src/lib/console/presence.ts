@@ -12,11 +12,11 @@ function rgbOf(hex: string) {
   if (h.length === 3) return [0, 1, 2].map((i) => parseInt(h[i] + h[i], 16));
   return [0, 2, 4].map((i) => parseInt(h.slice(i, i + 2), 16));
 }
-type Colors = { acc: number[]; bg: string; hair: string; muted: string; gain: number };
+type Colors = { acc: number[]; hair: string; muted: string; gain: number };
 let C: Colors | null = null;
 function colors(): Colors {
   if (C) return C;
-  C = { acc: rgbOf(token("--c-action")), bg: token("--c-bg"), hair: token("--c-hair-strong"), muted: token("--c-text-3"), gain: parseFloat(token("--orb-gain")) || 1 };
+  C = { acc: rgbOf(token("--c-action")), hair: token("--c-hair-strong"), muted: token("--c-text-3"), gain: parseFloat(token("--orb-gain")) || 1 };
   return C;
 }
 const rgba = (a: number) => { const k = colors(), c = k.acc; return `rgba(${c[0]},${c[1]},${c[2]},${Math.max(0, Math.min(1, a * k.gain)).toFixed(3)})`; };
@@ -63,7 +63,7 @@ function project(p: Pt, cy: number, sy: number, cx: number, sx: number) {
 }
 function draw3d(cv: HTMLCanvasElement, t: number) {
   const ctx = cv.getContext("2d")!, dpr = fit(cv), W = cv.width, H = cv.height, small = W < 140 * dpr;
-  ctx.fillStyle = colors().bg; ctx.fillRect(0, 0, W, H);
+  ctx.clearRect(0, 0, W, H); // transparent, so the page (or the orb button) shows through
   const cxp = W / 2, cyp = H / 2, R = Math.min(W, H) * (small ? 0.34 : 0.36);
   const cy = Math.cos(rot), sy = Math.sin(rot), tilt = 0.38 + Math.sin(t * 0.13) * 0.05, cx = Math.cos(tilt), sx = Math.sin(tilt);
   const dX = Math.sin(t * 0.21) * R * 0.03, dY = Math.cos(t * 0.17) * R * 0.03, breathe = 1 + Math.sin(t * 0.5) * 0.015 + amp * 0.05;
@@ -89,7 +89,7 @@ function draw3d(cv: HTMLCanvasElement, t: number) {
 }
 function drawFlat(cv: HTMLCanvasElement) {
   const ctx = cv.getContext("2d")!, dpr = fit(cv), W = cv.width, H = cv.height, mid = H / 2;
-  ctx.fillStyle = colors().bg; ctx.fillRect(0, 0, W, H);
+  ctx.clearRect(0, 0, W, H); // transparent, so the page (or the orb button) shows through
   ctx.strokeStyle = colors().hair; ctx.lineWidth = dpr;
   ctx.beginPath(); ctx.moveTo(0, Math.round(mid) + 0.5); ctx.lineTo(W, Math.round(mid) + 0.5); ctx.stroke();
   const A = { idle: 0.03, listening: 0.24, working: 0.06, speaking: 0.16 }[state] * H;
@@ -106,7 +106,7 @@ function drawWaves() {
   waves.forEach((cv) => {
     if (!cv.isConnected || !cv.clientWidth) return;
     const ctx = cv.getContext("2d")!, dpr = fit(cv), W = cv.width, H = cv.height, mid = H / 2;
-    ctx.fillStyle = colors().bg; ctx.fillRect(0, 0, W, H);
+    ctx.clearRect(0, 0, W, H); // transparent, so the page (or the orb button) shows through
     ctx.fillStyle = colors().hair; ctx.fillRect(0, Math.round(mid), W, dpr);
     const step = 3 * dpr, n = Math.floor(W / step), live = state === "listening" || state === "speaking";
     ctx.fillStyle = live ? rgba(0.9) : colors().muted;

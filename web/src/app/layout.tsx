@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
-/* Two looks are kept from the design: console (dark, default) and clinic (light).
+/* Looks: console (dark, default), blueprint (navy with dots) and clinic (light).
    tokens.css points --f-sans / --f-mono at these variables. */
 const plexSans = IBM_Plex_Sans({ variable: "--font-plex-sans", subsets: ["latin"], weight: ["400", "500", "600"] });
 const plexMono = IBM_Plex_Mono({ variable: "--font-plex-mono", subsets: ["latin"], weight: ["400", "500"] });
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 };
 
 /* Applies the saved look before first paint, so a light look never flashes dark. */
-const themeScript = `try{var t=localStorage.getItem("cc-theme");if(t==="clinic"){document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme="light"}}catch(e){}`;
+const themeScript = `try{var t=localStorage.getItem("cc-theme");if(t==="clinic"||t==="blueprint"){document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t==="clinic"?"light":"dark"}}catch(e){}`;
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (

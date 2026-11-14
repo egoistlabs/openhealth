@@ -7,10 +7,11 @@ import {
 } from "@/lib/console/data";
 import { Presence } from "@/lib/console/presence";
 
-export type Theme = "console" | "clinic";
+export type Theme = "blueprint" | "console" | "clinic";
 export const THEMES: Array<[Theme, string, string]> = [
   ["console", "Mission console", "Dark · technical"],
   ["clinic", "Calm clinic", "Light · soft"],
+  ["blueprint", "Blueprint", "Navy · dots"],
 ];
 
 export type ConsoleState = {
@@ -148,5 +149,6 @@ function subscribeTheme(cb: () => void) {
   return () => mo.disconnect();
 }
 function readTheme(): Theme {
-  return document.documentElement.dataset.theme === "clinic" ? "clinic" : "console";
+  const t = document.documentElement.dataset.theme;
+  return t === "clinic" || t === "blueprint" ? t : "console";
 }

@@ -7,12 +7,13 @@ import { CREW, MISSION, P, crewEvents, crewById, day, hm, solDate, type LogEvent
 import { tok } from "@/lib/console/plots";
 import { Icon, Num, Segmented, StatusMark, Toggle } from "@/components/ui";
 import { OrbCanvas } from "./Orb";
+import { DotPattern } from "@/components/ui/dot-pattern";
 import { THEMES, useConsole } from "./ConsoleProvider";
 
 export const ROUTE = { home: "/", checkin: "/check-in", companion: "/companion", crew: "/crew" } as const;
 
 export function ConsoleShell({ children }: { children: ReactNode }) {
-  const { s, live, atPresent } = useConsole();
+  const { s, live, atPresent, theme } = useConsole();
   const path = usePathname();
   const router = useRouter();
   const focus = path.startsWith(ROUTE.checkin) && atPresent;
@@ -27,6 +28,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
 
   return (
     <>
+      {theme === "blueprint" ? <DotBackground /> : null}
       <a className="skip" href="#main" onClick={(e) => { e.preventDefault(); mainRef.current?.focus(); }}>Skip to content</a>
       <div className={`app${s.log ? " has-log" : ""}${focus ? " is-focus" : ""}`} id="app">
         <Header />
@@ -379,4 +381,16 @@ function Tips() {
   }, []);
 
   return <div ref={ref} className="tip" id="tip" role="tooltip" hidden={text == null}>{text}</div>;
+}
+
+/* Blueprint look background: navy page, a soft spotlight near the top, and a static dot pattern
+   that fades out towards the edges. Sits behind the app and ignores the pointer. */
+function DotBackground() {
+  return (
+    <div aria-hidden="true" className="pointer-events-none fixed inset-0 -z-10 bg-bg">
+      <div className="absolute inset-0 bg-[radial-gradient(circle_720px_at_50%_200px,var(--c-spot),transparent_70%)]" />
+      <DotPattern width={20} height={20} cx={1} cy={1} cr={1}
+        className="fill-[var(--c-dot)] [mask-image:radial-gradient(ellipse_at_center,white_35%,transparent_90%)]" />
+    </div>
+  );
 }

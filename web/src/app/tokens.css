@@ -117,3 +117,19 @@
 
 
 :root[data-theme="clinic"] { --orb-gain: 2.4; color-scheme: light; }
+
+/* ---- Look 3 · Blueprint: deep navy with a dot pattern behind the app (try-out) ----
+   Text contrast on --c-bg: text 14:1, text-2 8:1, text-3 5.4:1. */
+:root[data-theme="blueprint"] {
+  --c-bg: #0B2340; --c-surface: #0F2C4F; --c-surface-2: #13355C;
+  --c-hair: #1F4570; --c-hair-strong: #2E5A8A;
+  --c-text: #EAF1FF; --c-text-2: #B3C3DA; --c-text-3: #8FA3BD; --c-dim: #3E6390;
+  --c-action: #8FB0FF; --c-action-hover: #A6C0FF; --c-on-action: #0B2340;
+  --c-normal: #8CC062; --c-watch: #E2B93B; --c-act: #D0584A; --c-act-text: #F08C7C;
+  --c-info: #6F9BC9; --c-info-text: #A6C4E6; --o-band: 0.16;
+  --c-dot: rgba(179, 205, 255, 0.32);
+  --c-spot: rgba(122, 162, 255, 0.16);
+  --shadow-card: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 28px rgba(3, 12, 26, 0.45);
+  --orb-gain: 1.2;
+  color-scheme: dark;
+}

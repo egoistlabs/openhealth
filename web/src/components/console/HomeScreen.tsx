@@ -2,117 +2,120 @@
 
 import Link from "next/link";
 import {
-  KEYS, MEASURES, MKEY, P, checkinCount, crewById, flagCopy, fmt, fmtBase, fmtDelta, hasBaseline, isOut, listJoin, overall, reason,
+  KEYS, MEASURES, MKEY, P, checkinCount, crewById, fmt, fmtBase, fmtDelta, hasBaseline, isOut, listJoin, overall, reason, solDate,
   type Measure, type MeasureKey, type Status,
 } from "@/lib/console/data";
 import { railSvg, sparkSvg, trendSvg } from "@/lib/console/plots";
-import { CLS, Icon, Legend, Num, StatusMark, StatusWord, Toggle } from "@/components/ui";
+import { Icon, Legend, Num, StatusMark, StatusRule, StatusWord, Term, Toggle } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
-import { FlagCard, FlagList, OkLine, markDone } from "./FlagCard";
+import { FlagCard, FlagList, OkLine } from "./FlagCard";
 import { Plot } from "./Plot";
 import { ROUTE, ReplayNote } from "./Shell";
 
-/* Home: see how I'm doing, then do the one next thing (A4, A5). */
+/* Home: me vs my baseline (A4, A5), in the console layout: a main column and a margin column.
+   Main: who, overall status, sharing, the one primary button, then today's measures.
+   Margin: what the screen is, how the baseline is set, and the open flags. */
 export function HomeScreen() {
   const c = useConsole();
-  const { s, set, atPresent, clockMin } = c;
-  const person = crewById(s.me), first = person.full.split(" ")[0];
-  const sh = c.shared(s.me), ready = hasBaseline(s.me, s.sol);
+  const { s, set, atPresent } = c;
+  const person = crewById(s.me), sh = c.shared(s.me), ready = hasBaseline(s.me, s.sol);
   const due = atPresent && !c.checkedToday();
-  const h = Math.floor(clockMin / 60) % 24;
-  const greet = h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
-  const eyebrow = atPresent ? `${greet}, ${first}` : <>{first} · looking back at Sol <Num>{s.sol}</Num></>;
-  const talk = <Link className="ta ta--quiet" href={ROUTE.companion}>Talk to the companion</Link>;
-  const ciBtn = <Link className="btn-primary btn--lg" href={ROUTE.checkin}>Start today&apos;s check-in <Icon name="arrow" /></Link>;
-  const backToday = <button type="button" className="btn-primary btn--lg" onClick={() => set({ sol: P })}>Return to today</button>;
-
-  if (!ready) {
-    const n = checkinCount(s.me, s.sol);
-    return (
-      <>
-        <ReplayNote />
-        <div className="page">
-          <section className="hero">
-            <p className="hero__eyebrow">{eyebrow}</p>
-            <h1 className="hero__h">Let&apos;s learn what normal looks like for you.</h1>
-            <p className="hero__p">After 3 check-ins the companion can tell when something is off. <Num>{n}</Num> of 3 done so far.</p>
-            <div className="hero__cta">{atPresent ? <>{ciBtn}{talk}</> : backToday}</div>
-          </section>
-          <HomeFoot shared={sh} />
-        </div>
-      </>
-    );
-  }
-
+  const worst = ready ? overall(s.me, s.sol) : "pending";
   const sts = MEASURES.map((m) => c.st(m.key)), within = sts.filter((x) => x.state === "normal").length;
-  const flags = c.flagsFor(), open = flags.filter((x) => !s.done[c.doneKey(x.key)]);
-  const headline = !flags.length ? "Everything is within your normal." : flags.length === 1 ? "One thing to keep an eye on." : `${flags.length} things to keep an eye on.`;
-  let sub: string, cta: React.ReactNode, rest = flags;
-  if (due) {
-    const t = listJoin(flags.map((x) => MKEY[x.key].short));
-    sub = flags.length
-      ? `${t.charAt(0).toUpperCase() + t.slice(1)} ${flags.length === 1 ? "is" : "are"} outside your normal. Today's check-in keeps this picture accurate.`
-      : "Today's check-in is still open. About 2 minutes, and any question can be skipped.";
-    cta = <>{ciBtn}{talk}</>;
-  } else if (open.length) {
-    const f = open[0], fc = flagCopy(s.me, f.key, f.st, s.tone, s.sol);
-    sub = fc.line;
-    cta = <>
-      <div className="hero__task"><span className="label">Suggested for today</span><span className="hero__act">{fc.action}</span></div>
-      <button type="button" className="btn-primary btn--lg" onClick={() => markDone(c, f.key)}>Mark as done</button>{talk}
-    </>;
-    rest = flags.filter((x) => x.key !== f.key);
-  } else {
-    sub = flags.length ? "You have done today's suggestions. Nothing else needs you." : "Today's check-in is done. Nothing needs your attention.";
-    cta = <Link className="btn-primary btn--lg" href={ROUTE.companion}>Talk to the companion <Icon name="arrow" /></Link>;
-  }
-  const worst = overall(s.me, s.sol);
+  const flags = ready ? c.flagsFor() : [];
+  const lead = flags[0];
+
+  const primary = !atPresent
+    ? <button type="button" className="btn-primary" onClick={() => set({ sol: P })}>Return to today <Icon name="arrow" /></button>
+    : due
+      ? <Link className="btn-primary" href={ROUTE.checkin}>Start daily check-in <Icon name="arrow" /></Link>
+      : <Link className="btn-primary" href={ROUTE.companion}>Talk to the companion <Icon name="arrow" /></Link>;
 
   return (
     <>
       <ReplayNote />
-      <div className="page">
-        <section className={`hero hero--${CLS[worst]}`}>
-          <p className="hero__eyebrow">{eyebrow}</p>
-          <h1 className="hero__h">{headline}</h1>
-          <p className="hero__p">{sub}</p>
-          <div className="hero__cta">{cta}</div>
-        </section>
-
-        {rest.length ? (
-          <section className="block">
-            <h2 className="block__h">{due ? "Needs attention" : "Also on watch"}<span className="block__n num">{rest.length}</span></h2>
-            <FlagList flags={rest} ctx="p" grid />
-          </section>
-        ) : null}
-
-        <section className="block">
-          <h2 className="block__h">Your measures<span className="block__sub"><Num>{within}</Num> of 7 within your normal · select a row for detail</span></h2>
-          <Discrepancy />
-          <div className="mrows" role="list">
-            <div className="mhead" aria-hidden="true">
-              <span className="th">Measure</span><span className="th r">Today</span><span className="th r">Normal</span><span className="th r">Change</span>
-              <span className="th">vs normal</span><span className="th">Last 14 sols</span><span className="th">Status</span>
-            </div>
-            {MEASURES.map((m, i) => <MeasureRow key={m.key} m={m} st={sts[i]} />)}
-          </div>
-          <Legend items={[["band", "Your normal range"], ["dot", "Today"], ["out", "Outside your normal"]]} />
-        </section>
-
-        <HomeFoot shared={sh} />
+      <div className="pbar">
+        <h1 className="pbar__t">Personal · me vs my baseline</h1>
+        <span className="pbar__r">Sol <Num>{s.sol}</Num> · <Num>{solDate(s.sol)}</Num></span>
       </div>
+
+      <section className="sec">
+        <div className="sec__main">
+          <div className="idn">
+            <p className="idn__name">{person.full}</p>
+            <p className="idn__meta">
+              <span>{person.role}</span><span>Sol <Num>{s.sol}</Num></span>
+              <span><Term k="baseline">Baseline</Term> window: <Num>14d</Num></span>
+            </p>
+            <div className="idn__status"><StatusRule state={worst} word={ready ? undefined : "Building baseline"} note="against your own normal only" /></div>
+            <p className="idn__row">
+              <span className="label">Sharing</span>
+              <b>{sh.length ? `${sh.length} of 7 shared` : "Private"}</b>
+              <span className="t2">{sh.length ? "As crew totals only." : "Nothing leaves this view."}</span>
+              <button type="button" className="ta" onClick={() => set((p) => ({ shares: { ...p.shares, [p.me]: (p.shares[p.me] || []).length ? [] : KEYS.slice() } }))}>
+                {sh.length ? "Make all private" : "Share aggregates with crew"}
+              </button>
+            </p>
+            <p className="idn__row"><b>Simulated data</b><span className="t2">— prototype, not a medical device</span></p>
+            <div className="idn__cta">{primary}</div>
+          </div>
+        </div>
+        <aside className="sec__margin">
+          <div>
+            <h2 className="sec-t sec-t--rule">What this screen is</h2>
+            <p className="t2">How you are doing against your own normal. It never compares you with other crew, ranks anyone, or uses percentiles.</p>
+          </div>
+        </aside>
+      </section>
+
+      <section className="sec">
+        <div className="sec__main">
+          <h2 className="sec-t">Today</h2>
+          {!ready ? (
+            <p className="lead">Building your baseline: <Num>{checkinCount(s.me, s.sol)}</Num> of 3 check-ins done. Flags start once it exists.</p>
+          ) : <>
+            <p className="lead today-sum">
+              <Num>{within}</Num> of <Num>7</Num> measures within your normal
+              {lead ? <> · {MKEY[lead.key].short} on {lead.st.state === "act" ? "act" : "watch"} for {lead.st.k} {MKEY[lead.key].unitWord}</> : null}.
+            </p>
+            <Discrepancy />
+            <div className="mrows" role="list">
+              <div className="mhead" aria-hidden="true">
+                <span className="th">Measure</span><span className="th r">Today</span><span className="th r">Normal</span><span className="th r">Delta</span>
+                <span className="th">Deviation</span><span className="th">14 sols</span><span className="th">Status</span>
+              </div>
+              {MEASURES.map((m, i) => <MeasureRow key={m.key} m={m} st={sts[i]} />)}
+            </div>
+            <Legend items={[["band", "Your normal range"], ["line", "Centre line: your median"], ["dot", "Today"], ["out", "Outside your normal"]]} />
+          </>}
+        </div>
+        <aside className="sec__margin">
+          <div>
+            <h2 className="sec-t sec-t--rule">How your baseline is set</h2>
+            <p className="t2">Each measure&apos;s normal is the median of your previous 14 sols. The band is your usual spread. Outside the band for 2+ days reads Watch; 5+ reads Act.</p>
+          </div>
+          <div>
+            <h2 className="sec-t">Flags</h2>
+            {!ready ? <OkLine state="pending">Flags start once your baseline exists.</OkLine>
+              : flags.length ? <FlagList flags={flags} ctx="m" />
+                : <OkLine state="normal">All seven measures sit within your normal.</OkLine>}
+          </div>
+        </aside>
+      </section>
     </>
   );
 }
 
+/* One measure: value, normal, delta, deviation rail, 14-sol sparkline, status and a one-line reason (A4).
+   Selecting it opens the 28-sol trend and the share toggle. */
 function MeasureRow({ m, st }: { m: Measure; st: Status }) {
   const c = useConsole();
   const { s, set } = c;
   const open = !!s.open[m.key], old = st.latest != null && st.latest < s.sol, hi = s.hi && s.hi.key === m.key;
   const isSh = c.shared(s.me).includes(m.key);
   return (
-    <div className={`mr${open ? " is-open" : ""}${hi ? " is-hi" : ""}`} role="listitem">
-      <button type="button" className="mr__btn" aria-expanded={open} onClick={() => set((p) => ({ open: { ...p.open, [m.key]: !p.open[m.key] } }))}>
+    <div id={`mr-${m.key}`} className={`mr${open ? " is-open" : ""}${hi ? " is-hi" : ""}`} role="listitem">
+      <button type="button" className="mr__btn" aria-expanded={open} aria-controls={`mx-${m.key}`} onClick={() => set((p) => ({ open: { ...p.open, [m.key]: !p.open[m.key] } }))}>
         <span className="mr__n">{m.name}<span className="chev"><Icon name="chev" /></span></span>
         <span className={`mr__v r${old ? " is-old" : ""}`} title={old ? `From Sol ${st.latest}` : undefined}>{fmt(m.key, st.value)}</span>
         <span className="mr__b r">{fmtBase(m.key, st.base)}</span>
@@ -164,23 +167,4 @@ function Discrepancy() {
   if (isOut(rated.st) && !off.length)
     return <p className="disc" role="note"><StatusMark state="info" /><span>{lead}, while {listJoin(MEASURED.map((k) => MKEY[k].short))} are all within your normal.</span></p>;
   return null;
-}
-
-function HomeFoot({ shared }: { shared: MeasureKey[] }) {
-  const { set } = useConsole();
-  return (
-    <footer className="page__foot">
-      <div className="foot__row">
-        <span className="label">Sharing</span>
-        <span>{shared.length ? `${shared.length} of 7 measures shared with crew, as totals only` : "Private. Nothing leaves this screen."}</span>
-        <button type="button" className="ta ta--quiet" onClick={() => set((p) => ({ shares: { ...p.shares, [p.me]: (p.shares[p.me] || []).length ? [] : KEYS.slice() } }))}>
-          {shared.length ? "Make all private" : "Share totals with crew"}
-        </button>
-      </div>
-      <details className="more">
-        <summary>How is &ldquo;your normal&rdquo; worked out?</summary>
-        <p>Each measure&apos;s normal is the middle value of your previous 14 sols, and the shaded band is your usual day-to-day spread. Outside the band for 2+ days reads Watch; 5+ days reads Act. You are only ever compared with yourself, never with other crew.</p>
-      </details>
-    </footer>
-  );
 }
