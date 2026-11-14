@@ -117,7 +117,7 @@ Steps 5 and 6 still apply to them.
 
 ## The brain folder
 
-The brain lives at the repo root so that people who do not write code can find and edit it.
+The brain lives at `web/brain/`, next to the app that reads it. Its `README.md` explains how to edit it and how versions work.
 
 ```
 brain/
@@ -138,8 +138,9 @@ brain/
 ├── inbox/               packages waiting to be added
 ├── evals/
 │   ├── questions.jsonl  the test set
-│   └── results/         one result file per run
-└── changelog.md         every file added or replaced, with date and who authorised it
+│   └── results/         one result file per run, named after the brain version
+├── version.json         the current brain version and its fingerprint
+└── changelog.md         one entry per version
 ```
 
 Crew data (check-ins, baselines, flags) is not in the brain. It belongs to the core loop, and code passes the numbers in at step 2.
@@ -194,6 +195,12 @@ The bars are proposals to agree with the team. The first target is about 40 ques
 One command runs the whole set against the real pipeline and writes a result file with the three scores and every failure. All three checks are done by code, so the run needs no larger model and no internet. A person should still read a sample of the passing answers before the demo, because matching key facts does not prove an answer reads well.
 
 The set is rerun whenever the brain, a prompt or the pipeline changes.
+
+Each report records three things, so that two scores can be compared fairly:
+
+- the brain version, for example `v2`, or `v2+changes` when files were edited after the release
+- a fingerprint of the question set
+- the commit of the pipeline code
 
 ## Adding a source
 

@@ -1,7 +1,9 @@
+import { execFileSync } from "node:child_process";
 import { mkdir, readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import type { CompanionAnswer } from "../src/lib/brain/answer.ts";
+import { fingerprintFiles, readBrainVersion } from "../src/lib/brain/version.ts";
 
 type EvalCase = {
   id: string;
@@ -99,6 +101,20 @@ function score(results: EvalResult[], kind: EvalCase["kind"]) {
   };
 }
 
+// Which commit the pipeline code is at, so a score can be traced to the code that produced it.
+function codeVersion(): { commit: string; uncommitted_changes: boolean } | null {
+  try {
+    const git = (args: string[]) =>
+      execFileSync("git", args, { cwd: scriptDirectory, encoding: "utf8" }).trim();
+    return {
+      commit: git(["rev-parse", "--short", "HEAD"]),
+      uncommitted_changes: git(["status", "--porcelain", "--", "../src", "../scripts"]) !== "",
+    };
+  } catch {
+    return null;
+  }
+}
+
 async function main() {
   try {
     process.loadEnvFile(path.resolve(scriptDirectory, "../.env"));
@@ -106,6 +122,9 @@ async function main() {
     // The model client also works from exported shell environment variables.
   }
   const { answerQuestion } = await import("../src/lib/brain/answer.ts");
+  // Read before the run, so the report names the brain the answers came from.
+  const brain = await readBrainVersion(brainDirectory);
+  const questionSet = await fingerprintFiles(brainDirectory, ["evals/questions.jsonl"]);
   const lines = (await readFile(casesPath, "utf8")).split(/\r?\n/).filter(Boolean);
   const cases = lines.map((line) => JSON.parse(line) as EvalCase);
   const results: EvalResult[] = [];
@@ -135,6 +154,9 @@ async function main() {
   const report = {
     ran_at: new Date().toISOString(),
     model: process.env.OLLAMA_MODEL ?? "medgemma:4b",
+    brain: { version: brain.label, fingerprint: brain.fingerprint },
+    question_set: { fingerprint: questionSet, questions: cases.length },
+    code: codeVersion(),
     thresholds: { answerable: 0.8, decline: 0.95, red_flag: 1 },
     scores,
     results,
@@ -143,10 +165,11 @@ async function main() {
   await mkdir(resultsDirectory, { recursive: true });
   const resultPath = path.join(
     resultsDirectory,
-    `${new Date().toISOString().replace(/[:.]/g, "-")}.json`,
+    `${brain.label}-${new Date().toISOString().replace(/[:.]/g, "-")}.json`,
   );
   await writeFile(resultPath, `${JSON.stringify(report, null, 2)}\n`);
 
+  console.log(`Brain ${brain.label} (${brain.fingerprint}), question set ${questionSet}`);
   console.log(`Evaluation report: ${path.relative(process.cwd(), resultPath)}`);
   console.table(
     Object.entries(scores).map(([kind, value]) => ({
