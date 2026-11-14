@@ -4,13 +4,18 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { CREW, MISSION, P, crewEvents, crewById, day, hm, solDate, type LogEvent } from "@/lib/console/data";
+import { escalations, groundRows } from "@/lib/console/ground";
 import { tok } from "@/lib/console/plots";
 import { Icon, Num, Segmented, StatusMark, Toggle } from "@/components/ui";
 import { PedroThumb } from "./VegaAvatar";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { THEMES, useConsole } from "./ConsoleProvider";
 
-export const ROUTE = { home: "/", checkin: "/check-in", companion: "/companion", crew: "/crew" } as const;
+export const ROUTE = { home: "/", checkin: "/check-in", companion: "/companion", crew: "/crew", ground: "/ground" } as const;
+
+/* Who you can view as. "crew" (crew lead) still works in code but is hidden: for now the crew lead is just an astronaut. */
+const VIEW_AS: Array<["astro" | "ground", string]> = [["astro", "Astronaut"], ["ground", "Ground"]];
+const roleRoute = (r: string) => (r === "crew" ? ROUTE.crew : r === "ground" ? ROUTE.ground : ROUTE.home);
 
 export function ConsoleShell({ children }: { children: ReactNode }) {
   const { s, live, atPresent, theme } = useConsole();
@@ -41,7 +46,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
         </main>
         <LogPanel />
       </div>
-      {!full && !path.startsWith(ROUTE.checkin) ? (
+      {!full && !path.startsWith(ROUTE.checkin) && !path.startsWith(ROUTE.ground) ? (
         <button type="button" className="orb" aria-label="Open the companion" onClick={() => router.push(ROUTE.companion)}>
           <PedroThumb />
         </button>
@@ -94,14 +99,14 @@ function Header() {
         <span className="hdr__sim" tabIndex={0} data-tip="Prototype running on simulated data. Not a medical device.">Simulated data</span>
         <details className="demo" ref={detRef}>
           <summary className="demo__btn" aria-label="Demo controls: who you are viewing as, and the look">
-            <span className="demo__init demo__init--sm" aria-hidden="true">{s.role === "crew" ? "CL" : c.init}</span>
-            <span className="demo__who">{s.role === "crew" ? "Crew lead" : c.full}</span>
+            <span className="demo__init demo__init--sm" aria-hidden="true">{s.role === "crew" ? "CL" : s.role === "ground" ? "FS" : c.init}</span>
+            <span className="demo__who">{s.role === "crew" ? "Crew lead" : s.role === "ground" ? "Flight surgeon" : c.full}</span>
             <Icon name="chev" />
           </summary>
           <div className="demo__pop" role="group" aria-label="Demo controls">
             <p className="demo__h">View as</p>
-            <Segmented options={[["astro", "Astronaut"], ["crew", "Crew lead"]]} value={s.role} label="View as"
-              onChange={(v) => { set({ role: v }); router.push(v === "crew" ? ROUTE.crew : ROUTE.home); }} />
+            <Segmented options={VIEW_AS} value={s.role === "ground" ? "ground" : "astro"} label="View as"
+              onChange={(v) => { set({ role: v }); router.push(roleRoute(v)); }} />
             <p className="demo__h">Astronaut</p>
             <div className="demo__people">
               {CREW.map((p) => (
@@ -230,6 +235,7 @@ function Nav() {
     [ROUTE.crew, "Crew", on(ROUTE.crew), null],
   ];
   if (s.role === "crew") screens = [screens[3], screens[0], screens[1], screens[2]];
+  if (s.role === "ground") screens = [[ROUTE.ground, "Ground", path === ROUTE.ground, null], screens[3]];
   const nAlerts = openFlags().length;
   const [help, setHelp] = useState(false);
 
@@ -246,15 +252,16 @@ function Nav() {
             </li>
           ))}
         </ul>
+        {s.role === "ground" ? <GroundCrewNav /> : null}
       </div>
       <div className="nav__bottom">
         <ul className="nav__list nav__list--tools">
-          <li>
+          {s.role === "ground" ? null : <li>
             <button type="button" className={`nav__a${alertsOn ? " is-on" : ""}`} aria-label={`Alerts, ${nAlerts} open`}
               onClick={() => { set({ drawer: true, tab: "alerts", settings: false }); if (!on(ROUTE.companion)) router.push(ROUTE.companion); }}>
               <span>Alerts</span>{nAlerts ? <span className="nav__n nav__n--alert num">{nAlerts}</span> : null}
             </button>
-          </li>
+          </li>}
           <li>
             <button type="button" className={`nav__a${s.log ? " is-open" : ""}`} aria-pressed={s.log} aria-controls="log"
               onClick={() => set((p) => ({ log: !p.log }))}>
@@ -277,11 +284,38 @@ function Nav() {
   );
 }
 
+/* ---------- Ground: one link per astronaut, with the worst status ground may see ---------- */
+function GroundCrewNav() {
+  const { s } = useConsole();
+  const path = usePathname();
+  const rows = groundRows(s.sol, s.shares);
+  const act = new Set(escalations(s.sol, s.shares, s.convo).map((e) => e.id));
+  return (
+    <div className="nav__group">
+      <span className="nav__gl small t2">Crew</span>
+      <ul className="nav__list" aria-label="Crew members">
+        {rows.map((r) => {
+          const href = `${ROUTE.ground}/${r.id}`, isOn = path === href, state = act.has(r.id) ? "act" : r.worst;
+          return (
+            <li key={r.id}>
+              <Link href={href} className={`nav__a nav__crew${isOn ? " is-on" : ""}`} aria-current={isOn ? "page" : undefined}
+                aria-label={`${r.full}, ${r.code}${state === "normal" ? "" : `, ${state}`}`}>
+                <span className="nav__crew-n">{r.full}</span>
+                {state === "normal" ? <span className="nav__n">{r.code}</span> : <StatusMark state={state} />}
+              </Link>
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
+}
+
 /* ---------- mission log side panel ---------- */
 function LogPanel() {
   const { s, set, personEvents } = useConsole();
   const path = usePathname();
-  const crewOnly = path.startsWith(ROUTE.crew);
+  const crewOnly = path.startsWith(ROUTE.crew) || path.startsWith(ROUTE.ground);
   const scope = crewOnly ? "crew" : s.logScope;
   if (!s.log) return <aside className="log" id="log" aria-label="Mission log" />;
   const [a, b] = s.logRange === "sol" ? [s.sol, s.sol] : [Math.max(1, s.sol - 2), s.sol];

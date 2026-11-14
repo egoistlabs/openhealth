@@ -16,7 +16,8 @@ export const THEMES: Array<[Theme, string, string]> = [
 ];
 
 export type ConsoleState = {
-  role: "astro" | "crew";
+  /* "crew" (crew lead) is kept in code but hidden from View as: for now the crew lead is just an astronaut */
+  role: "astro" | "crew" | "ground";
   me: string;
   sol: number;
   shares: Shares;
@@ -144,7 +145,7 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
     const convo = () => (atPresent ? s.convo[s.me] ?? conversation(s.me, P) : conversation(s.me, s.sol));
     return {
       s, set, atPresent, clockMin,
-      landing: s.role === "crew" ? "/crew" : "/",
+      landing: s.role === "crew" ? "/crew" : s.role === "ground" ? "/ground" : "/",
       say: (t: string) => setLive(t),
       live,
       st,
