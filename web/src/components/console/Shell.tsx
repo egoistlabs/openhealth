@@ -196,16 +196,19 @@ function Spine() {
       const lx = Math.max(14, Math.min(W - 14, h));
       svg += `<rect class="sp-label-bg" x="${lx - 14}" y="${H - 14}" width="28" height="13"/><text class="sp-label" text-anchor="middle" x="${lx}" y="${H - 4}">${s.sol}</text>`;
     } else {
+      // caption so the strip reads as a timeline, not decoration
+      svg += `<text class="sp-cap" text-anchor="middle" x="${W / 2}" y="14">SOLS</text>`;
+      svg += `<text class="sp-cap sp-cap--side" text-anchor="middle" transform="translate(${W - 13} ${H / 2}) rotate(90)">MISSION TIMELINE · DRAG TO REVIEW</text>`;
       svg += `<line class="sp-cur" x1="2" x2="${W - 2}" y1="${Math.round(h) + 0.5}" y2="${Math.round(h) + 0.5}"/>`;
       svg += `<rect class="sp-handle" x="4" y="${h - 4}" width="${W - 8}" height="8"/>`;
-      const ly = h < 30 ? h + 20 : h - 8;
-      svg += `<rect class="sp-label-bg" x="2" y="${ly - 10}" width="${W - 4}" height="13"/><text class="sp-label" text-anchor="middle" x="${W / 2}" y="${ly}">${s.sol}</text>`;
+      const ly = h < 40 ? h + 20 : h - 8;
+      svg += `<rect class="sp-label-bg" x="2" y="${ly - 11}" width="${W - 4}" height="15"/><text class="sp-label" text-anchor="middle" x="${W / 2}" y="${ly}">Sol ${s.sol}</text>`;
     }
     svg += "</svg>";
   }
 
   return (
-    <div className="spine" id="spine" ref={ref} role="slider" tabIndex={0} aria-label="Mission timeline: choose a sol to view"
+    <div className="spine" id="spine" ref={ref} role="slider" title="Mission timeline: drag or use arrow keys to view another sol" tabIndex={0} aria-label="Mission timeline: choose a sol to view"
       aria-valuemin={1} aria-valuemax={P} aria-valuenow={s.sol} aria-orientation={horiz ? "horizontal" : "vertical"}
       aria-valuetext={`Sol ${s.sol}, ${solDate(s.sol)}${s.sol === P ? ", today" : ""}`}
       onPointerDown={(e) => { drag.current = true; set({ logRange: "sol" }); try { ref.current?.setPointerCapture(e.pointerId); } catch { /* optional */ } setSol(solFrom(e)); }}
@@ -272,7 +275,7 @@ function Nav() {
         </ul>
         <details className="nav__help" open={help} onToggle={(e) => setHelp((e.target as HTMLDetailsElement).open)}>
           <summary>How the timeline works</summary>
-          <p>The thin strip on the far left is the whole mission. Drag it, or focus it and use the arrow keys, to look back at any sol.</p>
+          <p>The strip on the far left labelled “Mission timeline” is the whole mission. Drag it, or focus it and use the arrow keys, to look back at any sol.</p>
           <div className="nav__legend" aria-label="Timeline legend">
             <span><StatusMark state="watch" />Flag raised</span>
             <span><svg className="mk" viewBox="0 0 8 8" aria-hidden="true"><rect className="sp-m--checkin" x="2" y="2" width="4" height="4" /></svg>Check-in</span>

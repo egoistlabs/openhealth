@@ -140,6 +140,9 @@ a.hdr__item:hover, button.hdr__item:hover { background: var(--c-surface); }
 .sp-cur { stroke: var(--c-action); stroke-width: var(--bw); }
 .sp-label { fill: var(--c-text); font: var(--fw-medium) var(--fs-th) var(--f-mono); }
 .sp-label-bg { fill: var(--c-bg); }
+.sp-cap { fill: var(--c-text-3); font: var(--fw-semi) 12px var(--f-mono); letter-spacing: var(--tr-th); }
+.sp-cap--side { fill: var(--c-text-2); font-size: 14px; }
+.spine:hover .sp-cap--side, .spine:focus-visible .sp-cap--side { fill: var(--c-action); }
 
 /* Nav */
 .nav { grid-area: nav; display: flex; flex-direction: column; justify-content: space-between; border-right: var(--bw) solid var(--c-hair); min-height: 0; overflow-y: auto; }
