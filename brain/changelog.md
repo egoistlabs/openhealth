@@ -35,3 +35,10 @@
 - First team brain: identity, 12 reference files, 3 procedures, 7 measures, prompts and red flags
 - Evals: answerable 12/25, decline 10/10, red flag 5/5
 - Fingerprint: 0d14a8cab348
+
+## v1.0.1 (fix), 2026-11-14
+
+- Tuned the answer prompt and filled in the check-in, daily summary and crew summary task prompts
+- Files: edited prompts/checkin-parse.md, edited prompts/companion.md, edited prompts/crew-summary.md, edited prompts/daily-summary.md
+- Evals: answerable 26/26, decline 10/10, red flag 5/5
+- Fingerprint: 7a43f373a725
