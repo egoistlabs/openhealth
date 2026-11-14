@@ -2,23 +2,34 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { CREW, MEASURES, MISSION, RANK, hm, mealsWeek, teamStatus, type MeasureKey, type State } from "@/lib/console/data";
+import { CREW, MEASURES, MISSION, P, RANK, crewEvents, hm, mealsWeek, teamStatus, type MeasureKey, type State } from "@/lib/console/data";
 import { adherence, escalationText, escalations, groundAggregate, groundRows, lastDownlink } from "@/lib/console/ground";
-import { teamSvg } from "@/lib/console/plots";
+import { teamThresholdSvg } from "@/lib/console/threshold";
 import type { GroundReport } from "@/lib/ground/report";
-import { Legend, Num, StatusMark, StatusRule, StatusWord, WORD } from "@/components/ui";
+import { Num, StatusMark, StatusWord, WORD } from "@/components/ui";
+import { ChangelogTimeline, type TimelineCategory, type TimelineEntry } from "@/components/ui/changelog-timeline";
 import { useConsole } from "./ConsoleProvider";
-import { Plot } from "./Plot";
+import { FillPlot } from "./Plot";
 import { ReplayNote } from "./Shell";
+import { GroundCrewCards } from "./GroundCrewCards";
 
+const LOG_CATS: Record<string, TimelineCategory> = {
+  act: { label: "Act", mark: "■", color: "var(--c-act)" },
+  watch: { label: "Watch", mark: "▲", color: "var(--c-watch)" },
+  normal: { label: "OK", mark: "●", color: "var(--c-normal)" },
+  info: { label: "Info", mark: "◆", color: "var(--c-info)" },
+};
 const AREAS: Array<[MeasureKey, string]> = [["sleep", "Sleep"], ["mood", "Mood"], ["load", "Workload"], ["team", "Teamwork"]];
+const TABS = [["health", "Crew health"], ["people", "By crew member"], ["companion", "Companion"], ["brain", "Brain"]] as const;
+type Tab = (typeof TABS)[number][0];
 const pct = (n: number, d: number) => (d ? `${Math.round((n / d) * 100)}%` : "—");
 const when = (iso: string | null) => (iso ? iso.slice(0, 16).replace("T", " ") : "—");
+const REACHES = "Each crew member chooses, per measure, what is shared. Two things override that, by name: a measure at Act (5+ days outside their own normal), and Pedro giving the emergency notice. Wearable vitals downlink per person.";
 
 type Summary = { text: string; verified: boolean; fallback: boolean } | { error: string } | null;
 
-/* Ground: the flight surgeon on Earth reading the latest downlink.
-   Per person, only shared measures; escalations by name; companion and brain as counts only. */
+/* Ground dashboard: the flight surgeon on Earth reading the latest downlink, on one screen.
+   Crew cards with vitals on top; then escalations + team status | tabbed detail | summary + team log. */
 export function GroundScreen() {
   const { s, clockMin, atPresent } = useConsole();
   const dl = lastDownlink(s.sol, clockMin);
@@ -30,6 +41,9 @@ export function GroundScreen() {
   const shown = areas.filter((a) => a.t.state !== "pending");
   const worst = shown.reduce<State>((w, a) => (RANK[a.t.state] > RANK[w] ? a.t.state : w), "normal");
   const mNow = mealsWeek(s.shares, s.sol), mPrev = mealsWeek(s.shares, s.sol - 7);
+  const log: Array<{ sol: number; min: number; sev: string; text: string }> = [];
+  for (let t = s.sol; t > s.sol - 3 && t > 0; t--) crewEvents(t, s.shares).slice().reverse().forEach((e) => log.push(e));
+  const [tab, setTab] = useState<Tab>("health");
 
   const [report, setReport] = useState<GroundReport | null>(null);
   const [reportErr, setReportErr] = useState(false);
@@ -52,76 +66,55 @@ export function GroundScreen() {
       const j = await r.json();
       setSummary(r.ok ? { text: j.summary, verified: !!j.verified, fallback: !!j.fallback } : { error: j.error ?? "The summary could not be written." });
     } catch {
-      setSummary({ error: "The summary service is not reachable. The numbers below are complete without it." });
+      setSummary({ error: "The summary service is not reachable. The numbers on this page are complete without it." });
     } finally { setBusy(false); setSummaryFor(s.sol); }
   };
   const stale = summary && summaryFor !== s.sol;
 
   return (
-    <>
+    <div className="gdash">
       <ReplayNote />
-      <div className="pbar">
-        <h1 className="pbar__t">Ground · Sol <Num>{s.sol}</Num></h1>
-        <button type="button" className="btn-primary" onClick={draft} disabled={busy} aria-busy={busy}>
+      <div className="gdash__bar">
+        <h1 className="gdash__t">Dashboard · Sol <Num>{s.sol}</Num></h1>
+        <span className="gdash__dl" role="group" aria-label="Downlink">
+          <span><span className="t2">Last downlink</span> Sol <Num>{dl.sol}</Num> · <Num>{hm(dl.min)}</Num> {MISSION.tz}</span>
+          <span><span className="t2">Light time</span> <Num>{dl.delay}</Num> min</span>
+          <span><span className="t2">Next pass</span> {dl.next != null && atPresent ? <><Num>{hm(dl.next)}</Num> {MISSION.tz}</> : "—"}</span>
+          <span className="t2" tabIndex={0} data-tip={`Flight surgeon view. Delayed, nothing here is live.\n\n${REACHES}\n\nSimulated data.`}>Delayed view · What reaches Earth ⓘ</span>
+        </span>
+        <button type="button" className="btn-primary btn-sm" onClick={draft} disabled={busy} aria-busy={busy}>
           {busy ? "Writing summary…" : "Draft downlink summary"}
         </button>
       </div>
-      <div className="dl" role="group" aria-label="Downlink">
-        <span><span className="t2">Last downlink</span> Sol <Num>{dl.sol}</Num> · <Num>{hm(dl.min)}</Num> {MISSION.tz}</span>
-        <span><span className="t2">One-way light time</span> <Num>{dl.delay}</Num> min</span>
-        <span><span className="t2">Next pass</span> {dl.next != null && atPresent ? <><Num>{hm(dl.next)}</Num> {MISSION.tz}</> : "—"}</span>
-        <span className="t2">Delayed view. Nothing here is live.</span>
-      </div>
-      <p className="pnote">Flight surgeon view. Per person you see only the measures that person shares. Act statuses and companion emergency notices reach Earth by name, with no values or words. Journals and conversations never leave the hab. Simulated data.</p>
 
-      {/* ---------- escalations ---------- */}
-      <section className="sec">
-        <div className="sec__main">
-          <h2 className="sec-t">Escalations <span className="tools small t2"><Num>{esc.length}</Num> open</span></h2>
+      <GroundCrewCards sol={s.sol} />
+
+      <div className="gdash__grid">
+        {/* ---------- left: escalations and team status ---------- */}
+        <section className="gdash__col" aria-labelledby="g-esc">
+          <h2 id="g-esc" className="gdash__h">Escalations <span className="small t2"><Num>{esc.length}</Num> open</span></h2>
           {esc.length ? (
-            <ul className="prompts">
+            <ul className="prompts gdash__esc">
               {esc.map((e, i) => (
                 <li key={i}>
                   <StatusMark state="act" />
                   <span><Link className="ta" href={`/ground/${e.id}`}><b>{e.full}</b></Link> <span className="t2">· {e.code}</span>
                     {e.kind === "companion" ? <span className="t2"> · Sol <Num>{e.sol}</Num> <Num>{hm(e.min)}</Num></span> : null}
-                    <br />{escalationText(e)}</span>
+                    <br /><span className="small">{escalationText(e)}</span></span>
                 </li>
               ))}
             </ul>
-          ) : <p className="ok-line"><StatusMark state="normal" /><span>No Act statuses and no emergency notices in the last 14 sols.</span></p>}
-        </div>
-        <aside className="sec__margin">
-          <div>
-            <h2 className="sec-t sec-t--rule">What reaches Earth</h2>
-            <p className="t2">Each crew member chooses, per measure, what is shared. Two things override that, by name: a measure at Act (5+ days outside their own normal), and Pedro giving the emergency notice. Ground gets that it happened, never the values or what was said.</p>
-          </div>
-        </aside>
-      </section>
+          ) : <p className="ok-line"><StatusMark state="normal" /><span>No Act statuses or emergency notices in 14 sols.</span></p>}
 
-      {/* ---------- crew health ---------- */}
-      <section className="sec">
-        <div className="sec__main">
-          <h2 className="sec-t">Crew health</h2>
-          <div className="blocks">
-            {areas.map(({ k, label, t }) => (
-              <div key={k} className="cb">
-                <span className="cb__t">{label}</span>
-                {t.state === "pending" ? <StatusRule state="pending" word="Not enough shared" /> : <StatusRule state={t.state} />}
-                {t.state === "pending" ? null : <Plot draw={(w) => teamSvg(k, s.sol, s.shares, w)} label="Team trend, 14 sols" />}
-                <p className="cb__reason">{t.reason}</p>
-              </div>
-            ))}
-          </div>
-          <Legend items={[["line", "Team trend: average distance from each person's own normal"], ["band", "Within normal"]]} />
-          <div className="mt6">
-            <div className="srow"><span>Team status</span><span className="srow__v">{shown.length ? <><StatusWord state={worst} /> {agg.areas_needing_attention ? `${agg.areas_needing_attention} of ${shown.length} areas need attention` : "All areas within normal"}</> : "Not enough shared"}</span></div>
+          <h2 className="gdash__h mt3">Team status</h2>
+          <div className="gdash__rows">
+            <div className="srow"><span>Areas</span><span className="srow__v">{shown.length ? <><StatusWord state={worst} /> {agg.areas_needing_attention ? `${agg.areas_needing_attention} of ${shown.length} need attention` : "All within normal"}</> : "Not enough shared"}</span></div>
             <div className="srow"><span>Check-in adherence, 14 sols</span><span className="srow__v">{adh.rate == null ? "—" : <Num>{Math.round(adh.rate * 100)}%</Num>}</span></div>
             <div className="srow"><span>Checked in on Sol <Num>{s.sol}</Num></span><span className="srow__v"><Num>{agg.checked_in}</Num> of <Num>{CREW.length}</Num></span></div>
             <div className="srow"><span>Shared measures outside normal</span><span className="srow__v"><Num>{agg.shared_measures_outside_normal}</Num> of <Num>{agg.shared_measures}</Num></span></div>
-            <div className="srow"><span>Shared meals</span><span className="srow__v">{mNow == null ? "Not enough shared" : <><Num>{mNow}</Num> this week · <Num>{mPrev}</Num> last week</>}</span></div>
+            <div className="srow"><span>Shared meals</span><span className="srow__v">{mNow == null ? "—" : <><Num>{mNow}</Num> · <Num>{mPrev}</Num> last wk</>}</span></div>
           </div>
-          <div className="adh" aria-label="Check-ins per sol, last 14 sols">
+          <div className="adh gdash__adh" aria-label="Check-ins per sol, last 14 sols">
             {adh.rows.map((r) => (
               <span key={r.sol} className="adh__c" data-tip={`Sol ${r.sol}: ${r.done} of ${CREW.length} checked in`} tabIndex={0}>
                 <i style={{ height: `${(r.done / CREW.length) * 100}%` }} />
@@ -129,73 +122,90 @@ export function GroundScreen() {
               </span>
             ))}
           </div>
-        </div>
-        <aside className="sec__margin">
-          <div>
-            <h2 className="sec-t sec-t--rule">Downlink summary</h2>
-            {summary == null ? <p className="t2">Press “Draft downlink summary” for a short written read of the crew-level numbers. It is given aggregates only, and any number it invents is caught and replaced.</p>
-              : "error" in summary ? <p className="t2">{summary.error}</p>
+        </section>
+
+        {/* ---------- middle: tabbed detail ---------- */}
+        <section className="gdash__col gdash__mid" aria-label="Detail">
+          <div className="gtabs" role="tablist" aria-label="Detail">
+            {TABS.map(([k, label]) => (
+              <button key={k} type="button" role="tab" id={`gt-${k}`} aria-selected={tab === k} aria-controls="gtab-panel"
+                className={`gtabs__b${tab === k ? " is-on" : ""}`} onClick={() => setTab(k)}>{label}</button>
+            ))}
+          </div>
+          <div className="gtabs__p" id="gtab-panel" role="tabpanel" aria-labelledby={`gt-${tab}`}>
+            {tab === "health" ? (
+              <>
+                <div className="gdash__blocks">
+                  {areas.map(({ k, label, t }) => (
+                    <div key={k} className={`gblk gblk--${t.state}`}>
+                      <div className="gblk__h"><span className="gblk__t">{label}</span>{t.state === "pending" ? <span className="small t2">Not enough shared</span> : <StatusWord state={t.state} />}</div>
+                      {t.state === "pending" ? <span className="gblk__plot" /> : <FillPlot className="gblk__plot" draw={(w, h) => teamThresholdSvg(k, s.sol, s.shares, w, h)} />}
+                      <p className="small t2">{t.reason}</p>
+                    </div>
+                  ))}
+                </div>
+                <p className="small t2 mt2">Line: team average distance from each sharing person&apos;s own normal, 14 sols. Green is the healthy side, amber the worse side.</p>
+              </>
+            ) : tab === "people" ? (
+              <>
+                <div className="gtbl-wrap" tabIndex={0} role="region" aria-label="Shared measures by crew member">
+                  <table className="gtbl gtbl--dense">
+                    <thead>
+                      <tr>
+                        <th scope="col">Crew</th>
+                        <th scope="col">Check-in</th>
+                        {MEASURES.map((m) => <th key={m.key} scope="col" data-tip={m.tip}>{m.name.replace(" & stress", "")}</th>)}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {rows.map((r) => (
+                        <tr key={r.id}>
+                          <th scope="row"><span className="gtbl__n"><Link className="ta" href={`/ground/${r.id}`}>{r.full}</Link></span><span className="small t2">{r.code} · shares <Num>{r.sharedN}</Num>/<Num>{MEASURES.length}</Num></span></th>
+                          <td>{r.checkedIn ? "Done" : <span className="t2">Not yet</span>}</td>
+                          {r.cells.map((c) => (
+                            <td key={c.key} className={c.shared ? undefined : "is-off"}>
+                              {c.shared
+                                ? <span data-tip={c.state === "pending" || c.state === "nobase" ? undefined : `${c.value}${c.delta ? ` · ${c.delta}` : ""}`}><StatusWord state={c.state} /></span>
+                                : <span className="small t2">—</span>}
+                            </td>
+                          ))}
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <p className="small t2 mt2">Against each person&apos;s own normal (median of their previous 14 sols). {WORD.watch} is 2+ days outside it, {WORD.act} 5+. Hover a status for the value. — means not shared.</p>
+              </>
+            ) : tab === "companion" ? <CompanionBlock report={report} err={reportErr} />
+              : <BrainBlock report={report} err={reportErr} />}
+          </div>
+        </section>
+
+        {/* ---------- right: downlink summary + team log ---------- */}
+        <aside className="gdash__col gdash__side" aria-label="Summary and team log">
+          <div className="gdash__sum">
+            <h2 className="gdash__h">Downlink summary</h2>
+            {summary == null ? <p className="small t2">Press “Draft downlink summary” for a short written read of the crew-level numbers. Aggregates only; invented numbers are caught.</p>
+              : "error" in summary ? <p className="small t2">{summary.error}</p>
               : <>
-                  <p>{summary.text}</p>
-                  <p className="small t2 mt3">{summary.fallback ? "Written by code: the model's draft did not pass the number check, or the model is off." : summary.verified ? "Checked: every number appears in the crew-level data." : ""}{stale ? ` Written for Sol ${summaryFor}.` : ""}</p>
+                  <p className="small">{summary.text}</p>
+                  <p className="small t2 mt1">{summary.fallback ? "Written by code: the model's draft failed the number check, or the model is off." : summary.verified ? "Checked: every number appears in the crew-level data." : ""}{stale ? ` Written for Sol ${summaryFor}.` : ""}</p>
                 </>}
           </div>
+          {/* same hover-to-read / click-to-pin team log as the Crew screen */}
+          <ChangelogTimeline fill className="crew__tl ground__tl" title="Team log" subtitle={`Sol ${Math.max(1, s.sol - 2)}–${s.sol} · newest first`} categories={LOG_CATS} visibleEntries={8}
+            empty="No team events yet."
+            entries={log.map((e, i): TimelineEntry => ({
+              id: `${e.sol}-${e.min}-${i}`,
+              label: hm(e.min),
+              group: `Sol ${e.sol}${e.sol === P ? " · Today" : ""}`,
+              category: LOG_CATS[e.sev] ? e.sev : "info",
+              title: e.text,
+              summary: <>Sol <Num>{e.sol}</Num> at <Num>{hm(e.min)}</Num>: {e.text}</>,
+            }))} />
         </aside>
-      </section>
-
-      {/* ---------- per person, shared only ---------- */}
-      <section className="sec">
-        <div className="sec__main">
-          <h2 className="sec-t">By crew member <span className="tools small t2">shared measures only</span></h2>
-          <div className="gtbl-wrap" tabIndex={0} role="region" aria-label="Shared measures by crew member">
-            <table className="gtbl">
-              <thead>
-                <tr>
-                  <th scope="col">Crew</th>
-                  <th scope="col">Check-in</th>
-                  {MEASURES.map((m) => <th key={m.key} scope="col" data-tip={m.tip}>{m.name.replace(" & stress", "")}</th>)}
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r) => (
-                  <tr key={r.id}>
-                    <th scope="row"><span className="gtbl__n"><Link className="ta" href={`/ground/${r.id}`}>{r.full}</Link></span><span className="small t2">{r.code} · shares <Num>{r.sharedN}</Num> of <Num>{MEASURES.length}</Num></span></th>
-                    <td>{r.checkedIn ? "Done" : <span className="t2">Not yet</span>}{r.missed7 ? <span className="small t2 db"><Num>{r.missed7}</Num> missed in 7</span> : null}</td>
-                    {r.cells.map((c) => (
-                      <td key={c.key} className={c.shared ? undefined : "is-off"}>
-                        {c.shared
-                          ? <><StatusWord state={c.state} />{c.state === "pending" || c.state === "nobase" ? null : <span className="small t2 db num">{c.value}{c.delta ? ` · ${c.delta}` : ""}</span>}</>
-                          : <span className="small t2">Not shared</span>}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </div>
-        <aside className="sec__margin">
-          <div>
-            <h2 className="sec-t sec-t--rule">Reading this table</h2>
-            <p className="t2">Each status is against that person&apos;s own normal: the median of their previous 14 sols. {WORD.watch} is 2+ days outside it, {WORD.act} is 5+. The small line is the latest value and its change from their normal. People are never compared with each other.</p>
-          </div>
-        </aside>
-      </section>
-
-      {/* ---------- companion + brain ---------- */}
-      <section className="sec">
-        <div className="sec__main">
-          <h2 className="sec-t">Companion activity <span className="tools small t2">counts only</span></h2>
-          <CompanionBlock report={report} err={reportErr} />
-        </div>
-        <aside className="sec__margin">
-          <div>
-            <h2 className="sec-t sec-t--rule">Brain on board</h2>
-            <BrainBlock report={report} err={reportErr} />
-          </div>
-        </aside>
-      </section>
-    </>
+      </div>
+    </div>
   );
 }
 

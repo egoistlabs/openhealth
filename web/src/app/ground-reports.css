@@ -1,0 +1,87 @@
+/* Ground · Pedro reports: submissions | report | status.
+   Own file (imported by the page) so it loads fresh in dev instead of riding on a stale console.css. */
+.gr { grid-template-columns: minmax(280px, 1fr) minmax(0, 2fr) minmax(280px, 1fr); }
+.gr .gdash__h { font-size: var(--fs-lead); }
+
+/* sol picker */
+.gr-sols { display: flex; flex-wrap: wrap; gap: var(--s-1); }
+.gr-sol { padding: 6px 12px; border: var(--bw) solid var(--c-hair-strong); border-radius: 6px; color: var(--c-text-2); font-size: var(--fs-body); white-space: nowrap; }
+.gr-sol:hover { color: var(--c-text); border-color: var(--c-text-3); }
+.gr-sol.is-on { border-color: var(--c-action); color: var(--c-text); background: color-mix(in srgb, var(--c-action) 20%, transparent); font-weight: var(--fw-semi); }
+
+/* astronaut buttons: the crew-card poster look, large */
+/* the four cards share the column's full height (never under 150px each) */
+.gr__list { display: flex; flex-direction: column; }
+.gr-rows { flex: 1 1 auto; display: grid; grid-auto-rows: minmax(150px, 1fr); gap: var(--s-3); }
+.gr-rows > li { display: flex; min-height: 0; }
+.gr-row { position: relative; display: block; width: 100%; height: auto; min-height: 150px; overflow: hidden; isolation: isolate; border-radius: 8px; text-align: left;
+  border: 2px solid transparent;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--c-action) 38%, #2B2F7A) 0%, color-mix(in srgb, var(--c-action) 16%, #1A1D4A) 100%); }
+.gr-row:hover { border-color: rgb(255 255 255 / .35); }
+.gr-row.is-on { border-color: var(--c-action); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-action) 35%, transparent); }
+.gr-row--act { border-left: 6px solid var(--c-act); }
+.gr-row--watch { border-left: 6px solid var(--c-watch); }
+.gr-row__txt { position: relative; z-index: 2; display: grid; align-content: center; gap: 8px; height: 100%; max-width: 64%; padding: 0 0 0 var(--s-5, 20px); }
+.gr-row__name { color: #fff; font: 700 22px / 1.15 var(--f-sans); }
+.gr-row__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: rgb(255 255 255 / .8); font-size: 14px; }
+.gr-row__pic { width: 50% !important; }
+/* wearable strip pinned to the bottom of each card; the text sits above it */
+.gr-row__txt { padding-bottom: 56px; }
+.gr-row__vit { position: absolute; z-index: 3; left: 0; right: 0; bottom: 0; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 1px;
+  background: rgb(8 10 20 / .72); backdrop-filter: blur(4px); border-top: 1px solid rgb(255 255 255 / .12); }
+.gr-v { display: grid; gap: 1px; min-width: 0; padding: 6px 8px; border-top: 2px solid var(--c-normal); }
+.gr-v--watch { border-top-color: var(--c-watch); } .gr-v--act { border-top-color: var(--c-act); }
+.gr-v__l { display: inline-flex; align-items: center; gap: 4px; color: rgb(255 255 255 / .7); font-size: 11px; white-space: nowrap; overflow: hidden; }
+.gr-v__n { color: #fff; font-size: 15px; font-weight: var(--fw-semi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gr-v__n small { margin-left: 2px; color: rgb(255 255 255 / .55); font-size: 10px; font-weight: 400; }
+.gr-v--act .gr-v__n { color: #FF8A7A; } .gr-v--watch .gr-v__n { color: #F5C451; }
+.gr-row__img { object-position: center 15% !important; }
+.gr-row__code { padding: 1px 7px; border-radius: 999px; background: rgb(255 255 255 / .9); color: #14163A; font: var(--fw-semi) 11px / 1.4 var(--f-mono); }
+.gr-row__st { display: inline-flex; align-items: center; gap: 6px; justify-self: start; padding: 2px 8px; border-radius: 999px; background: rgb(0 0 0 / .45); color: #fff; font-size: 12px; }
+.gr-row__pic { position: absolute; z-index: 1; top: 0; right: 0; bottom: 0; width: 46%;
+  -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 35%); mask-image: linear-gradient(90deg, transparent 0%, #000 35%); }
+.gr-row__img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; border: 0; background: none; }
+
+/* report */
+.gr__head { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-2); margin-bottom: var(--s-3); }
+.gr__head h2 { margin: 0; font: var(--fw-semi) var(--fs-title) / 1.2 var(--f-sans); }
+.gr-sum { display: grid; gap: 6px; padding: var(--s-4); border: var(--bw) solid var(--c-hair-strong); border-left: 4px solid var(--c-normal); border-radius: 6px; background: var(--c-surface); font-size: var(--fs-lead); line-height: 1.5; }
+.gr-sum--watch { border-left-color: var(--c-watch); } .gr-sum--act { border-left-color: var(--c-act); } .gr-sum--pending { border-left-color: var(--c-hair-strong); }
+.gr-sum__l { color: var(--c-text-2); font-size: 12px; text-transform: uppercase; letter-spacing: .08em; }
+.gr-sum__a { margin-top: 4px; padding-top: 8px; border-top: var(--bw) solid var(--c-hair); }
+.gr-ans { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: var(--s-2); }
+.gr-ans__c { display: grid; gap: 2px; padding: var(--s-3); border-radius: 6px; background: var(--c-surface-2); min-width: 0; }
+.gr-ans__c.is-off { opacity: .55; }
+.gr-ans__l { color: var(--c-text-2); font-size: 13px; }
+.gr-ans__v { font-size: 20px; font-weight: var(--fw-semi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gr-ans__n { color: var(--c-text-3); font-size: 12px; }
+.gr-body__src { margin-top: var(--s-1); color: var(--c-text-3); font-size: 12px; }
+
+/* crew status modal: the full person page, scrolling inside the dialog */
+.gpm { width: min(1240px, calc(100vw - 48px)); height: calc(100vh - 48px); max-height: calc(100vh - 48px); overflow: auto; }
+.gpm .gpm__bar { position: sticky; top: 0; z-index: 5; background: var(--c-bg); }
+.gpm .sec { grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); }
+.gpm__tools { display: inline-flex; align-items: center; gap: var(--s-3); }
+
+/* astronaut vs a typical adult on Earth */
+.ec { display: grid; gap: 2px; }
+.ec__row { display: grid; grid-template-columns: minmax(150px, 1fr) minmax(160px, 2fr) minmax(140px, 1fr); grid-template-areas: "l bar v" "n n n"; align-items: center; gap: 4px var(--s-4); padding: var(--s-2) 0; border-bottom: var(--bw) solid var(--c-hair); }
+.ec__l { grid-area: l; display: grid; }
+.ec__bar { grid-area: bar; position: relative; height: 14px; border-radius: 999px; background: var(--c-surface-2); }
+.ec__band { position: absolute; top: 0; bottom: 0; border-radius: 999px; background: color-mix(in srgb, var(--c-normal) 35%, transparent); }
+.ec__norm { position: absolute; top: -4px; bottom: -4px; width: 2px; margin-left: -1px; background: var(--c-text-2); }
+.ec__dot { position: absolute; top: 50%; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%; border: 2px solid #fff; background: var(--c-normal); box-shadow: 0 0 6px rgb(0 0 0 / .5); }
+.ec__dot--below, .ec__dot--above { background: var(--c-watch); }
+.ec__v { grid-area: v; display: grid; justify-items: end; text-align: right; }
+.ec__w--in { color: var(--c-normal); } .ec__w--below, .ec__w--above { color: var(--c-watch); }
+.ec__n { grid-area: n; }
+@media (max-width: 760px) { .ec__row { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "l v" "bar bar" "n n"; } }
+
+/* right column */
+.gr-vit { padding: 0; }
+.gr-ms { display: grid; }
+.gr-ms li { display: flex; justify-content: space-between; align-items: center; gap: var(--s-2); padding: 8px 0; border-bottom: var(--bw) solid var(--c-hair); font-size: var(--fs-body); }
+.gr .gdash__col { overflow: auto; }
+
+@media (max-width: 1280px) { .gr { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); } }
+@media (max-width: 760px) { .gr { grid-template-columns: minmax(0, 1fr); } }

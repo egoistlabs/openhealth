@@ -1056,6 +1056,28 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
   -webkit-mask-image: linear-gradient(90deg, transparent 0%, #000 30%); mask-image: linear-gradient(90deg, transparent 0%, #000 30%); }
 .rcard__img { display: block; width: 100%; height: 100%; object-fit: cover; object-position: center 20%; border: 0; background: none; }
 @media (max-width: 960px) { .roster { grid-template-columns: repeat(2, minmax(0, 1fr)); padding: var(--s-4); } }
+/* Ground: roster card on top, last night's wearable vitals underneath, inside one card */
+.gcards { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-2); padding: var(--s-3) var(--s-6); border-bottom: var(--bw) solid var(--c-hair); }
+.gcard { display: flex; flex-direction: column; min-width: 0; overflow: hidden; border-radius: 6px; border: var(--bw) solid var(--c-hair-strong); background: var(--c-surface, #12141A); }
+.gcard--watch { border-color: color-mix(in srgb, var(--c-watch) 55%, transparent); }
+.gcard--act { border-color: color-mix(in srgb, var(--c-act) 65%, transparent); }
+.gcard__hero { display: block; border-radius: 0; color: inherit; text-decoration: none; }
+.gcard__hero:hover .rcard__spec, .gcard__hero:focus-visible .rcard__spec { text-decoration: underline; text-underline-offset: 3px; }
+.gcard__vh { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-2); padding: var(--s-2) var(--s-3) var(--s-1); color: var(--c-text-2); font-size: 11px; }
+.gcard__sum { font-weight: var(--fw-semi); white-space: nowrap; }
+.gcard__sum--normal { color: var(--c-normal); } .gcard__sum--watch { color: var(--c-watch); } .gcard__sum--act { color: var(--c-act); }
+.gcard__vit { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 2px; padding: 0 var(--s-2) var(--s-2); }
+.gvit { display: grid; gap: 1px; min-width: 0; padding: 4px 6px; border-top: 2px solid var(--c-hair-strong); background: var(--c-surface-2); font-size: 11px; cursor: default; }
+.gvit--watch { border-top-color: var(--c-watch); } .gvit--act { border-top-color: var(--c-act); } .gvit--normal { border-top-color: var(--c-normal); }
+.gvit:focus-visible { outline: 2px solid var(--c-action); outline-offset: -2px; }
+.gvit__l { display: inline-flex; align-items: center; gap: 4px; color: var(--c-text-2); min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gvit__v { color: var(--c-text); font-size: var(--fs-label); font-weight: var(--fw-semi); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gvit__v small { margin-left: 2px; color: var(--c-text-3); font-size: 9px; font-weight: 400; }
+.gvit__d { color: var(--c-text-3); font-size: 10px; }
+.gvit--watch .gvit__d { color: var(--c-watch); } .gvit--act .gvit__d { color: var(--c-act); }
+.gvit--act .gvit__v { color: var(--c-act); }
+@media (max-width: 1280px) { .gcards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .gcards { grid-template-columns: minmax(0, 1fr); padding: var(--s-4); } }
 .log__tools { display: inline-flex; align-items: center; gap: var(--s-2); }
 .log__x { font-size: 20px; line-height: 1; padding: 0 var(--s-1); color: var(--c-text-2); }
 .log__x:hover { color: var(--c-text); }
@@ -1074,6 +1096,94 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
 @media (min-width: 1280px) {
   .crew > .sec:last-child > .sec__margin { display: flex; flex-direction: column; }
   .crew .crew__tl { flex: 1 1 0; min-height: 260px; }
+}
+/* ---------- Ground dashboard: compact, one screen ---------- */
+.gdash__bar { display: flex; align-items: center; gap: var(--s-4); flex-wrap: wrap; padding: var(--s-2) var(--s-6); border-bottom: var(--bw) solid var(--c-hair); }
+.gdash__t { font: var(--fw-regular) var(--fs-lead) / 1.2 var(--f-display); white-space: nowrap; }
+.gdash__dl { display: flex; flex-wrap: wrap; gap: 2px var(--s-4); flex: 1 1 auto; font-size: var(--fs-label); }
+.btn-sm { padding: 6px 12px; min-height: 0; font-size: var(--fs-label); }
+.gdash .gcards { padding: var(--s-2) var(--s-6); }
+.gdash__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.7fr) minmax(0, 1fr); }
+.gdash__col { min-width: 0; padding: var(--s-3) var(--s-4); }
+.gdash__col + .gdash__col { border-left: var(--bw) solid var(--c-hair); }
+.gdash__h { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-2); margin-bottom: var(--s-2); font: var(--fw-semi) var(--fs-body) / 1.3 var(--f-sans); }
+.gdash__esc { gap: var(--s-1); font-size: var(--fs-label); }
+.gdash__rows .srow { padding: 4px 0; font-size: var(--fs-label); }
+.gdash__adh { height: 40px; margin-top: var(--s-2); padding-bottom: var(--s-3); }
+.gtabs { display: flex; gap: 2px; border-bottom: var(--bw) solid var(--c-hair); margin-bottom: var(--s-3); overflow-x: auto; }
+.gtabs__b { padding: 6px var(--s-3); border-bottom: 2px solid transparent; margin-bottom: -1px; color: var(--c-text-2); font-size: var(--fs-label); white-space: nowrap; }
+.gtabs__b:hover { color: var(--c-text); }
+.gtabs__b.is-on { color: var(--c-text); border-bottom-color: var(--c-action); font-weight: var(--fw-semi); }
+.gdash__blocks { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-2); }
+.gblk { display: grid; gap: var(--s-1); padding: var(--s-2) var(--s-3); border: var(--bw) solid var(--c-hair-strong); border-top-width: 2px; min-width: 0; }
+.gblk--watch { border-top-color: var(--c-watch); } .gblk--act { border-top-color: var(--c-act); } .gblk--normal { border-top-color: var(--c-normal); }
+.gblk__h { display: flex; justify-content: space-between; align-items: baseline; gap: var(--s-2); font-size: var(--fs-label); }
+.gblk__t { font-weight: var(--fw-semi); }
+.gtbl--dense th, .gtbl--dense td { padding: 4px var(--s-2) 4px 0; }
+.gdash__side { display: flex; flex-direction: column; gap: var(--s-3); }
+.gdash__sum { padding-bottom: var(--s-2); border-bottom: var(--bw) solid var(--c-hair); }
+/* the team log fills what is left of the column and scrolls inside, never the page */
+.gdash__side .ground__tl { flex: 1 1 0; min-height: 220px; max-height: 420px; overflow: auto; }
+/* Ground · Crew status: vitals strip, Pedro conversation summary, activity log */
+.gp-vit { padding: 0; max-width: 640px; }
+.gp-talk { display: grid; gap: var(--s-2); }
+.gp-talk__d { padding: var(--s-2) var(--s-3); border: var(--bw) solid var(--c-hair-strong); }
+.gp-talk__h { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--s-1) var(--s-3); margin-bottom: var(--s-1); }
+.gp-talk__pts { display: grid; gap: 2px; padding-left: var(--s-4); list-style: disc; }
+.gp-act { max-height: 520px; overflow: auto; }
+/* Ground · Escalations: open list | log */
+.gesc { grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); }
+.gesc__list { display: grid; gap: var(--s-2); }
+.gesc__item { display: grid; gap: var(--s-1); padding: var(--s-2) var(--s-3); border: var(--bw) solid var(--c-hair-strong); border-left: 3px solid var(--c-act); }
+.gesc__who { display: flex; align-items: center; gap: var(--s-2); }
+.gesc__why { display: grid; gap: 2px; padding-left: var(--s-4); list-style: disc; color: var(--c-text-2); }
+.gesc__side .ground__tl { max-height: calc(100vh - 220px); }
+/* fill the screen: the three columns stretch to the bottom; charts and logs take the spare height */
+/* #view (the wrapper inside .main) has no height, so size against the viewport minus the app header */
+.gdash { min-height: calc(100vh - var(--hdr-h) - var(--ribbon-h, 0px)); display: flex; flex-direction: column; }
+.gdash__grid { flex: 1 1 auto; }
+.gdash__col { display: flex; flex-direction: column; }
+.gdash__adh { flex: 1 1 auto; height: auto; min-height: 48px; max-height: 220px; }
+.gdash__mid .gtabs__p { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; }
+.gdash__blocks { flex: 1 1 auto; grid-auto-rows: minmax(150px, 1fr); }
+.gblk { display: flex; flex-direction: column; }
+.gblk__plot { position: relative; display: block; flex: 1 1 auto; min-height: 48px; margin: var(--s-1) 0; }
+.gblk__plot svg { position: absolute; left: 0; top: 0; display: block; }
+.gvit__d { white-space: nowrap; }
+.gtabs { overflow-y: hidden; scrollbar-width: none; }
+.gtabs::-webkit-scrollbar { display: none; }
+@media (min-width: 1281px) {
+  /* exactly one screen: the grid gets what is left and everything inside shrinks to fit, never scrolls the page */
+  /* #view normally adds bottom padding for the corner orb; that padding was what scrolled */
+  #view:has(> .gdash) { height: 100%; padding-bottom: 0; }
+  .gdash { height: 100%; min-height: 560px; }
+  .gdash__grid { min-height: 0; grid-template-rows: minmax(0, 1fr); }
+  .gdash__col { min-height: 0; overflow: hidden; padding-top: var(--s-2); padding-bottom: var(--s-2); }
+  .gdash__adh { flex: 1 1 0; min-height: 40px; max-height: 150px; margin-top: auto; }
+  .gdash__blocks { grid-auto-rows: minmax(0, 1fr); min-height: 0; }
+  .gblk { min-height: 0; padding-top: var(--s-1); padding-bottom: var(--s-1); }
+  .gblk__plot { min-height: 28px; }
+  .gtabs__p { overflow: auto; }
+  .gdash__side .ground__tl { max-height: none; min-height: 0; }
+  .gesc__side .ground__tl { max-height: none; }
+  .gdash .gcard__hero.rcard { height: 76px; }
+  .gdash .gcard__hero .rcard__txt { padding-top: var(--s-2); padding-bottom: var(--s-2); }
+  .gdash .gcard__vh { padding-top: 4px; }
+  .gdash .gvit { padding: 3px 6px; }
+  .gdash__h { margin-bottom: var(--s-1); }
+  .gdash__h.mt3 { margin-top: var(--s-2); }
+}
+/* hero band shorter on the dashboard so the vitals fit */
+.gdash .gcard__hero.rcard { height: 88px; }
+.gdash .gcard__hero .rcard__spec { font-size: var(--fs-lead); }
+@media (max-width: 1280px) {
+  .gdash__grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1.6fr); }
+  .gdash__side { grid-column: 1 / -1; border-left: 0; border-top: var(--bw) solid var(--c-hair); }
+}
+@media (max-width: 760px) {
+  .gdash__grid { grid-template-columns: minmax(0, 1fr); }
+  .gdash__col + .gdash__col { border-left: 0; border-top: var(--bw) solid var(--c-hair); }
+  .gdash__bar, .gdash .gcards { padding-left: var(--s-4); padding-right: var(--s-4); }
 }
 /* denser team-log rows so more of the log fits without scrolling */
 .crew__tl [data-entry-trigger] { min-height: 28px; }

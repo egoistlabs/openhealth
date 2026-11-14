@@ -7,13 +7,13 @@ import { CREW, MISSION, P, crewEvents, crewById, day, hasBaseline, hm, solDate, 
 import { FlagList } from "./FlagCard";
 import { SettingsDialog } from "./SettingsDialog";
 import { PedroGuide } from "./PedroGuide";
-import { escalations, groundRows } from "@/lib/console/ground";
+import { escalations } from "@/lib/console/ground";
 import { tok } from "@/lib/console/plots";
 import { Icon, Num, Segmented, StatusMark, Toggle } from "@/components/ui";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { THEMES, useConsole } from "./ConsoleProvider";
 
-export const ROUTE = { home: "/", checkin: "/check-in", companion: "/companion", crew: "/crew", ground: "/ground" } as const;
+export const ROUTE = { home: "/", checkin: "/check-in", companion: "/companion", crew: "/crew", ground: "/ground", groundEsc: "/ground/escalations", groundReports: "/ground/reports" } as const;
 
 /* Who you can view as. "crew" (crew lead) still works in code but is hidden: for now the crew lead is just an astronaut. */
 const VIEW_AS: Array<["astro" | "ground", string]> = [["astro", "Astronaut"], ["ground", "Ground"]];
@@ -247,7 +247,14 @@ function Nav() {
     [ROUTE.crew, "Crew", on(ROUTE.crew), null],
   ];
   if (s.role === "crew") screens = [screens[2], screens[0], screens[1]];
-  if (s.role === "ground") screens = [[ROUTE.ground, "Ground", path === ROUTE.ground, null], screens[2]];
+  if (s.role === "ground") {
+    const nEsc = escalations(s.sol, s.shares, s.convo).length;
+    screens = [
+      [ROUTE.ground, "Dashboard", path === ROUTE.ground, null],
+      [ROUTE.groundEsc, "Escalations", path === ROUTE.groundEsc, nEsc ? <span className="nav__n nav__n--alert num">{nEsc}</span> : null],
+      [ROUTE.groundReports, "Pedro reports", path === ROUTE.groundReports, <span key="n" className="nav__n num">{CREW.filter((c) => day(c.id, s.sol)?.checkin).length}/{CREW.length}</span>],
+    ];
+  }
   const nAlerts = openFlags().length;
   const [help, setHelp] = useState(false);
 
@@ -264,7 +271,6 @@ function Nav() {
             </li>
           ))}
         </ul>
-        {s.role === "ground" ? <GroundCrewNav /> : null}
       </div>
       <div className="nav__bottom">
         <ul className="nav__list nav__list--tools">
@@ -302,32 +308,6 @@ function Nav() {
   );
 }
 
-/* ---------- Ground: one link per astronaut, with the worst status ground may see ---------- */
-function GroundCrewNav() {
-  const { s } = useConsole();
-  const path = usePathname();
-  const rows = groundRows(s.sol, s.shares);
-  const act = new Set(escalations(s.sol, s.shares, s.convo).map((e) => e.id));
-  return (
-    <div className="nav__group">
-      <span className="nav__gl small t2">Crew</span>
-      <ul className="nav__list" aria-label="Crew members">
-        {rows.map((r) => {
-          const href = `${ROUTE.ground}/${r.id}`, isOn = path === href, state = act.has(r.id) ? "act" : r.worst;
-          return (
-            <li key={r.id}>
-              <Link href={href} className={`nav__a nav__crew${isOn ? " is-on" : ""}`} aria-current={isOn ? "page" : undefined}
-                aria-label={`${r.full}, ${r.code}${state === "normal" ? "" : `, ${state}`}`}>
-                <span className="nav__crew-n">{r.full}</span>
-                {state === "normal" ? <span className="nav__n">{r.code}</span> : <StatusMark state={state} />}
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
-}
 
 /* ---------- mission log side panel ---------- */
 /* Alerts side panel: same slot and push behaviour as the Mission log, so the current screen stays put. */
@@ -427,20 +407,26 @@ function Tips() {
   const ref = useRef<HTMLDivElement>(null);
   const [text, setText] = useState<string | null>(null);
   const forEl = useRef<HTMLElement | null>(null);
+  const [placeFor, setPlaceFor] = useState(0);
+
+  /* Place the tip once it is visible with its new text, so its real height is known: below the element,
+     or above it when below would run off the bottom of the window (e.g. the check-in bars). */
+  useLayoutEffect(() => {
+    const tip = ref.current, el = forEl.current;
+    if (!tip || !el || text == null) return;
+    const r = el.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight, g = tok("--s-2");
+    const left = Math.min(window.innerWidth - tw - g, Math.max(g, r.left));
+    let top = r.bottom + g;
+    if (top + th > window.innerHeight - g) top = Math.max(g, r.top - th - g);
+    tip.style.left = left + "px"; tip.style.top = top + "px";
+  }, [text, placeFor]);
 
   useEffect(() => {
     const show = (el: HTMLElement) => {
       forEl.current = el;
       setText(el.dataset.tip || "");
       el.setAttribute("aria-describedby", "tip");
-      requestAnimationFrame(() => {
-        const tip = ref.current; if (!tip) return;
-        const r = el.getBoundingClientRect(), tw = tip.offsetWidth, th = tip.offsetHeight, g = tok("--s-2");
-        const left = Math.min(window.innerWidth - tw - g, Math.max(g, r.left));
-        let top = r.bottom + g;
-        if (top + th > window.innerHeight - g) top = r.top - th - g;
-        tip.style.left = left + "px"; tip.style.top = top + "px";
-      });
+      setPlaceFor((n) => n + 1); // position after React has rendered the new text (see the layout effect)
     };
     const hide = () => { forEl.current?.removeAttribute("aria-describedby"); forEl.current = null; setText(null); };
     const over = (e: MouseEvent) => { const t = (e.target as HTMLElement).closest<HTMLElement>("[data-tip]"); if (t && t !== forEl.current) show(t); else if (!t && forEl.current) hide(); };
