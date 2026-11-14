@@ -1,9 +1,13 @@
 import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
+import { resolveBrainRoot } from "./root.ts";
 import type { BrainDocument } from "./types.ts";
 
-const BRAIN_ROOT = path.join(process.cwd(), "..", "brain");
 const CONTENT_DIRECTORIES = ["reference", "procedures", "measures"] as const;
+
+function brainRoot(): string {
+  return resolveBrainRoot();
+}
 
 function parseList(value: string | undefined): string[] {
   if (!value) return [];
@@ -60,17 +64,18 @@ async function markdownFiles(directory: string): Promise<string[]> {
 }
 
 export async function loadBrainDocuments(): Promise<BrainDocument[]> {
+  const root = brainRoot();
   const files = (
     await Promise.all(
       CONTENT_DIRECTORIES.map((directory) =>
-        markdownFiles(path.join(BRAIN_ROOT, directory)),
+        markdownFiles(path.join(root, directory)),
       ),
     )
   ).flat();
 
   const documents = await Promise.all(
     files.map(async (file) => {
-      const relativePath = path.relative(BRAIN_ROOT, file).split(path.sep).join("/");
+      const relativePath = path.relative(root, file).split(path.sep).join("/");
       const content = await readFile(file, "utf8");
       return parseDocument(relativePath, content);
     }),
@@ -83,9 +88,13 @@ export async function loadBrainDocuments(): Promise<BrainDocument[]> {
 }
 
 export async function loadIdentity(): Promise<string> {
-  return readFile(path.join(BRAIN_ROOT, "identity", "companion.md"), "utf8");
+  return readFile(path.join(brainRoot(), "identity", "companion.md"), "utf8");
 }
 
 export async function loadCompanionInstructions(): Promise<string> {
-  return readFile(path.join(BRAIN_ROOT, "prompts", "companion.md"), "utf8");
+  return readFile(path.join(brainRoot(), "prompts", "companion.md"), "utf8");
+}
+
+export async function loadPromptFile(name: string): Promise<string> {
+  return readFile(path.join(brainRoot(), "prompts", `${name}.md`), "utf8");
 }

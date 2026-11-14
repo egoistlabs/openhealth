@@ -140,7 +140,7 @@ brain/
 │   ├── questions.jsonl  the test set
 │   └── results/         one result file per run, named after the brain version
 ├── version.json         the current brain version and its fingerprint
-└── changelog.md         one entry per version, with its intent (fix, add or change)
+└── changelog.md         one entry per version (with its intent) and per added source
 ```
 
 Crew data (check-ins, baselines, flags) is not in the brain. It belongs to the core loop, and code passes the numbers in at step 2.

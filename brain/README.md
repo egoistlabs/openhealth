@@ -5,6 +5,12 @@ small, human-readable source of approved context. The model does not search the
 folder or learn from it. Application code selects up to three matching active
 files, adds them to a short prompt, and checks the model's response.
 
+The folder lives at the **repository root**, next to `web/`, so that people who
+do not write code can find and edit it. Nothing in `web/` reads its own copy:
+the app, the evaluation runner and the add-a-source command all resolve this
+one folder. Launching the app from `web/` or from the repository root works, and
+`BRAIN_DIR` can point the tooling at a staged copy when testing a new source.
+
 ## How to edit it
 
 - Keep one subject per file, in plain language, and under about 400 words.
@@ -40,20 +46,44 @@ replaces:
 - `prompts/`: fixed-task prompt guidance.
 - `safety/`: code-driven red-flag phrases and mandatory escalation text.
 - `evals/`: offline question set and generated run reports.
+- `inbox/`: source packages waiting to be added or tested.
+
+## Adding a source
+
+A package is a folder in `inbox/` with one source file and a `tests.jsonl`:
+
+```
+inbox/short-stretching/
+├── procedure.md     written in the file template
+└── tests.jsonl      questions it must now answer, and one it must still decline
+```
+
+One command validates it, tests it against a temporary copy of this folder, and
+only then makes it live:
+
+```bash
+cd web
+npm run brain:add -- inbox/short-stretching
+npm run brain:add -- inbox/short-stretching --package-only   # demo: package tests only
+```
+
+The full command runs the package's tests and the whole test set, and refuses to
+go live if a question that passed before now fails. Replaced files are marked
+`status: replaced` and kept. Every live change is recorded in `changelog.md`.
 
 ## Changing the brain safely
 
-Every change follows the same loop. Run the commands from the `web/` folder.
+Every change follows the same loop. Run the commands from the `web/` folder:
 
 1. **Change** a file, or add one, using the template above. Replace old
    guidance by adding a new file and marking the old one `status: replaced`.
    Never delete a file.
 2. **Add questions** for it in `evals/questions.jsonl`: at least two it must
    answer and one nearby question it must still decline.
-3. **Check** with `pnpm brain:check`. It takes a second and does not use the
+3. **Check** with `npm run brain:check`. It takes a second and does not use the
    model.
-4. **Evaluate** with `pnpm evals`.
-5. **Release** with `pnpm brain:release <intent> "what changed"`, only if red flags are
+4. **Evaluate** with `npm run evals`.
+5. **Release** with `npm run brain:release <intent> "what changed"`, only if red flags are
    at 100%, declines at 95% or more, and no question that passed before now
    fails.
 
@@ -96,11 +126,11 @@ change it was.
 | `add` | The companion knows something new: a new file, a new topic, a new red-flag term. | 1.0.0 to 1.1.0 |
 | `change` | Guidance, behaviour or safety rules are different: a file was replaced or retired, the identity changed, a red flag was removed. | 1.0.0 to 2.0.0 |
 
-- `pnpm brain:version` shows the current version and lists the files that
+- `npm run brain:version` shows the current version and lists the files that
   changed since it was released.
-- `pnpm brain:release <intent> "what changed"` records the brain as it is now
+- `npm run brain:release <intent> "what changed"` records the brain as it is now
   as the next version, for example
-  `pnpm brain:release fix "Tuned the answer prompt"`. It adds an entry to
+  `npm run brain:release fix "Tuned the answer prompt"`. It adds an entry to
   `changelog.md` with the intent, the files and the eval score.
 
 A brain with unreleased edits shows as `v1.0.0+changes`. Run the evals on it as
@@ -112,6 +142,9 @@ The version covers identity, reference, procedures, measures, prompts and
 safety. The question set in `evals/` is tracked separately, by its own
 fingerprint in each report, because scores from different question sets cannot
 be compared.
+
+Adding a source with `npm run brain:add` does not release a version by itself.
+Run `npm run brain:version` afterwards and release with the right intent.
 
 Changing a brain file changes the context available to the model without
 retraining it. It does not override safety checks implemented in code.

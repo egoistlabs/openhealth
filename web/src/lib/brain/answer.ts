@@ -2,6 +2,7 @@ import { loadBrainDocuments, loadCompanionInstructions, loadIdentity } from "./l
 import { checkRedFlags } from "./safety.ts";
 import { searchBrain } from "./search.ts";
 import { generateGroundedAnswer } from "../ollama/client.ts";
+import { numbersIn } from "../text.ts";
 import type { ScoredDocument } from "./types.ts";
 
 export const DECLINE_MESSAGE = "I don't have that on board.";
@@ -20,10 +21,6 @@ export type CompanionAnswer = {
   escalation: { required: boolean; categories?: string[] };
 };
 
-function numbersMentionedIn(text: string): Set<string> {
-  return new Set(text.match(/-?\d+(?:\.\d+)?/g) ?? []);
-}
-
 export function verifyGroundedAnswer(
   answer: { can_answer: boolean; answer: string; sources_used: string[] },
   allowedSources: ScoredDocument[],
@@ -35,10 +32,11 @@ export function verifyGroundedAnswer(
   const sourceIds = new Set(allowedSources.map((source) => source.id));
   if (answer.sources_used.some((source) => !sourceIds.has(source))) return false;
 
-  const allowedNumbers = numbersMentionedIn(
-    `${allowedSources.map((source) => source.body).join("\n")}\n${JSON.stringify(numbers)}`,
-  );
-  return [...numbersMentionedIn(answer.answer)].every((number) => allowedNumbers.has(number));
+  const allowedNumbers = new Set([
+    ...numbersIn(allowedSources.map((source) => source.body).join("\n")),
+    ...numbersIn(JSON.stringify(numbers)),
+  ]);
+  return [...numbersIn(answer.answer)].every((number) => allowedNumbers.has(number));
 }
 
 export async function answerQuestion(

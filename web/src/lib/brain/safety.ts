@@ -1,18 +1,20 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
+import { resolveBrainRoot } from "./root.ts";
 
 type RedFlagConfiguration = {
   escalation_message: string;
   categories: Array<{ id: string; terms: string[] }>;
 };
 
-const RED_FLAGS_PATH = path.join(process.cwd(), "..", "brain", "safety", "red-flags.json");
-
 export async function checkRedFlags(
   message: string,
 ): Promise<{ matched: boolean; categories: string[]; escalationMessage: string }> {
   const configuration = JSON.parse(
-    await readFile(RED_FLAGS_PATH, "utf8"),
+    await readFile(
+      path.join(resolveBrainRoot(), "safety", "red-flags.json"),
+      "utf8",
+    ),
   ) as RedFlagConfiguration;
   const normalizedMessage = message.toLowerCase().replace(/\s+/g, " ");
   const categories = configuration.categories

@@ -1,6 +1,6 @@
 // Show or release the brain version.
-//   pnpm brain:version                          show the version and what changed since
-//   pnpm brain:release <intent> "what changed"  record the brain as it is now as the next version
+//   npm run brain:version                          show the version and what changed since
+//   npm run brain:release <intent> "what changed"  record the brain as it is now as the next version
 //
 // The intent says why the version was made, and decides the number:
 //   fix    1.0.0 -> 1.0.1   add    1.0.0 -> 1.1.0   change 1.0.0 -> 2.0.0
@@ -20,7 +20,9 @@ import {
 } from "../src/lib/brain/version.ts";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
-const brainDirectory = path.resolve(scriptDirectory, "../../brain");
+const brainDirectory = process.env.BRAIN_DIR
+  ? path.resolve(process.cwd(), process.env.BRAIN_DIR)
+  : path.resolve(scriptDirectory, "../../brain");
 const CONTENT = ["reference/", "procedures/", "measures/"];
 
 type Score = { passed: number; total: number };
@@ -80,7 +82,7 @@ async function main() {
     if (current.modified) {
       console.log("\nChanged since the last release:");
       printChanges(current.changes);
-      console.log('\nTo release: pnpm brain:release <intent> "what changed"');
+      console.log('\nTo release: npm run brain:release <intent> "what changed"');
       printIntents();
     }
     return;
@@ -89,7 +91,7 @@ async function main() {
   const intent = rest[0] as Intent;
   const note = rest.slice(1).join(" ").trim();
   if (!(intent in INTENTS) || !note) {
-    console.error('Give an intent and say what changed: pnpm brain:release <intent> "what changed"');
+    console.error('Give an intent and say what changed: npm run brain:release <intent> "what changed"');
     printIntents();
     process.exitCode = 1;
     return;
@@ -111,7 +113,7 @@ async function main() {
   const check = await checkBrain(brainDirectory);
   if (check.errors.length > 0) {
     for (const error of check.errors) console.error(`ERROR    ${error}`);
-    console.error("\nThe brain has errors, so no version was made. Fix them, then run pnpm brain:check.");
+    console.error("\nThe brain has errors, so no version was made. Fix them, then run npm run brain:check.");
     process.exitCode = 1;
     return;
   }

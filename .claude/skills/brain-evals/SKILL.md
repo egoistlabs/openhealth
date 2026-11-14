@@ -7,7 +7,7 @@ description: Add, change or review the eval questions that test the companion's 
 
 The question set in `brain/evals/questions.jsonl` is the safety net for every brain change. It is only useful if it is honest, so the main rule is: a question changes because the question was wrong, never because the companion failed it.
 
-Run every command from `web/`. The brain itself is the `brain/` folder at the repo root, so file paths below start from the repo root. Use `npm run` if `pnpm` is not installed.
+Run every command from `web/`. The brain is the `brain/` folder at the repo root, so file paths below start from the repo root. This project uses `npm run`.
 
 ## The three kinds of question
 
@@ -39,13 +39,13 @@ One JSON object per line:
 - **A new or replaced brain file:** at least two answerable questions and one nearby decline question.
 - **A new red-flag term or category:** one red-flag question for it.
 - **A bad answer seen in real use:** add the exact question as typed, with the kind it should have been. This is the most valuable source of questions.
-- **A file with no question:** `pnpm brain:check` lists these as warnings.
+- **A file with no question:** `npm run brain:check` lists these as warnings.
 
 ## Steps
 
 1. Add or edit lines in `brain/evals/questions.jsonl`.
-2. Run `pnpm brain:check`. It catches a missing field, a duplicate id, a `must_cite` that points to a missing or replaced file, and a red-flag question that matches no term. Fix every error.
-3. Run `pnpm evals` to get a score for the new question set.
+2. Run `npm run brain:check`. It catches a missing field, a duplicate id, a `must_cite` that points to a missing or replaced file, and a red-flag question that matches no term. Fix every error.
+3. Run `npm run evals` to get a score for the new question set.
 4. Tell the person that the question set changed, so the new scores cannot be compared with older reports. The first run after a change is the new baseline.
 
 A change to the question set alone does not make a new brain version.
