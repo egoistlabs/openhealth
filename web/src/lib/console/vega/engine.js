@@ -473,8 +473,11 @@ class TextSpeech {
     this._next();
   }
   stop() {
+    // speechSynthesis is shared by the page: only cancel it when this avatar is the one talking,
+    // so a silent avatar (the corner thumbnail) being removed never cuts off another one
+    const mine = this.active || this.queue.length > 0;
     this.token++; this.queue = []; this.segs = []; clearTimeout(this.timer);
-    if (this.ttsOK) speechSynthesis.cancel();
+    if (this.ttsOK && mine) speechSynthesis.cancel();
     if (this.active) { this.active = false; this.hooks.end?.(); }
   }
   _layout(from, t0) {
@@ -590,7 +593,10 @@ function pickVoice(voices, name) {
 
 /* ───────────────────────── mount ───────────────────────── */
 /** Mount the avatar into `stage` (a sized element). hooks: { state, caption (each sentence as it starts), word (each word as it is said: { text, start } within the sentence), emotion, note, frame }. Returns the control API. */
-export function createVega(stage, hooks = {}) {
+/* opts.framing: "body" (default, head to waist) or "head" (head and shoulders, for small portraits).
+   opts.still: draw a moment of the idle pose and then stop the loop (reduced motion, thumbnails). */
+export function createVega(stage, hooks = {}, opts = {}) {
+  const headShot = opts.framing === 'head';
   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.setClearColor(0x000000, 0);
@@ -617,9 +623,10 @@ export function createVega(stage, hooks = {}) {
   function fit() {
     const w = stage.clientWidth, h = stage.clientHeight; if (!w || !h) return;
     renderer.setSize(w, h, false); camera.aspect = w / h;
-    const tanH = Math.tan((camera.fov * Math.PI) / 360), halfH = 2.2, halfW = 1.95;
-    camera.position.set(0, -0.42, Math.max(halfH / tanH, halfW / (tanH * camera.aspect)));
-    camera.lookAt(0, -0.42, 0); camera.updateProjectionMatrix();
+    const tanH = Math.tan((camera.fov * Math.PI) / 360);
+    const [cy, halfH, halfW] = headShot ? [0.02, 1.4, 1.3] : [-0.42, 2.2, 1.95];
+    camera.position.set(0, cy, Math.max(halfH / tanH, halfW / (tanH * camera.aspect)));
+    camera.lookAt(0, cy, 0); camera.updateProjectionMatrix();
   }
   const ro = new ResizeObserver(fit); ro.observe(stage); fit();
 
@@ -819,6 +826,7 @@ export function createVega(stage, hooks = {}) {
     },
   };
 
-  renderer.setAnimationLoop(animate);
+  /* still: let the pose settle for a moment, then stop drawing */
+  renderer.setAnimationLoop(opts.still ? (ms) => { animate(ms); if (clock > 0.6) renderer.setAnimationLoop(null); } : animate);
   return api;
 }

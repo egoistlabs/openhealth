@@ -106,7 +106,7 @@ function CompanionStage() {
     if (rows.length <= spoken.current) return;
     const fresh = rows.slice(spoken.current);
     spoken.current = rows.length;
-    const reply = [...fresh].reverse().find((r) => r.who === "companion" && r.text);
+    const reply = [...fresh].reverse().find((r) => r.who === "companion" && r.text && !r.restored);
     if (!reply || reply.stopped || !vega.current) return;
     /* the answer first, so its opening sentence stands on its own; the suggested action last */
     const aloud = reply.action ? `${reply.text} Worth trying: ${reply.action}` : reply.text!;

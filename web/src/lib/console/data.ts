@@ -98,6 +98,8 @@ export type ConvoRow = {
   noAnswer?: boolean;
   offline?: boolean;
   stopped?: boolean;
+  /** loaded from local storage: shown in the log, never spoken again */
+  restored?: boolean;
 };
 
 export const P = 142; // present sol
@@ -546,7 +548,9 @@ export function insights(id: string, s: number) {
 export function solDate(s: number) { const d = new Date(MISSION.earthDayOfSol1 + (s - 1) * 88775244); return d.toISOString().slice(0, 10); }
 
 /* ---------- writes (B2: saving twice on one day replaces the first) ---------- */
-export function setToday(id: string, vals: Partial<Day>) { overrides[id + "|" + P] = vals; bump(); }
+export function setToday(id: string, vals: Partial<Day>) { setDay(id, P, vals); }
+/* real values for one sol (a submitted check-in, loaded from local storage) replace the simulated ones */
+export function setDay(id: string, sol: number, vals: Partial<Day>) { overrides[id + "|" + sol] = vals; bump(); }
 export function previewToday<T>(id: string, vals: Partial<Day>, fn: () => T): T {
   const k = id + "|" + P, prev = overrides[k];
   overrides[k] = vals; bump();

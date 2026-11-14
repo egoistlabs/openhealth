@@ -5,6 +5,7 @@ import { createVega } from "@/lib/console/vega/engine";
 import { Presence } from "@/lib/console/presence";
 import type { Emotion } from "@/lib/console/emotion";
 import { Persona } from "./Persona";
+import { usePresenceState } from "./Orb";
 import { COMPANION_NAME } from "@/lib/console/data";
 
 export type VegaApi = {
@@ -43,8 +44,8 @@ export type SpeechEvents = {
   end?: () => void;
 };
 
-/* The companion's 3D talking avatar (A7). Falls back to the 2D picture (Persona) under
-   reduced motion or without WebGL. The parent gets the control API through onReady. */
+/* The companion's 3D talking avatar (A7). Under reduced motion it is drawn once, still; without WebGL
+   it falls back to the 2D picture (Persona). The parent gets the control API through onReady. */
 export function VegaAvatar({ onReady, onSpeech }: { onReady: (api: VegaApi | null) => void; onSpeech?: SpeechEvents }) {
   const ref = useRef<HTMLDivElement>(null);
   const reduced = useSyncExternalStore(subscribeRM, () => window.matchMedia(RM).matches, () => false);
@@ -55,7 +56,7 @@ export function VegaAvatar({ onReady, onSpeech }: { onReady: (api: VegaApi | nul
 
   useEffect(() => {
     const el = ref.current;
-    if (reduced || !canRender || !el) return;
+    if (!canRender || !el) return;
     let api: VegaApi;
     try {
       api = createVega(el, {
@@ -67,7 +68,7 @@ export function VegaAvatar({ onReady, onSpeech }: { onReady: (api: VegaApi | nul
         caption: (s: string) => { if (s) speechRef.current?.sentence?.(s); },
         word: (w: { text: string; start: number }) => speechRef.current?.word?.(w),
         frame: (o: { jawOpen: number }) => Presence.setAmp(o.jawOpen),
-      }) as unknown as VegaApi;
+      }, { still: reduced }) as unknown as VegaApi;
     } catch {
       return; // WebGL failed at runtime: the stage stays empty rather than crashing the screen
     }
@@ -75,6 +76,31 @@ export function VegaAvatar({ onReady, onSpeech }: { onReady: (api: VegaApi | nul
     return () => { readyRef.current(null); api.dispose(); };
   }, [reduced, canRender]);
 
-  if (reduced || !canRender) return <Persona />;
+  if (!canRender) return <Persona />;
   return <div ref={ref} className="vega" role="img" aria-label={COMPANION_NAME} />;
+}
+
+/* Pedro's face for the corner button that opens the companion: the same 3D model, framed on his head.
+   Still under reduced motion; without WebGL, his initial. The ring shows the companion's state. */
+export function PedroThumb() {
+  const ref = useRef<HTMLSpanElement>(null);
+  const state = usePresenceState();
+  const reduced = useSyncExternalStore(subscribeRM, () => window.matchMedia(RM).matches, () => false);
+  const canRender = useSyncExternalStore(noop, hasWebGL, () => true);
+  useEffect(() => {
+    const el = ref.current;
+    if (!canRender || !el) return;
+    let api: VegaApi;
+    try {
+      api = createVega(el, {}, { framing: "head", still: reduced }) as unknown as VegaApi;
+    } catch {
+      return; // the initial underneath stays visible
+    }
+    return () => api.dispose();
+  }, [reduced, canRender]);
+  return (
+    <span ref={ref} className="persona persona--thumb pedro-thumb" data-state={state} role="img" aria-label={COMPANION_NAME}>
+      <span className="pedro-thumb__initial" aria-hidden="true">{COMPANION_NAME[0]}</span>
+    </span>
+  );
 }

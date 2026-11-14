@@ -5,12 +5,13 @@ import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
   COMPANION_NAME, MEASURES, MISSION, MKEY, P, baseline, crewById, day, fmt, fmtBase, fmtDelta, hm, median, mstatus, previewToday, setToday,
-  type Day,
+  type Day, type LogEvent,
 } from "@/lib/console/data";
 import { Icon, Num, StatusMark, StatusWord } from "@/components/ui";
 import StepProgress, { type ProgressStep } from "@/components/ui/c-progress-7";
 import { useConsole } from "./ConsoleProvider";
 import { ReactionGame } from "./ReactionGame";
+import { saveCheckin } from "@/lib/console/store";
 import { ROUTE, ReplayNote } from "./Shell";
 import { CheckinPedro, type PedroLine } from "./CheckinPedro";
 
@@ -45,7 +46,7 @@ export function CheckinScreen({ step }: { step?: string }) {
     const idx = step ? Math.max(0, STEPS.indexOf((step === "timing" ? "sleep" : step) as Step)) : 0;
     return {
       step: idx,
-      vals: { onset: d?.onset ?? 0, wake: d?.wake ?? 420, mood: s.draft.mood ?? null, load: s.draft.load ?? null, team: s.draft.team ?? null, meals: null, rt: null, slow: null } as Vals,
+      vals: { onset: d?.onset ?? 0, wake: d?.wake ?? 420, mood: s.draft.mood ?? d?.mood ?? null, load: s.draft.load ?? d?.load ?? null, team: s.draft.team ?? d?.team ?? null, meals: d?.meals ?? null, rt: d?.rt ?? null, slow: d?.slow ?? null } as Vals,
       skipped: {} as Record<string, boolean>,
       pick: 0,
     };
@@ -59,8 +60,11 @@ export function CheckinScreen({ step }: { step?: string }) {
   const [trials, setTrials] = useState<number[]>([]);
   const qRef = useRef<HTMLHeadingElement>(null);
   const [lastMe, setLastMe] = useState(s.me);
+  const [lastRev, setLastRev] = useState(s.rev);
 
   // switching person in the demo menu restarts the check-in for that person
+  // saved check-ins finish loading from local storage after the first render: start again from them
+  if (lastRev !== s.rev && lastMe === s.me) { setLastRev(s.rev); setCi(init()); }
   if (lastMe !== s.me) { setLastMe(s.me); const n = init(); setCi(n); say(greet(n.step)); }
 
   useEffect(() => { qRef.current?.focus({ preventScroll: true }); }, [ci.step]);
@@ -104,15 +108,20 @@ export function CheckinScreen({ step }: { step?: string }) {
   };
 
   const submit = () => {
-    setToday(s.me, previewVals());
+    const today = previewVals();
+    setToday(s.me, today);
     const flags = c.flagsFor();
+    const added: LogEvent[] = [{ sol: P, min: clockMin, type: "checkin", sev: "info", code: "CI-01", text: "You completed your check-in." }];
+    if (vals.rt != null) added.push({ sol: P, min: clockMin - 1, type: "tap", sev: "info", code: "PF-02", text: `Your reaction test median was ${vals.rt} ms.` });
+    // kept on this device, so it is still there after a reload (lib/console/store.ts)
+    const stored = saveCheckin({ id: s.me, sol: P, savedAt: new Date().toISOString(), day: today, events: added });
     set((p) => {
-      const extra = [...(p.extra[p.me] || []), { sol: P, min: clockMin, type: "checkin" as const, sev: "info" as const, code: "CI-01", text: "You completed your check-in." }];
-      if (vals.rt != null) extra.push({ sol: P, min: clockMin - 1, type: "tap" as const, sev: "info" as const, code: "PF-02", text: `Your reaction test median was ${vals.rt} ms.` });
-      return { draft: {}, extra: { ...p.extra, [p.me]: extra }, rev: p.rev + 1 };
+      // a resubmission replaces today's earlier log lines rather than adding a second set
+      const kept = (p.extra[p.me] || []).filter((e) => !(e.sol === P && (e.code === "CI-01" || e.code === "PF-02")));
+      return { draft: {}, extra: { ...p.extra, [p.me]: [...kept, ...added] }, rev: p.rev + 1 };
     });
     c.addLines([{ who: "companion", text: flags.length ? `Thanks. Logged. ${7 - flags.length} of 7 within your normal; ${MKEY[flags[0].key].short} is still on watch.` : "Thanks. Logged. Everything sits within your normal." }]);
-    c.say("Check-in submitted.");
+    c.say(stored ? "Check-in submitted and saved on this device." : "Check-in submitted. This browser blocks storage, so it will be gone after a reload.");
     router.push(ROUTE.home);
   };
 

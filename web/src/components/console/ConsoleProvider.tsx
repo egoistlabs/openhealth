@@ -2,10 +2,11 @@
 
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import {
-  CREW, KEYS, MISSION, P, RANK, conversation, crewById, day, events, isOut, mstatus,
+  CREW, KEYS, MISSION, P, RANK, conversation, crewById, day, events, isOut, mstatus, setDay,
   type ConvoRow, type LogEvent, type MeasureKey, type Shares, type Status, type Tone,
 } from "@/lib/console/data";
 import { Presence } from "@/lib/console/presence";
+import { loadCheckins, loadConvo, saveConvo } from "@/lib/console/store";
 
 export type Theme = "blueprint" | "console" | "clinic";
 export const THEMES: Array<[Theme, string, string]> = [
@@ -75,6 +76,7 @@ type Ctx = {
 };
 
 const ConsoleContext = createContext<Ctx | null>(null);
+const noopSubscribe = () => () => {};
 
 export function useConsole() {
   const c = useContext(ConsoleContext);
@@ -96,6 +98,30 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
     const id = window.setInterval(() => setElapsed(Math.floor((Date.now() - t0.current) / 60000)), 5000);
     return () => window.clearInterval(id);
   }, []);
+
+  // submitted check-ins from local storage replace the simulated values for their sols.
+  // Read once, on the first render after hydration (the server has no storage, so SSR matches).
+  const onClient = useSyncExternalStore(noopSubscribe, () => true, () => false);
+  const [storeRead, setStoreRead] = useState(false);
+  if (onClient && !storeRead) {
+    setStoreRead(true);
+    const saved = loadCheckins();
+    if (saved.length) {
+      const extra: Record<string, LogEvent[]> = {};
+      for (const c of saved) {
+        setDay(c.id, c.sol, c.day); // idempotent, so a repeated render is harmless
+        (extra[c.id] ||= []).push(...c.events);
+      }
+      setS((p) => ({ ...p, extra: { ...p.extra, ...extra }, rev: p.rev + 1 }));
+    }
+    const convo = loadConvo();
+    if (Object.keys(convo).length) {
+      const marked = Object.fromEntries(Object.entries(convo).map(([id, rows]) => [id, rows.map((r) => ({ ...r, restored: true }))]));
+      setS((p) => ({ ...p, convo: { ...marked, ...p.convo } }));
+    }
+  }
+  // the companion log is written back whenever it changes (after the saved one has been read, so it is never overwritten by an empty log)
+  useEffect(() => { if (storeRead) saveConvo(s.convo); }, [s.convo, storeRead]);
 
   // look: lives on <html data-theme> (set before paint by the root layout script)
   const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "console" as Theme);
