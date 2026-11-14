@@ -213,10 +213,19 @@ function CompanionStage() {
             <button type="button" className="ta ta--quiet" aria-expanded={s.drawer} aria-controls="drawer" onClick={() => set((p) => ({ drawer: !p.drawer }))}>{s.drawer ? "Hide log" : "Show log"}</button>
           </div>
           {<>
-            <VegaAvatar onSpeech={onSpeech} onReady={(api) => {
-              vega.current = api;
-              api?.setRestEmotion(restEmotion(worst));
-            }} />
+            <div className="vega-wrap">
+              <VegaAvatar onSpeech={onSpeech} onReady={(api) => {
+                vega.current = api;
+                api?.setRestEmotion(restEmotion(worst));
+              }} />
+              {/* thought bubble while Pedro works on an answer (before he starts speaking) */}
+              {(working || busy) && speaking == null && reveal == null ? (
+                <span className="think" aria-hidden="true" key={working?.[working.length - 1] ?? "busy"}>
+                  <i className="think__s think__s--1" /><i className="think__s think__s--2" />
+                  <span className="think__cloud"><span className="think__dots"><i /><i /><i /></span></span>
+                </span>
+              ) : null}
+            </div>
             <Reply row={shown} live={reveal != null || speaking != null} progress={chat.progress} />
           </>}
         </section>
