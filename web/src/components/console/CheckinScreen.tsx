@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 import {
-  COMPANION_NAME, MEASURES, MISSION, MKEY, P, baseline, crewById, day, fmt, fmtBase, fmtDelta, hm, median, mstatus, previewToday, setToday,
+  COMPANION_NAME, MEASURES, MISSION, MKEY, P, baseline, crewById, day, fmt, fmtBase, fmtDelta, hm, listJoin, median, mstatus, previewToday, setToday,
   type Day, type LogEvent,
 } from "@/lib/console/data";
 import { Icon, Num, StatusMark, StatusWord } from "@/components/ui";
@@ -14,7 +14,8 @@ import { ReactionGame } from "./ReactionGame";
 import { saveCheckin } from "@/lib/console/store";
 import { ROUTE, ReplayNote } from "./Shell";
 import { CheckinPedro, type PedroLine } from "./CheckinPedro";
-import { BodyMap, needsDetails, type PainMark } from "./BodyMap";
+import { BodyMap, PainSummary, isSkinMark, needsDetails, sevColour, skinKindFrom, type PainMark } from "./BodyMap";
+import { clearFollowUp, useFollowUps, type FollowUp } from "@/lib/console/body/followups";
 
 const STEPS = ["sleep", "body", "mood", "load", "team", "meals", "game", "review"] as const;
 const LABEL: Record<(typeof STEPS)[number], string> = { sleep: "Sleep", body: "Body", mood: "Mood", load: "Day load", team: "Teamwork", meals: "Shared meals", game: "Reaction game", review: "Review" };
@@ -62,6 +63,11 @@ export function CheckinScreen({ step }: { step?: string }) {
   const say = (text: string) => setLine((p) => ({ id: p.id + 1, text }));
   /* true while Pedro turns a spoken answer into a value: the step stays locked until it lands */
   const [hearing, setHearing] = useState(false);
+  /* body step: the part open in the body map panel, which a spoken note is added to */
+  const [painFocus, setPainFocus] = useState<{ key: string; label: string } | null>(null);
+  /* spots flagged on Home ("follow up at the next check-in"): the next check-in's body step asks about them.
+     Flags are only made after a check-in is submitted, so any flag present now is for this check-in. */
+  const followUps = useFollowUps(s.me).filter((f) => f.sol <= P);
   const [trials, setTrials] = useState<number[]>([]);
   const qRef = useRef<HTMLHeadingElement>(null);
   const [lastMe, setLastMe] = useState(s.me);
@@ -100,7 +106,10 @@ export function CheckinScreen({ step }: { step?: string }) {
   const go = (n: number) => {
     const to = Math.max(0, Math.min(STEPS.length - 1, n));
     setCi((p) => ({ ...p, step: to }));
-    say(ASK[STEPS[to]]);
+    setPainFocus(null); // the body map reopens with no part selected
+    say(STEPS[to] === "body" && followUps.length
+      ? `${ASK.body} You asked me to follow up on ${listJoin(followUps.map((f) => f.region.toLowerCase()))}. Is it still there?`
+      : ASK[STEPS[to]]);
   };
 
   const previewVals = (): Partial<Day> => {
@@ -117,6 +126,8 @@ export function CheckinScreen({ step }: { step?: string }) {
     setToday(s.me, today);
     const flags = c.flagsFor();
     const added: LogEvent[] = [{ sol: P, min: clockMin, type: "checkin", sev: "info", code: "CI-01", text: "You completed your check-in." }];
+    /* a followed-up spot that was marked again is logged again, so its follow-up is done */
+    if (!ci.skipped.body) for (const f of followUps) if (vals.pain.some((p) => p.id === f.id)) clearFollowUp(s.me, f.id);
     if (!ci.skipped.body && vals.pain.length) added.push({ sol: P, min: clockMin - 2, type: "checkin", sev: "info", code: "PN-01", text: `Pain logged: ${vals.pain.map((p) => `${p.region.toLowerCase()} ${p.level}/10${p.kind ? `, ${p.kind.toLowerCase()}` : ""} (${p.note?.trim()})`).join(", ")}.`, pain: vals.pain });
     if (vals.rt != null) added.push({ sol: P, min: clockMin - 1, type: "tap", sev: "info", code: "PF-02", text: `Your reaction test median was ${vals.rt} ms.` });
     // kept on this device, so it is still there after a reload (lib/console/store.ts)
@@ -184,10 +195,35 @@ export function CheckinScreen({ step }: { step?: string }) {
     const read = n != null && !new RegExp(`\\b(${n}|${NUMBER_WORDS[n]})\\b`, "i").test(text);
     say(read ? `That sounds like ${got} out of 5. Press Next to save it, or tap to change it.` : `Got it: ${got}. Press Next to save it, or tap to change it.`);
   };
+  /* body step: a spoken answer becomes the note of the part open in the body map panel (painFocus) */
+  const focusPain = (f: { key: string; label: string } | null) => {
+    if (f && f.key !== painFocus?.key) {
+      const skin = f.key.includes(":openhealth-skin-");
+      say(skin ? `Tell me about the ${f.label.toLowerCase()}: what it looks like and when it started. Hold the mic, or type it in the panel.`
+        : `Tell me about your ${f.label.toLowerCase()}: when it hurts and what it feels like. Hold the mic, or type it in the panel.`);
+    }
+    setPainFocus(f);
+  };
+  const applyPain = (text: string) => {
+    const mark = painFocus ? vals.pain.find((p) => p.id === painFocus.key) : undefined;
+    const said = text.trim();
+    if (!mark) { say("Tap the spot that hurts first, then tell me about it."); return; }
+    if (!said) { say(`Sorry, I didn't catch that. Tell me about your ${mark.region.toLowerCase()}.`); return; }
+    const kind = isSkinMark(mark) && !mark.kind ? skinKindFrom(said) : undefined;
+    const m = said.match(/\b(10|[1-9]|one|two|three|four|five|six|seven|eight|nine|ten)\s*(?:\/|out of|over)\s*(?:10|ten)\b/i);
+    const level = m ? (Number(m[1]) || ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"].indexOf(m[1].toLowerCase())) : undefined;
+    const note = mark.note?.trim() ? `${mark.note.trim()}. ${said}` : said;
+    setVal({ pain: vals.pain.map((p) => (p.id === mark.id ? { ...p, note, ...(kind ? { kind } : null), ...(level ? { level } : null) } : p)), noPain: false }, "body");
+    const extra = [kind ? `marked as ${kind.toLowerCase()}` : "", level ? `${level} out of 10` : ""].filter(Boolean).join(", ");
+    const missing = isSkinMark(mark) && !mark.kind && !kind ? " Pick what it is in the panel too." : "";
+    say(`Added to your ${mark.region.toLowerCase()}${extra ? `, ${extra}` : ""}. Check the note in the panel.${missing}`);
+  };
   const hear = async (text: string) => {
     setHearing(true);
-    try { await apply(text, k); } finally { setHearing(false); }
+    try { if (k === "body") applyPain(text); else await apply(text, k); } finally { setHearing(false); }
   };
+  /* the mic shows on the body step once a marked spot is open in the panel */
+  const painListen = k === "body" && !!painFocus && vals.pain.some((p) => p.id === painFocus.key);
 
   /* ---------- steps ---------- */
   const stepSleep = () => {
@@ -313,12 +349,40 @@ export function CheckinScreen({ step }: { step?: string }) {
 
   /* pain pins from the last 14 sols (logged by earlier check-ins on this device) */
   const painHistory: PainMark[] = (s.extra[s.me] || []).filter((e) => e.code === "PN-01" && e.sol >= P - 14 && e.sol < P).flatMap((e) => e.pain ?? []);
+  /* follow-up answers: "still there" marks the spot again (same area and type) for a fresh rating and note */
+  const stillThere = (f: FollowUp) => {
+    if (!vals.pain.some((p) => p.id === f.id)) setVal({ pain: [...vals.pain, { id: f.id, view: "front", x: 0, y: 0, region: f.region, level: f.level, kind: f.kind }], noPain: false }, "body");
+    say(`Thanks. How is your ${f.region.toLowerCase()} compared with Sol ${f.sol}? Rate it again and tell me how it has changed.`);
+  };
+  const goneNow = (f: FollowUp) => {
+    clearFollowUp(s.me, f.id);
+    say(`Good to hear your ${f.region.toLowerCase()} has cleared up.`);
+  };
   const stepBody = () => <>
     <h1 className="ci__q focus-visible:outline-none" ref={qRef} tabIndex={-1}>Anything sore or aching today?</h1>
     <p className="ci__hint">Drag to turn the body and tap the spot: on the skin for a rash, bite or cut, or switch Skin off to tap the muscle or bone that hurts. Rate it 1 to 10 in the panel. An amber glow means it was marked on earlier sols.</p>
+    {followUps.length ? (
+      <section className="fu" aria-label="Follow-ups">
+        <p className="small"><b>Follow-ups.</b> <span className="t2">You asked to check on these. Are they still there?</span></p>
+        {followUps.map((f) => {
+          const again = vals.pain.some((p) => p.id === f.id);
+          return (
+            <div key={f.id} className="fu__row">
+              <span className="fu__dot" style={{ background: sevColour(f.level) }} />
+              <span className="fu__t"><b>{f.region}</b>{f.kind ? ` · ${f.kind.toLowerCase()}` : ""} · <Num>{f.level}/10</Num> on Sol <Num>{f.sol}</Num>
+                {f.note?.trim() ? <span className="t2"> · “{f.note.trim()}”</span> : null}</span>
+              {again ? <span className="small t2">Marked again: rate it and add how it changed</span> : <span className="fu__act">
+                <button type="button" className="opt" onClick={() => stillThere(f)}>Still there</button>
+                <button type="button" className="opt" onClick={() => goneNow(f)}>Gone now</button>
+              </span>}
+            </div>
+          );
+        })}
+      </section>
+    ) : null}
     <BodyMap value={vals.pain} history={painHistory} noPain={vals.noPain}
       onChange={(pain) => setVal({ pain, noPain: false }, "body")}
-      onNoPain={() => setVal({ pain: [], noPain: true }, "body")} />
+      onNoPain={() => setVal({ pain: [], noPain: true }, "body")} onFocusChange={focusPain} />
     {vals.pain.some(needsDetails) ? <p className="ci__hint" role="status" style={{ color: "#F2701D" }}>Add the details for {vals.pain.filter(needsDetails).map((p) => p.region).join(", ")} before you continue.</p> : null}
   </>;
 
@@ -376,7 +440,10 @@ export function CheckinScreen({ step }: { step?: string }) {
     const sh = c.shared(s.me);
     return <>
       <h1 className="ci__q focus-visible:outline-none" ref={qRef} tabIndex={-1}>Here is today, against your own normal.</h1>
-      <p className="small"><b>Pain:</b> {ci.skipped.body ? <span className="t2">Skipped</span> : vals.pain.length ? vals.pain.map((p) => `${p.region} ${p.level}/10${p.kind ? `, ${p.kind}` : ""}, ${p.note?.trim()}`).join("; ") : <span className="t2">None today</span>}</p>
+      {!ci.skipped.body && vals.pain.length ? <section aria-label="Where it hurts today" style={{ display: "grid", gap: 6 }}>
+        <p className="small"><b>Pain and skin:</b> {vals.pain.length} {vals.pain.length === 1 ? "spot" : "spots"} marked. Tap a card to find it on the body.</p>
+        <PainSummary marks={vals.pain} />
+      </section> : <p className="small"><b>Pain:</b> <span className="t2">{ci.skipped.body ? "Skipped" : "None today"}</span></p>}
       <p className="ci__hint">Submitting writes today to your baseline log. Sharing: {sh.length ? `${sh.length} measures as aggregates` : "private"}. Simulated data.</p>
       <div className="tscroll">
         <table className="sumt">
@@ -424,7 +491,8 @@ export function CheckinScreen({ step }: { step?: string }) {
           {body}
         </div>
         <aside className="ci__rail" aria-label={COMPANION_NAME}>
-          <CheckinPedro line={line} voiceOn={s.voice} canListen={k !== "game" && k !== "review" && k !== "body"} onHeard={hear} />
+          <CheckinPedro line={line} voiceOn={s.voice} canListen={k === "body" ? painListen : k !== "game" && k !== "review"} onHeard={hear}
+            tip={k === "body" ? "Describe the spot you picked, e.g. “itchy red rash since yesterday” or “sharp when I lift my arm, about a six out of ten”." : undefined} />
         </aside>
       </div>
       <div className={k === "sleep" ? "ci__foot ci__foot--rule" : "ci__foot"}>

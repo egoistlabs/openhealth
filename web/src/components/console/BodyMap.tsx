@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import dynamic from "next/dynamic";
+import Image from "next/image";
+import bodyThumb from "@/lib/console/body/body-thumb.json";
 import type { SomakineViewerHandle } from "@somakine/react";
 import type { RegionId, StructureId, StructureType } from "@somakine/core";
 import type { ViewerAssetProgress, ViewerSelectionGroup } from "@somakine/viewer";
@@ -24,6 +26,12 @@ export const isSkinMark = (p: PainMark) => p.id.includes(":openhealth-skin-");
 export const needsDetails = (p: PainMark) => !p.note?.trim() || (isSkinMark(p) && !p.kind);
 const WHEN = ["During exercise", "At rest", "When moving", "After waking", "During EVA or suit work", "All the time"];
 const SKIN_KINDS = ["Rash", "Bite or sting", "Cut or scrape", "Bruise", "Burn", "Itch", "Dry or cracked", "Blister", "Swelling", "Other"];
+/* voice: the skin kind named in a spoken note, if any */
+const KIND_WORDS: Array<[RegExp, string]> = [
+  [/rash|hives|red(ness)?/i, "Rash"], [/bite|bitten|sting|stung/i, "Bite or sting"], [/cut|scrape|scratch|graze|abrasion/i, "Cut or scrape"],
+  [/bruis/i, "Bruise"], [/burn/i, "Burn"], [/itch/i, "Itch"], [/dry|crack|flak|peel/i, "Dry or cracked"], [/blister/i, "Blister"], [/swell|swollen|puff/i, "Swelling"],
+];
+export const skinKindFrom = (text: string) => KIND_WORDS.find(([re]) => re.test(text))?.[1];
 
 /* ---------- catalogue built from the data pack ---------- */
 type Side = "left" | "right" | null;
@@ -82,15 +90,26 @@ const JAW_TIP = "Jaw and temple pain often comes from clenching or grinding, whi
 
 const PAST = "#F5B82E";
 const LAYERS: Array<[string, StructureType[]]> = [["Muscles", ["muscle"]], ["Bones", ["bone"]], ["Joints & ligaments", ["joint", "ligament", "tendon"]]];
+const UNDER_SKIN = LAYERS.flatMap(([, types]) => types);
 
-export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
+export function BodyMap({ value, onChange, history, noPain, onNoPain, onFocusChange }: {
   value: PainMark[]; onChange: (v: PainMark[]) => void; history: PainMark[]; noPain: boolean; onNoPain: () => void;
+  /** the part open in the panel (key and label), so the check-in can take a spoken note for it */
+  onFocusChange?: (focus: { key: string; label: string } | null) => void;
 }) {
   const viewer = useRef<SomakineViewerHandle | null>(null);
   const [ready, setReady] = useState(false);
+  /* bumping this remounts the viewer: "Reset view" uses it, because the viewer's own resetView can come
+     back looking down from overhead, while a fresh viewer always starts standing, facing the user */
+  const [viewerKey, setViewerKey] = useState(0);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [failed, setFailed] = useState<string | null>(null);
-  const [focus, setFocus] = useState<string | null>(null);
+  const [focus, setFocusState] = useState<string | null>(null);
+  const setFocus = (key: string | null) => {
+    setFocusState(key);
+    const part = key ? PARTS.get(key) : undefined;
+    onFocusChange?.(part ? { key: part.key, label: part.label } : null);
+  };
   const [group, setGroup] = useState<RegionId | null>(null);
   const [layers, setLayers] = useState<Record<string, boolean>>({ Muscles: true, Bones: true, "Joints & ligaments": true });
   /* skin on (default): taps mark skin areas; off: taps reach the muscles and bones */
@@ -158,10 +177,20 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
   useEffect(() => {
     const v = viewer.current;
     if (!ready || !v) return;
-    for (const [name, types] of LAYERS) types.forEach((t) => v.setLayerVisibility(t, layers[name]));
+    /* with the skin on, everything under it is hidden too: it cannot be seen anyway, and the thin face
+       muscles and some tendons would otherwise poke through the skin */
+    for (const [name, types] of LAYERS) types.forEach((t) => v.setLayerVisibility(t, layers[name] && !skinOn));
     v.setLayerVisibility("skin", skinOn);
   }, [ready, layers, skinOn, group]);
 
+  const resetView = () => {
+    setGroup(null);
+    viewer.current = null;
+    styled.current = new Set(); // the new viewer starts untinted; the tint effect re-applies on ready
+    setReady(false);
+    setProgress(null);
+    setViewerKey((k) => k + 1);
+  };
   const toggleLayer = (name: string) => setLayers((l) => ({ ...l, [name]: !l[name] }));
   /* area buttons zoom the model to that area and open its list; "Whole body" goes back to the full figure */
   const openRegion = (id: RegionId | null) => {
@@ -294,15 +323,15 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
         <div style={S.card}>
           <div style={S.tools}>
             {LAYERS.map(([name]) => (
-              <button key={name} type="button" aria-pressed={layers[name]} onClick={() => toggleLayer(name)} disabled={!ready}
+              <button key={name} type="button" aria-pressed={layers[name]} onClick={() => toggleLayer(name)} disabled={!ready || skinOn} title={skinOn ? "Turn Skin off to see this layer" : undefined}
                 style={{ ...S.tool, ...(layers[name] ? S.toolOn : null) }}>{name}</button>
             ))}
             <button type="button" aria-pressed={skinOn} onClick={() => setSkinOn((s) => !s)} disabled={!ready}
               style={{ ...S.tool, ...(skinOn ? S.toolOn : null) }}>Skin</button>
-            <button type="button" onClick={() => { openRegion(null); viewer.current?.resetView(); }} disabled={!ready} style={{ ...S.tool, marginLeft: "auto" }}>Reset view</button>
+            <button type="button" onClick={resetView} disabled={!ready} style={{ ...S.tool, marginLeft: "auto" }}>Reset view</button>
           </div>
           <div style={S.stage} aria-busy={!ready}>
-            <BodyModel onReady={onReady} onPick={onPick} onProgress={onProgress} onError={onError} />
+            <BodyModel key={viewerKey} onReady={onReady} onPick={onPick} onProgress={onProgress} onError={onError} />
             {!ready || failed ? (
               <div style={S.overlay} role="status">
                 {failed ? <>The 3D body could not load.<br /><span style={{ fontSize: 11 }}>{failed}</span><br /><span style={{ fontSize: 11 }}>You can still pick an area below.</span></>
@@ -331,7 +360,125 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain }: {
   );
 }
 
+/* Read-only summary for the check-in review: the 3D body with today's marks tinted by severity, and a card
+   per mark (area, rating, what it is, note). Clicking a card highlights that spot on the model. */
+export function PainSummary({ marks }: { marks: PainMark[] }) {
+  const viewer = useRef<SomakineViewerHandle | null>(null);
+  const [ready, setReady] = useState(false);
+  const [failed, setFailed] = useState(false);
+  const [skinOn, setSkinOn] = useState(() => marks.some(isSkinMark));
+  const [active, setActive] = useState<string | null>(null);
+
+  useEffect(() => {
+    const v = viewer.current;
+    if (!ready || !v) return;
+    v.setLayerVisibility("skin", skinOn);
+    for (const t of UNDER_SKIN) v.setLayerVisibility(t, !skinOn);
+    for (const m of marks) {
+      const p = PARTS.get(m.id);
+      if (!p?.onModel) continue;
+      const c = sevColour(m.level);
+      v.setStructureStyle(p.id as StructureId, { color: c, emissive: c, emissiveIntensity: 0.45 }, p.side ? { side: p.side } : undefined);
+    }
+  }, [ready, marks, skinOn]);
+
+  const showMark = (m: PainMark) => {
+    setActive(m.id);
+    const p = PARTS.get(m.id);
+    if (!p?.onModel) return;
+    if (isSkinMark(m) !== skinOn) setSkinOn(isSkinMark(m)); // a muscle mark sits under the skin
+    viewer.current?.selectStructure(p.id as StructureId, p.side ? { side: p.side } : undefined);
+  };
+  const onReady = useCallback((h: SomakineViewerHandle) => { viewer.current = h; setReady(true); }, []);
+  const noop = useCallback(() => {}, []);
+  const onError = useCallback(() => setFailed(true), []);
+  const hasSkin = marks.some(isSkinMark), hasDeep = marks.some((m) => !isSkinMark(m));
+
+  return (
+    <div style={S.sumRoot}>
+      <div style={S.sumStage} aria-busy={!ready}>
+        <BodyModel onReady={onReady} onPick={noop} onProgress={noop} onError={onError} />
+        {!ready || failed ? <div style={S.overlay} role="status">{failed ? "The 3D body could not load." : "Loading body model…"}</div> : null}
+        {hasSkin && hasDeep ? (
+          <button type="button" aria-pressed={skinOn} onClick={() => setSkinOn((s) => !s)} disabled={!ready}
+            style={{ ...S.tool, ...(skinOn ? S.toolOn : null), position: "absolute", top: 8, left: 8 }}>Skin</button>
+        ) : null}
+      </div>
+      <PainCards marks={marks} active={active} onPick={showMark} />
+    </div>
+  );
+}
+
+/* A card per mark: area, rating, what it is (skin), and the note. Used by the review summary and the
+   Home Body pop-up; clicking a card picks that mark. */
+export function PainCards({ marks, active, onPick, maxHeight = 320, footer }: {
+  marks: PainMark[]; active: string | null; onPick: (m: PainMark) => void; maxHeight?: number | string;
+  /** extra controls under a card (outside the card button) */
+  footer?: (m: PainMark) => React.ReactNode;
+}) {
+  return (
+    <div style={{ ...S.sumList, maxHeight }}>
+      {marks.map((m) => (
+        <div key={m.id} style={{ display: "grid", gap: 4 }}>
+        <button type="button" onClick={() => onPick(m)} aria-pressed={active === m.id}
+          style={{ ...S.sumCard, borderColor: active === m.id ? "var(--c-action)" : sevColour(m.level) }}>
+          <span style={S.sumHead}>
+            <span style={{ ...S.dot, background: sevColour(m.level) }} />
+            <b style={{ flex: 1, textAlign: "left", fontWeight: 600 }}>{m.region}</b>
+            <span className="num" style={{ fontSize: 12, color: sevColour(m.level) }}>{m.level}/10</span>
+          </span>
+          {m.kind ? <span style={S.sumKind}>{m.kind}</span> : null}
+          {m.note?.trim() ? <span style={S.sumNote}>{m.note.trim()}</span> : null}
+        </button>
+        {footer?.(m)}
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* Still front and back pictures of the standing body for the Home card (rendered by
+   scripts/build-body-thumb.mjs), with a dot per mark in its severity colour. No 3D viewer. */
+type ThumbPoint = { view: "front" | "back"; x: number; y: number };
+const THUMB = bodyThumb as { width: number; height: number; points: Record<string, ThumbPoint> };
+export function PainBodyStill({ marks, active }: { marks: PainMark[]; active?: string | null }) {
+  const dots = marks.flatMap((m) => (THUMB.points[m.id] ? [{ m, p: THUMB.points[m.id] }] : []));
+  return (
+    <div style={S.still}>
+      <div style={S.stillIn}>
+      {(["front", "back"] as const).map((view) => (
+        <figure key={view} style={S.stillFig}>
+          <div style={{ ...S.stillImg, aspectRatio: `${THUMB.width} / ${THUMB.height}` }}>
+            <Image src={`/somakine-ext/body-${view}.png`} alt={`Body from the ${view}`} fill sizes="120px" style={{ objectFit: "contain" }} />
+            {dots.filter((d) => d.p.view === view).map((d) => (
+              <span key={d.m.id} title={`${d.m.region} ${d.m.level}/10`} style={{ ...S.stillDot, left: `${d.p.x}%`, top: `${d.p.y}%`, background: sevColour(d.m.level), ...(active === d.m.id ? S.stillDotOn : null) }} />
+            ))}
+          </div>
+          <figcaption style={S.stillCap}>{view === "front" ? "Front" : "Back"}</figcaption>
+        </figure>
+      ))}
+      </div>
+    </div>
+  );
+}
+
 const S = {
+  /* a positioned box with a real height (at least 110px), and the pictures laid inside it absolutely, so their
+     size never depends on the card passing its height down */
+  still: { position: "relative", flex: "1 1 110px", minHeight: 110 },
+  stillIn: { position: "absolute", inset: 0, display: "flex", justifyContent: "center", gap: 6 },
+  stillFig: { display: "grid", gridTemplateRows: "minmax(0, 1fr) auto", justifyItems: "center", gap: 2, margin: 0, height: "100%", minHeight: 0 },
+  stillImg: { position: "relative", height: "100%", maxWidth: "100%" },
+  stillDotOn: { width: 14, height: 14, zIndex: 1, boxShadow: "0 0 0 2px #fff, 0 0 0 5px rgb(111 168 160 / .55), 0 0 10px rgb(0 0 0 / .6)" },
+  stillCap: { fontSize: 10, color: "var(--c-text-3)" },
+  stillDot: { position: "absolute", width: 9, height: 9, borderRadius: "50%", transform: "translate(-50%, -50%)", boxShadow: "0 0 0 1.5px #fff, 0 0 6px rgb(0 0 0 / .5)" },
+  sumRoot: { display: "grid", gridTemplateColumns: "minmax(0, 1fr) minmax(240px, 1fr)", gap: 12, alignItems: "stretch" },
+  sumStage: { position: "relative", height: 320, borderRadius: 10, background: "radial-gradient(ellipse at 50% 40%, rgb(59 99 128 / .35), rgb(11 13 18 / .6) 70%)", overflow: "hidden", cursor: "grab" },
+  sumList: { display: "grid", gap: 6, alignContent: "start", maxHeight: 320, overflowY: "auto" },
+  sumCard: { display: "grid", gap: 4, padding: "8px 10px", borderRadius: 8, border: "0.5px solid", background: "rgb(143 163 189 / .05)", color: "var(--c-text)", cursor: "pointer", textAlign: "left", fontSize: 13 },
+  sumHead: { display: "flex", alignItems: "center", gap: 8 },
+  sumKind: { justifySelf: "start", fontSize: 11, padding: "1px 8px", borderRadius: 999, border: "0.5px solid var(--c-hair-strong)", color: "var(--c-text-2)" },
+  sumNote: { fontSize: 12, color: "var(--c-text-2)", lineHeight: 1.4 },
   root: { display: "grid", gap: 10 },
   top: { display: "grid", gridTemplateColumns: "minmax(0, 1.5fr) minmax(280px, 1fr)", gap: 14, alignItems: "stretch" },
   card: { display: "grid", gridTemplateRows: "auto minmax(0, 1fr) auto", gap: 8, padding: 12, borderRadius: 14, border: "0.5px solid var(--c-hair-strong)", background: "rgb(143 163 189 / .05)" },

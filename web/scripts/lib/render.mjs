@@ -14,6 +14,51 @@ function png(w, h, rgb) {
   return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
 }
 
+/** RGBA PNG (colour type 6), for images with a transparent background */
+export function pngRGBA(w, h, rgba) {
+  const raw = Buffer.alloc((w * 4 + 1) * h);
+  for (let y = 0; y < h; y++) { raw[y * (w * 4 + 1)] = 0; rgba.copy(raw, y * (w * 4 + 1) + 1, y * w * 4, (y + 1) * w * 4); }
+  const chunk = (type, data) => { const len = Buffer.alloc(4); len.writeUInt32BE(data.length); const td = Buffer.concat([Buffer.from(type), data]); const c = Buffer.alloc(4); c.writeUInt32BE(crc(td)); return Buffer.concat([len, td, c]); };
+  const ihdr = Buffer.alloc(13); ihdr.writeUInt32BE(w, 0); ihdr.writeUInt32BE(h, 4); ihdr[8] = 8; ihdr[9] = 6;
+  return Buffer.concat([Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]), chunk("IHDR", ihdr), chunk("IDAT", deflateSync(raw)), chunk("IEND", Buffer.alloc(0))]);
+}
+
+/** Orthographic render to RGBA with a transparent background, supersampled `ss`x for smooth edges.
+    cam: { r, u, f } unit vectors (screen right, screen up, toward the viewer); toScreen maps a point to pixels. */
+export function renderRGBA(meshes, cam, width, height, toScreen, { ss = 3, light = [0.35, 0.55, 0.75] } = {}) {
+  const W = width * ss, H = height * ss, zb = new Float32Array(W * H).fill(-Infinity), col = new Float32Array(W * H * 3);
+  const L = (() => { const v = [cam.r[0] * light[0] + cam.u[0] * light[1] + cam.f[0] * light[2], cam.r[1] * light[0] + cam.u[1] * light[1] + cam.f[1] * light[2], cam.r[2] * light[0] + cam.u[2] * light[1] + cam.f[2] * light[2]]; const l = Math.hypot(...v); return v.map((x) => x / l); })();
+  for (const { positions: P, indices: I, normals: N, col: c } of meshes) {
+    for (let t = 0; t < I.length; t += 3) {
+      const ids = [I[t], I[t + 1], I[t + 2]];
+      const s = ids.map((i) => { const [x, y, z] = toScreen([P[i * 3], P[i * 3 + 1], P[i * 3 + 2]]); return [x * ss, y * ss, z]; });
+      const area = (s[1][0] - s[0][0]) * (s[2][1] - s[0][1]) - (s[2][0] - s[0][0]) * (s[1][1] - s[0][1]);
+      if (Math.abs(area) < 1e-9) continue;
+      const sh = ids.map((i) => { let d = N[i * 3] * L[0] + N[i * 3 + 1] * L[1] + N[i * 3 + 2] * L[2]; const facing = N[i * 3] * cam.f[0] + N[i * 3 + 1] * cam.f[1] + N[i * 3 + 2] * cam.f[2]; if (facing < 0) d = -d; return 0.42 + 0.58 * Math.max(0, d); });
+      for (let y = Math.max(0, Math.floor(Math.min(s[0][1], s[1][1], s[2][1]))); y <= Math.min(H - 1, Math.ceil(Math.max(s[0][1], s[1][1], s[2][1]))); y++)
+        for (let x = Math.max(0, Math.floor(Math.min(s[0][0], s[1][0], s[2][0]))); x <= Math.min(W - 1, Math.ceil(Math.max(s[0][0], s[1][0], s[2][0]))); x++) {
+          const px = x + 0.5, py = y + 0.5;
+          const w0 = ((s[1][0] - px) * (s[2][1] - py) - (s[2][0] - px) * (s[1][1] - py)) / area, w1 = ((s[2][0] - px) * (s[0][1] - py) - (s[0][0] - px) * (s[2][1] - py)) / area, w2 = 1 - w0 - w1;
+          if (w0 < 0 || w1 < 0 || w2 < 0) continue;
+          const z = w0 * s[0][2] + w1 * s[1][2] + w2 * s[2][2], k = y * W + x;
+          if (z <= zb[k]) continue;
+          zb[k] = z;
+          const shade = w0 * sh[0] + w1 * sh[1] + w2 * sh[2];
+          col[k * 3] = c[0] * shade; col[k * 3 + 1] = c[1] * shade; col[k * 3 + 2] = c[2] * shade;
+        }
+    }
+  }
+  /* box-filter down to the output size; coverage becomes alpha */
+  const out = Buffer.alloc(width * height * 4);
+  for (let y = 0; y < height; y++) for (let x = 0; x < width; x++) {
+    let r = 0, g = 0, b = 0, n = 0;
+    for (let j = 0; j < ss; j++) for (let i = 0; i < ss; i++) { const k = (y * ss + j) * W + (x * ss + i); if (zb[k] > -Infinity) { r += col[k * 3]; g += col[k * 3 + 1]; b += col[k * 3 + 2]; n++; } }
+    const o = (y * width + x) * 4;
+    if (n) { out[o] = Math.round(r / n); out[o + 1] = Math.round(g / n); out[o + 2] = Math.round(b / n); out[o + 3] = Math.round((255 * n) / (ss * ss)); }
+  }
+  return pngRGBA(width, height, out);
+}
+
 /* camera: right/up/forward(toward viewer) basis in BodyParts3D mm space (+X left, -Y front, +Z up) */
 const CAMS = {
   front: { r: [-1, 0, 0], u: [0, 0, 1], f: [0, -1, 0] },

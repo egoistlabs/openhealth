@@ -13,11 +13,13 @@ const LOADING = { mode: "eager", concurrency: 4 } as const;
 /* keep scroll zoom gentle: a little closer or further than the fitted whole-body view, no deep zoom */
 const ZOOM = { initialDistanceFactor: 1, minDistanceFactor: 0.7, maxDistanceFactor: 1.3 } as const;
 
-export default function BodyModel({ onReady, onPick, onProgress, onError }: {
+export default function BodyModel({ onReady, onPick, onProgress, onError, viewDirection }: {
   onReady: (h: SomakineViewerHandle) => void;
   onPick: (picks: ViewerSelectionGroup) => void;
   onProgress: (p: ViewerAssetProgress) => void;
   onError: (e: unknown) => void;
+  /** camera direction for the first framing (default: the viewer's slightly-from-above front view) */
+  viewDirection?: readonly [number, number, number];
 }) {
   const ref = useRef<SomakineViewerHandle>(null);
   return (
@@ -28,6 +30,7 @@ export default function BodyModel({ onReady, onPick, onProgress, onError }: {
       background={null}
       loading={LOADING}
       zoomLimits={ZOOM}
+      initialViewDirection={viewDirection}
       assetResolver={resolveBodyAsset}
       onStateChange={(s) => { if (s.phase === "ready" && ref.current) onReady(ref.current); }}
       onSelectionGroup={onPick}

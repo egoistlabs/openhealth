@@ -11,12 +11,14 @@ export type PedroLine = { id: number; text: string };
 /* The companion inside the check-in: says each question, listens when held, and reads back what it set.
    `line` is what Pedro says now (a new id says it again). `onHeard` gets the transcript; the parent
    answers by setting a new line. With voice off, Pedro still shows the words but stays silent and the mic is disabled. */
-export function CheckinPedro({ line, voiceOn, canListen, onHeard }: {
+export function CheckinPedro({ line, voiceOn, canListen, onHeard, tip }: {
   line: PedroLine;
   voiceOn: boolean;
-  /** false on steps with nothing to say (the reaction game, the review) */
+  /** false on steps with nothing to say (the reaction game, the review, the body step until a spot is picked) */
   canListen: boolean;
   onHeard: (text: string) => Promise<void>;
+  /** example of what to say on this step (defaults to the rating examples) */
+  tip?: string;
 }) {
   const vega = useRef<VegaApi | null>(null);
   const [v, setV] = useState<VState>(null);
@@ -43,7 +45,7 @@ export function CheckinPedro({ line, voiceOn, canListen, onHeard }: {
       <VoiceState v={v} inCheckin />
       {!canListen ? null : voiceOn ? (
         <HoldButton ctx="checkin" quiet live enabled={!busy} setV={setV} label={`Hold to tell ${COMPANION_NAME}`}
-          tip="Answer in your own words, e.g. “asleep around midnight, up at seven” or “pretty good today”."
+          tip={tip ?? "Answer in your own words, e.g. “asleep around midnight, up at seven” or “pretty good today”."}
           onStart={() => vega.current?.stop()}
           onPhrase={async (p) => {
             setBusy(true);

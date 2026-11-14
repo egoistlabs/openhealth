@@ -16,7 +16,8 @@
     "sim:mission": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/sim-mission.ts",
     "brain:add": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/brain-add.ts",
     "postinstall": "node scripts/copy-somakine-assets.mjs",
-    "body:head-neck": "node scripts/build-head-neck-extension.mjs"
+    "body:head-neck": "node scripts/build-head-neck-extension.mjs",
+    "body:thumb": "node scripts/build-body-thumb.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.105",

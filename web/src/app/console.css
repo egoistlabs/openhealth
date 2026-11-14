@@ -1260,3 +1260,28 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
 .th-good { fill: #7FB069; fill-opacity: .45; }
 .th-bad { fill: #E5534B; fill-opacity: .45; }
 .vse__x { display: grid; gap: var(--s-1); margin-top: var(--s-2); }
+
+/* Home: Body card (pain and skin marks on the 3D body) */
+/* the pictures get at least 110px (fits the row, so Home does not scroll) and grow into any spare height */
+.mcard--body { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+.mcard__body { flex: 1; display: flex; flex-direction: column; gap: var(--s-1); padding: var(--s-1) var(--s-3) var(--s-2); min-height: 0; }
+.mcard__pain { display: grid; gap: 2px; margin: 0; padding: 0; list-style: none; font-size: var(--fs-label); }
+.mcard__pain li { display: flex; align-items: center; gap: var(--s-2); min-width: 0; }
+.mcard__dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.mcard__pn { flex: 1; min-width: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mcard__open { font-size: var(--fs-label); white-space: nowrap; }
+
+/* Home: Body pop-up */
+.bmodal { width: min(760px, calc(100vw - 48px)); }
+.bmodal__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-4); }
+.bmodal__fig { display: flex; height: min(440px, calc(100vh - 220px)); }
+.bmodal__list { display: grid; gap: var(--s-3); align-content: start; max-height: min(440px, calc(100vh - 220px)); overflow-y: auto; }
+@media (max-width: 720px) { .bmodal__body { grid-template-columns: minmax(0, 1fr); } .bmodal__fig { height: 300px; } }
+.bmodal__fu { justify-self: start; font-size: var(--fs-label); }
+
+/* Check-in body step: follow-ups flagged from the Home Body pop-up */
+.fu { display: grid; gap: var(--s-1); padding: var(--s-2) var(--s-3); margin-bottom: var(--s-2); border: var(--bw) solid var(--c-watch); border-radius: var(--r-control); background: rgb(245 184 46 / .06); }
+.fu__row { display: flex; align-items: center; gap: var(--s-2); flex-wrap: wrap; font-size: var(--fs-label); }
+.fu__dot { width: 9px; height: 9px; border-radius: 50%; flex: none; }
+.fu__t { flex: 1; min-width: 200px; }
+.fu__act { display: flex; gap: var(--s-1); }

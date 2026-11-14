@@ -19,6 +19,8 @@ import { ColourKey } from "./ColourKey";
 import { MeasureHistory } from "./MeasureHistory";
 import { MEASURE_INFO } from "@/lib/console/measure-info";
 import { ROUTE, ReplayNote } from "./Shell";
+import { PainBodyStill, PainCards, sevColour, type PainMark } from "./BodyMap";
+import { setFollowUp, useFollowUps } from "@/lib/console/body/followups";
 
 /* Home: me vs my baseline (A4, A5), in the console layout: a main column and a margin column.
    Main: who, overall status, sharing, the one primary button, then today's measures.
@@ -132,7 +134,7 @@ export function HomeScreen() {
 /* Today's measures as a compact card grid (A4): no table, no scroll. Each card shows the value, its
    normal, the delta, a 14-sol sparkline and status. Drag a card by its grip to reorder; click it to
    open the full stats in a modal (28-sol trend, deviation rail, flag, share toggle). */
-const MITEMS = MEASURES.map((m) => ({ id: m.key as string }));
+const MITEMS = [...MEASURES.map((m) => ({ id: m.key as string })), { id: "body" }];
 function MeasureGrid({ sts }: { sts: Status[] }) {
   const [slotItemMap, setSlotItemMap] = useState<SlotItemMapArray>(() => utils.initSlotItemMap(MITEMS, "id"));
   const slotted = useMemo(() => utils.toSlottedItems(MITEMS, "id", slotItemMap), [slotItemMap]);
@@ -147,6 +149,13 @@ function MeasureGrid({ sts }: { sts: Status[] }) {
         onSwap={(e) => setSlotItemMap(e.newSlotItemMap.asArray)}>
         <div className="mgrid" role="list" aria-label="Today's measures">
           {slotted.map(({ slotId, itemId }) => {
+            if (itemId === "body") return (
+              <SwapySlot key={slotId} id={slotId} className="mgrid__slot">
+                <SwapyItem id={itemId} key={itemId} className="mgrid__item" dragItemOpacity={60}>
+                  <BodyCard />
+                </SwapyItem>
+              </SwapySlot>
+            );
             const i = MEASURES.findIndex((m) => m.key === itemId);
             if (i < 0) return null;
             return (
@@ -162,6 +171,92 @@ function MeasureGrid({ sts }: { sts: Status[] }) {
       <p className="small t2 mgrid__hint">Click a card for full stats. Drag the grip to reorder.</p>
       {openKey ? <MeasureModal m={MKEY[openKey]} st={sts[MEASURES.findIndex((m) => m.key === openKey)]} onClose={() => setOpenKey(null)} /> : null}
     </>
+  );
+}
+
+/* Body: where it hurt on this sol (pain and skin marks from the check-in), on the 3D body, plus a short list.
+   Opens the check-in review, where each mark can be read in full or corrected. */
+function BodyCard() {
+  const { s } = useConsole();
+  const marks = useMemo(
+    () => (s.extra[s.me] || []).filter((e) => e.code === "PN-01" && e.sol === s.sol).flatMap((e) => e.pain ?? []),
+    [s.extra, s.me, s.sol],
+  );
+  const worst = marks.reduce((a, m) => Math.max(a, m.level), 0);
+  const [open, setOpen] = useState(false);
+  return (<>
+    <div className={`mcard mcard--${worst >= 7 ? "act" : worst >= 4 ? "watch" : "normal"} mcard--body`} role="listitem">
+      <div className="mcard__h">
+        <DragHandle className="mcard__grip" label="Drag Body to reorder" />
+        <span className="mcard__n">Body</span>
+        <span className="small t2">{marks.length ? `${marks.length} ${marks.length === 1 ? "spot" : "spots"}` : "Nothing sore"}</span>
+        {marks.length ? <button type="button" className="ta mcard__open" onClick={() => setOpen(true)} aria-haspopup="dialog">Details</button> : null}
+      </div>
+      <div className="mcard__body">
+        <PainBodyStill marks={marks} />
+        {marks.length ? (
+          <ul className="mcard__pain">
+            {marks.slice(0, 2).map((m) => (
+              <li key={m.id}>
+                <span className="mcard__dot" style={{ background: sevColour(m.level) }} />
+                <span className="mcard__pn">{m.region}{m.kind ? ` · ${m.kind.toLowerCase()}` : ""}</span>
+                <Num>{m.level}/10</Num>
+              </li>
+            ))}
+            {marks.length > 2 ? <li className="t2">+{marks.length - 2} more</li> : null}
+          </ul>
+        ) : <p className="small t2">{day(s.me, s.sol)?.checkin ? "No pain or skin problems logged." : "Logged in the daily check-in."}</p>}
+      </div>
+    </div>
+    {open ? <BodyModal marks={marks} sol={s.sol} me={s.me} onClose={() => setOpen(false)} /> : null}
+  </>);
+}
+
+/* Body pop-up: the still front and back pictures with every mark, and a card per mark (rating, what it
+   is, the note). Clicking a card rings its dot. */
+function BodyModal({ marks, sol, me, onClose }: { marks: PainMark[]; sol: number; me: string; onClose: () => void }) {
+  const ref = useRef<HTMLDialogElement>(null);
+  const follow = useFollowUps(me);
+  const following = (id: string) => follow.some((f) => f.id === id);
+  const toggle = (m: PainMark) => setFollowUp(me, { id: m.id, region: m.region, kind: m.kind, level: m.level, note: m.note, sol }, !following(m.id));
+  const allOn = marks.every((m) => following(m.id));
+  const [active, setActive] = useState<string | null>(null);
+  // as MeasureModal: open once on mount, no close() in cleanup (dev double effects would close it)
+  useEffect(() => {
+    const d = ref.current;
+    if (d && !d.open) d.showModal();
+  }, []);
+  return (
+    <dialog ref={ref} className="mmodal bmodal" aria-labelledby="bmodal-t" onClose={onClose}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
+      <div className="mmodal__in">
+        <header className="mmodal__h">
+          <div className="mmodal__ttl">
+            <h2 className="mmodal__t" id="bmodal-t">Body</h2>
+            <p className="small t2">Sol <Num>{sol}</Num> · {marks.length} {marks.length === 1 ? "spot" : "spots"} marked in the check-in</p>
+          </div>
+          <span style={{ flex: 1 }} />
+          <button type="button" className="mmodal__x" onClick={onClose} aria-label="Close">×</button>
+        </header>
+        <div className="bmodal__body">
+          <div className="bmodal__fig"><PainBodyStill marks={marks} active={active} /></div>
+          <div className="bmodal__list">
+            <PainCards marks={marks} active={active} onPick={(m) => setActive(m.id)} maxHeight="none"
+              footer={(m) => (
+                <button type="button" className={following(m.id) ? "opt is-on bmodal__fu" : "opt bmodal__fu"} aria-pressed={following(m.id)} onClick={() => toggle(m)}>
+                  {following(m.id) ? "✓ Following up at the next check-in" : "Follow up at the next check-in"}
+                </button>
+              )} />
+            {marks.length > 1 ? (
+              <button type="button" className="ta" onClick={() => marks.forEach((m) => { if (following(m.id) === allOn) toggle(m); })}>
+                {allOn ? "Stop following up all" : "Follow up all at the next check-in"}
+              </button>
+            ) : null}
+            <p className="small t2">Pedro will ask about followed-up spots at your next daily check-in, so you can say whether each one is still there and how it has changed.</p>
+          </div>
+        </div>
+      </div>
+    </dialog>
   );
 }
 
