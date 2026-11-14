@@ -1,12 +1,13 @@
 "use client";
 
 import { CREW, MKEY, P, RANK, crewEvents, day, hm, isOut, listJoin, mealsWeek, mstatus, teamStatus, type MeasureKey, type State } from "@/lib/console/data";
-import { teamSvg } from "@/lib/console/plots";
-import { CLS, Icon, Legend, Num, StatusMark, StatusWord } from "@/components/ui";
+import { CLS, Icon, Num, StatusMark, StatusWord } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
-import { Plot } from "./Plot";
+import { FillPlot } from "./Plot";
+import { teamThresholdSvg } from "@/lib/console/threshold";
 import { ReplayNote } from "./Shell";
 import { CrewPortrait } from "./CrewPortrait";
+import { ColourKey } from "./ColourKey";
 import { ChangelogTimeline, type TimelineCategory, type TimelineEntry } from "@/components/ui/changelog-timeline";
 
 const LOG_CATS: Record<string, TimelineCategory> = {
@@ -93,7 +94,7 @@ export function CrewScreen() {
               <span className="ctile__s">on shared measures</span></div>
           </div>
 
-          <h2 className="sec-t mt4">Crew at a glance</h2>
+          <h2 className="sec-t mt4">Crew at a glance<ColourKey refLabel="Own normal" /></h2>
           {/* same card look as Home's measure cards, but static: no drag grip, no stats modal */}
           <div className="mgrid mgrid--4" role="list" aria-label="Team areas">
             {blocks.map(({ k, label, t }) => (
@@ -108,12 +109,13 @@ export function CrewScreen() {
                     <span className={`mcard__d${t.out ? " is-out" : ""}`}>{t.state === "pending" ? "" : "outside normal"}</span>
                   </span>
                   <span className="mcard__b">{t.reason}</span>
-                  {t.state === "pending" ? null : <Plot as="span" className="mcard__spark" draw={(w) => teamSvg(k, s.sol, s.shares, w)} label="Team trend, 14 sols" />}
+                  {t.state === "pending" ? null : <FillPlot className="mcard__th" draw={(w, h) => teamThresholdSvg(k, s.sol, s.shares, w, h)} />}
+                  {t.state === "pending" ? null : <span className="mcard__ref">vs each person&apos;s own normal</span>}
                 </div>
               </div>
             ))}
           </div>
-          <Legend items={[["line", "Team trend: average distance from each person's own normal"], ["band", "Within normal"]]} />
+          <p className="small t2 mt1">Line: the team&apos;s average distance from each sharing person&apos;s own normal over 14 sols. Green is the healthy side, amber the worse side.</p>
 
           <h2 className="sec-t mt4">Support prompts</h2>
           {prompts.length ? (

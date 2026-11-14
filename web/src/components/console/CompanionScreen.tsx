@@ -167,6 +167,16 @@ function CompanionStage() {
     chat.send(q);
   };
 
+  /* a question typed in the Pedro launcher on another screen: send it once on arrival */
+  const asked = useRef(false);
+  useEffect(() => {
+    if (asked.current || !s.ask || !atPresent) return;
+    asked.current = true;
+    const q = s.ask;
+    set({ ask: null });
+    userSaid(q);
+  });
+
   /* voice on the companion: a rating heard in speech goes into today's check-in draft (C3) */
   const onPhrase = (p: VoicePhrase) => {
     setV(null);

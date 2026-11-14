@@ -12,7 +12,7 @@ type Pt = { from: number; to: number; v: number | null; med: number | null; out:
 const RANGES = [["4W", 28], ["12W", 84], ["All", Infinity]] as const;
 const VW = 600, VH = 150;
 
-export function MeasureHistory({ m, me, sol, lead, aside }: { m: Measure; me: string; sol: number; lead?: ReactNode; aside?: ReactNode }) {
+export function MeasureHistory({ m, me, sol, lead, aside, after }: { m: Measure; me: string; sol: number; lead?: ReactNode; aside?: ReactNode; after?: ReactNode }) {
   const [range, setRange] = useState<(typeof RANGES)[number][0]>("4W");
   const [hover, setHover] = useState<number | null>(null);
   const span = RANGES.find((r) => r[0] === range)![1];
@@ -107,6 +107,7 @@ export function MeasureHistory({ m, me, sol, lead, aside }: { m: Measure; me: st
         <span><i className="mh__sw is-out" />Outside your normal</span>
         <span><i className="mh__sw mh__sw--med" />Your normal (median)</span>
       </div>
+      {after}
      </div>
 
      <div className="mh__side">

@@ -8,13 +8,16 @@ import {
   KEYS, MEASURES, MKEY, P, checkinCount, crewById, day, fmt, hm, fmtBase, fmtDelta, hasBaseline, isOut, listJoin, overall, reason, solDate,
   type Measure, type MeasureKey, type Status,
 } from "@/lib/console/data";
-import { railSvg, sparkSvg } from "@/lib/console/plots";
+import { railSvg } from "@/lib/console/plots";
+import { referenceFor, thresholdSvg } from "@/lib/console/threshold";
 import { CLS, Icon, Num, StatusMark, StatusRule, StatusWord, Term, Toggle } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
 import { FlagCard, FlagTimeline, OkLine } from "./FlagCard";
-import { Plot } from "./Plot";
+import { FillPlot, Plot } from "./Plot";
 import { CrewPortrait } from "./CrewPortrait";
+import { ColourKey } from "./ColourKey";
 import { MeasureHistory } from "./MeasureHistory";
+import { MEASURE_INFO } from "@/lib/console/measure-info";
 import { ROUTE, ReplayNote } from "./Shell";
 
 /* Home: me vs my baseline (A4, A5), in the console layout: a main column and a margin column.
@@ -83,7 +86,8 @@ export function HomeScreen() {
               </dl>
               {atPresent ? <Link className="ta" href={`${ROUTE.checkin}?step=review`}>Review or correct</Link> : null}
             </> : <>
-              <p className="t2">Five quick questions with Pedro: sleep, mood, day load, teamwork and shared meals. Then an optional reaction game. About 2 minutes.</p>
+              <p className="cicard__lead">A 2-minute daily talk with Pedro that keeps your personal baseline up to date.</p>
+              <p className="t2">Five quick questions: sleep, mood, day load, teamwork and shared meals. Then an optional reaction game.</p>
               {atPresent
                 ? <Link className="btn-primary btn-primary--wide" href={ROUTE.checkin}>Start daily check-in <Icon name="arrow" /></Link>
                 : <p className="small t2">No check-in was logged on this sol.</p>}
@@ -94,7 +98,10 @@ export function HomeScreen() {
 
       <section className="sec">
         <div className="sec__main">
-          <h2 className="sec-t">Today</h2>
+          <h2 className="sec-t">Today
+            {/* colour key for the status words and the card charts */}
+            <ColourKey />
+          </h2>
           {!ready ? (
             <p className="lead">Building your baseline: <Num>{checkinCount(s.me, s.sol)}</Num> of 3 check-ins done. Flags start once it exists.</p>
           ) : <>
@@ -174,7 +181,8 @@ function MeasureCard({ m, st, onOpen }: { m: Measure; st: Status; onOpen: () => 
           <span className={`mcard__d${isOut(st) ? " is-out" : ""}`}>{st.base ? fmtDelta(m.key, st.delta) : "—"}</span>
         </span>
         <span className="mcard__b">Normal {fmtBase(m.key, st.base)}</span>
-        <Plot as="span" className="mcard__spark" draw={(w) => sparkSvg(s.me, s.sol, m.key, w)} />
+        <FillPlot className="mcard__th" draw={(w, h) => thresholdSvg(s.me, s.sol, m.key, w, h)} />
+        <span className="mcard__ref">{refLabel(s.me, m.key, s.sol)}</span>
       </button>
     </div>
   );
@@ -209,6 +217,7 @@ function MeasureModal({ m, st, onClose }: { m: Measure; st: Status; onClose: () 
           <button type="button" className="mmodal__x" onClick={onClose} aria-label="Close">×</button>
         </header>
         <MeasureHistory key={m.key} m={m} me={s.me} sol={s.sol}
+          after={<MeasureAbout k={m.key} name={m.name} />}
           lead={<div className="mmodal__dev">
             <p className="mmodal__why">{reason(s.me, m.key, st)}</p>
             <h3 className="label">Deviation from your normal</h3>
@@ -248,3 +257,32 @@ function Discrepancy() {
     return <p className="disc" role="note"><StatusMark state="info" /><span>{lead}, while {listJoin(MEASURED.map((k) => MKEY[k].short))} are all within your normal.</span></p>;
   return null;
 }
+
+/* "About this measure": why it matters on a mission, reference points, what affects it, how it is measured */
+function MeasureAbout({ k, name }: { k: MeasureKey; name: string }) {
+  const info = MEASURE_INFO[k];
+  if (!info) return null;
+  return (
+    <section className="about" aria-label={`About ${name}`}>
+      <h3 className="label">Why {name.toLowerCase()} matters</h3>
+      <p className="about__why">{info.why}</p>
+      <div className="about__grid">
+        <div>
+          <h4 className="about__h">The standard</h4>
+          <dl className="about__std">
+            {info.standard.map(([l, v]) => <div key={l}><dt>{l}</dt><dd>{v}</dd></div>)}
+          </dl>
+        </div>
+        <div>
+          <h4 className="about__h">What throws it off</h4>
+          <ul className="about__list">{info.affects.map((a) => <li key={a}>{a}</li>)}</ul>
+        </div>
+      </div>
+      <p className="small t2">{info.how} General guidance only: your flags always compare you with your own normal.</p>
+    </section>
+  );
+}
+
+const refLabel = (id: string, k: MeasureKey, sol: number) => referenceFor(id, k, sol)?.label ?? "";
+
+

@@ -6,10 +6,10 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { CREW, MISSION, P, crewEvents, crewById, day, hasBaseline, hm, solDate, type LogEvent } from "@/lib/console/data";
 import { FlagList } from "./FlagCard";
 import { SettingsDialog } from "./SettingsDialog";
+import { PedroGuide } from "./PedroGuide";
 import { escalations, groundRows } from "@/lib/console/ground";
 import { tok } from "@/lib/console/plots";
 import { Icon, Num, Segmented, StatusMark, Toggle } from "@/components/ui";
-import { PedroThumb } from "./VegaAvatar";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { THEMES, useConsole } from "./ConsoleProvider";
 
@@ -22,7 +22,6 @@ const roleRoute = (r: string) => (r === "crew" ? ROUTE.crew : r === "ground" ? R
 export function ConsoleShell({ children }: { children: ReactNode }) {
   const { s, live, atPresent, theme } = useConsole();
   const path = usePathname();
-  const router = useRouter();
   const focus = path.startsWith(ROUTE.checkin) && atPresent;
   const full = path.startsWith(ROUTE.companion);
   const alertsPanel = s.alerts && !full && s.role !== "ground";
@@ -50,10 +49,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
         {alertsPanel ? <AlertsPanel /> : <LogPanel />}
       </div>
       {!full && !path.startsWith(ROUTE.checkin) && !path.startsWith(ROUTE.ground) ? (
-        <button type="button" className="orb" aria-label="Open Pedro" onClick={() => router.push(ROUTE.companion)}>
-
-          <PedroThumb />
-        </button>
+        <PedroGuide />
       ) : null}
       {s.role === "ground" ? null : <SettingsDialog />}
       <Tips />

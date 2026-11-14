@@ -1111,3 +1111,147 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
 @keyframes think-dot { 0%, 80%, 100% { opacity: .3; transform: translateY(0) scale(.85); } 40% { opacity: 1; transform: translateY(-4px) scale(1); } }
 @keyframes think-pop { 0%, 100% { opacity: .6; transform: scale(.9); } 50% { opacity: 1; transform: scale(1.05); } }
 @media (prefers-reduced-motion: reduce) { .think, .think__cloud, .think__dots i, .think__s { animation: none; } .think__dots i { opacity: .8; } }
+
+/* Pedro launcher (bottom-right bubble): guide me / ask a question */
+.pg { position: fixed; right: var(--s-6); bottom: var(--s-6); z-index: 40; }
+.has-log ~ .pg, .app.has-log + .pg { right: calc(var(--log-w) + var(--s-6)); }
+.pg .orb { position: static; border-radius: 50%; overflow: hidden; }
+.pg__pop { position: absolute; right: 0; bottom: calc(100% + var(--s-3)); width: min(380px, calc(100vw - 32px)); display: grid; gap: var(--s-2);
+  padding: var(--s-4); border: var(--bw) solid var(--c-hair-strong); border-radius: 12px; background: var(--c-surface); box-shadow: 0 16px 40px rgb(0 0 0 / .45);
+  animation: pg-in .18s ease-out both; }
+.pg__h { font: var(--fw-semi) var(--fs-lead) / var(--lh-lead) var(--f-sans); }
+.pg__sub { color: var(--c-text-2); font-size: var(--fs-label); line-height: var(--lh-label); }
+.pg__ask { display: flex; gap: var(--s-2); margin-top: var(--s-1); }
+.pg__ask .field { flex: 1; min-width: 0; }
+.pg__ask .btn-primary { min-height: 0; }
+.pg__chips { display: flex; flex-wrap: wrap; gap: var(--s-1); }
+.pg__chips .chip--lead { border-color: var(--c-action); color: var(--c-text); }
+@keyframes pg-in { from { opacity: 0; transform: translateY(6px) scale(.98); } to { opacity: 1; transform: none; } }
+
+/* Guided tour: dim spotlight, animated cursor, Pedro speech/subtitle bubble */
+.tour { position: fixed; inset: 0; z-index: 60; pointer-events: none; }
+.tour__spot { position: fixed; border: 2px solid var(--c-action); border-radius: 10px; box-shadow: 0 0 0 9999px rgb(0 0 0 / .5);
+  transition: left .5s cubic-bezier(.3, .8, .3, 1), top .5s cubic-bezier(.3, .8, .3, 1), width .5s cubic-bezier(.3, .8, .3, 1), height .5s cubic-bezier(.3, .8, .3, 1); }
+.tour__cursor { position: fixed; left: 0; top: 0; fill: #fff; stroke: #0B0D12; stroke-width: 1.5; filter: drop-shadow(0 2px 4px rgb(0 0 0 / .5));
+  transition: transform .6s cubic-bezier(.3, .8, .3, 1); }
+.tour__bub { position: fixed; width: 320px; display: grid; gap: var(--s-2); padding: var(--s-3) var(--s-4); pointer-events: auto;
+  border-radius: 12px; background: #0B0D12; color: #fff; border: var(--bw) solid rgb(255 255 255 / .12); box-shadow: 0 12px 30px rgb(0 0 0 / .5);
+  animation: pg-in .25s ease-out both; }
+.tour__who { display: inline-flex; align-items: center; gap: var(--s-2); color: rgb(255 255 255 / .6); font-size: var(--fs-label); font-weight: var(--fw-semi); }
+.tour__t { font-weight: var(--fw-semi); line-height: 1.4; }
+.tour__said { color: #fff; }
+.tour__rest { color: rgb(255 255 255 / .35); }
+.tour__wave { display: inline-flex; align-items: center; gap: 2px; height: 12px; }
+.tour__wave i { width: 2px; height: 100%; border-radius: 1px; background: var(--c-action); animation: tour-wave .9s ease-in-out infinite; }
+.tour__wave i:nth-child(2) { animation-delay: .12s; } .tour__wave i:nth-child(3) { animation-delay: .24s; } .tour__wave i:nth-child(4) { animation-delay: .36s; }
+@keyframes tour-wave { 0%, 100% { transform: scaleY(.3); } 50% { transform: scaleY(1); } }
+.tour__ctl { display: flex; align-items: center; justify-content: space-between; gap: var(--s-2); }
+.tour__n { color: rgb(255 255 255 / .5); font: var(--fw-medium) var(--fs-label) var(--f-mono); }
+.tour__btns { display: inline-flex; align-items: center; gap: var(--s-3); }
+.tour__btns .ta { color: rgb(255 255 255 / .85); }
+.tour__next { padding: 4px 12px; border-radius: 999px; background: var(--c-action); color: var(--c-on-action); font-weight: var(--fw-semi); font-size: var(--fs-label); }
+@media (prefers-reduced-motion: reduce) { .tour__spot, .tour__cursor { transition: none; } .tour__wave i { animation: none; } .pg__pop, .tour__bub { animation: none; } }
+/* Pedro's 3D model docked bottom-right during the tour, talking along with the subtitles */
+.tour__dock { position: fixed; right: var(--s-4); bottom: var(--s-4); width: 220px; height: 220px; pointer-events: none; z-index: 61;
+  border-radius: 50%; background: radial-gradient(closest-side, color-mix(in srgb, var(--c-action) 30%, transparent), transparent); animation: pg-in .3s ease-out both; }
+.tour__dock .vega { position: absolute; inset: 0; width: 100%; height: 100%; -webkit-mask-image: linear-gradient(to bottom, black 78%, transparent); mask-image: linear-gradient(to bottom, black 78%, transparent); }
+.tour__dock .persona { width: 100%; height: 100%; }
+/* tour bubble with a small talking Pedro on the left (replaces the corner dock) */
+.tour__dock { display: none; }
+.tour__bub { width: 380px; grid-template-columns: 72px minmax(0, 1fr); column-gap: var(--s-3); align-items: start;
+  transition: left .5s cubic-bezier(.3, .8, .3, 1), top .5s cubic-bezier(.3, .8, .3, 1); }
+.tour__av { grid-row: 1 / span 2; position: relative; width: 72px; height: 72px; border-radius: 50%; overflow: hidden;
+  background: radial-gradient(closest-side, color-mix(in srgb, var(--c-action) 35%, #0B0D12), #0B0D12); border: var(--bw) solid rgb(255 255 255 / .15); }
+.tour__av .vega { position: absolute; inset: -18% -18% -6%; width: auto; height: auto; -webkit-mask-image: none; mask-image: none; background: none; }
+.tour__av .persona { width: 100%; height: 100%; }
+.tour__body { display: grid; gap: var(--s-1); animation: pg-in .25s ease-out both; }
+.tour__ctl { grid-column: 2; }
+@media (prefers-reduced-motion: reduce) { .tour__bub { transition: none; } .tour__body { animation: none; } }
+/* bigger Pedro face in the bubble + auto-next countdown bar */
+.tour__bub { grid-template-columns: 84px minmax(0, 1fr); position: fixed; overflow: hidden; }
+.tour__av { width: 84px; height: 84px; }
+.tour__av .vega { inset: auto; left: -70%; top: -42%; width: 240%; height: 240%; }
+.tour__auto { position: absolute; left: 0; bottom: 0; height: 3px; width: 100%; background: var(--c-action); transform-origin: left; animation: tour-auto linear both; }
+@keyframes tour-auto { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+@media (prefers-reduced-motion: reduce) { .tour__auto { animation: none; transform: scaleX(1); opacity: .5; } }
+/* bigger avatar in the tour bubble (head + shoulders, not zoomed on the face) */
+.tour__bub { width: 440px; grid-template-columns: 124px minmax(0, 1fr); align-items: center; }
+.tour__av { width: 124px; height: 124px; }
+.tour__av .vega { left: -18%; top: -14%; width: 136%; height: 130%; }
+/* Daily check-in card: fuller explanation, stretches to the height of the profile section */
+.home > .sec:first-of-type > .sec__margin { display: flex; flex-direction: column; }
+.home .cicard { flex: 1; align-content: start; gap: var(--s-3); padding: var(--s-4) var(--s-5, 20px); }
+.home .cicard > .btn-primary, .home .cicard > .ta { margin-top: auto; }
+.cicard__lead { color: var(--c-text); font-weight: var(--fw-medium); }
+.cicard__sec { display: grid; gap: var(--s-1); }
+.cicard__list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 2px var(--s-4); font-size: var(--fs-label); line-height: var(--lh-label); color: var(--c-text-2); }
+.cicard__list b { display: block; color: var(--c-text); font-weight: var(--fw-semi); }
+/* taller tour bubble so longer explanations read comfortably */
+.tour__bub { min-height: 168px; }
+.tour__t { font-size: var(--fs-body); line-height: 1.5; }
+/* "About this measure" block in the measure modal */
+.about { display: grid; gap: var(--s-2); margin-top: var(--s-2); padding-top: var(--s-3); border-top: var(--bw) solid var(--c-hair); }
+.about__why { color: var(--c-text); line-height: 1.55; }
+.about__grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--s-4); }
+.about__h { font-size: var(--fs-label); font-weight: var(--fw-semi); color: var(--c-text-2); margin-bottom: var(--s-1); }
+.about__std { display: grid; gap: 2px; }
+.about__std > div { display: flex; justify-content: space-between; gap: var(--s-3); padding: 4px 0; border-bottom: var(--bw) solid var(--c-hair); font-size: var(--fs-label); }
+.about__std dt { color: var(--c-text-2); }
+.about__std dd { color: var(--c-text); font-weight: var(--fw-semi); text-align: right; }
+.about__list { display: grid; gap: 4px; font-size: var(--fs-label); color: var(--c-text-2); list-style: disc; padding-left: var(--s-4); }
+@media (max-width: 720px) { .about__grid { grid-template-columns: minmax(0, 1fr); } }
+
+/* Threshold sparkline on measure cards: you vs Earth reference (or your own normal) */
+.mcard__th { height: 64px !important; }
+.mcard__th svg { display: block; overflow: visible; }
+.th-good { fill: var(--c-normal); fill-opacity: .28; }
+.th-bad { fill: var(--c-watch); fill-opacity: .32; }
+.th-line { fill: none; stroke: var(--c-text); stroke-width: 1.5; stroke-linejoin: round; }
+.th-ref { stroke: var(--c-text-3); stroke-width: 1.2; stroke-dasharray: 2 3; }
+.th-ref.is-earth { stroke: var(--c-info); stroke-dasharray: 5 3; }
+.th-dot { fill: var(--c-text); }
+.mcard__ref { font-size: 10px; line-height: 1.3; color: var(--c-text-3); }
+.mgrid__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-1) var(--s-4); margin-top: var(--s-2); }
+.th-legend { display: inline-flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); font-size: var(--fs-label); color: var(--c-text-2); }
+.th-legend > span { display: inline-flex; align-items: center; gap: 6px; }
+.th-sw { display: inline-block; width: 14px; height: 8px; }
+.th-sw--line { height: 0; border-top: 1.5px solid var(--c-text); }
+.th-sw--ref { height: 0; border-top: 1.5px dashed var(--c-info); }
+.th-sw--good { background: var(--c-normal); opacity: .5; }
+.th-sw--bad { background: var(--c-watch); opacity: .55; }
+/* colour key beside the "Today" heading */
+.ckey { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-4); font: var(--fw-regular) var(--fs-label) / var(--lh-label) var(--f-sans); color: var(--c-text-2); }
+.ckey > span { display: inline-flex; align-items: center; gap: 6px; }
+.ckey__sep { width: var(--bw); height: 14px; background: var(--c-hair-strong); }
+.ckey__sw { display: inline-block; width: 14px; height: 10px; border-radius: 2px; }
+.ckey__sw--good { background: #7FB069; opacity: .55; }
+.ckey__sw--bad { background: #D4A72C; opacity: .6; }
+.ckey__sw--ref { height: 0; border-top: 1.5px dashed #8FA3BD; border-radius: 0; }
+
+/* compact measure cards: 4+ per row, shorter chart, tighter padding (Home must not scroll) */
+.mgrid { grid-template-columns: repeat(auto-fill, minmax(168px, 1fr)); gap: var(--s-2); }
+.mcard__h { padding: var(--s-2) var(--s-3) 0 var(--s-2); }
+.mcard__n { font-size: var(--fs-label); }
+.mcard__h .sw { font-size: 11px; }
+.mcard__btn { gap: 2px; padding: 4px var(--s-3) var(--s-2); }
+.mcard__v { font-size: var(--fs-lead); }
+.mcard__b { font-size: 11px; }
+.mcard__th { height: 38px !important; margin-top: 2px; }
+.mcard__ref { font-size: 10px; }
+
+/* Home cards: fixed 4 per row (4 + 3); the chart grows to fill the card, no empty gap */
+.home .mgrid { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-2); }
+.mcard__btn { display: flex !important; flex-direction: column; flex: 1; min-height: 0; }
+.mcard { display: flex !important; flex-direction: column; }
+.mcard__th { display: block; flex: 1 1 auto; min-height: 32px; height: auto !important; margin-top: var(--s-1); }
+.mcard__th svg { display: block; }
+.mcard__h .sw { white-space: nowrap; flex: none; }
+.mcard__row { min-width: 0; }
+@media (max-width: 960px) { .home .mgrid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.mcard__th { position: relative; }
+.mcard__th svg { position: absolute; left: 0; top: 0; }
+
+/* Crew area cards: compact, fixed chart height (they do not stretch to fill the page) */
+.crew .mgrid--4 { flex: none !important; grid-auto-rows: auto !important; }
+.crew .mgrid--4 .mcard__th { flex: none; height: 56px !important; }
+.mt1 { margin-top: var(--s-1); }

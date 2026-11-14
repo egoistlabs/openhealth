@@ -34,6 +34,8 @@ export type ConsoleState = {
   extra: Record<string, LogEvent[]>;
   convo: Record<string, ConvoRow[]>;
   draft: Partial<Record<MeasureKey, number>>;
+  /** a question typed in the Pedro launcher on another screen; the Pedro page sends it on arrival */
+  ask: string | null;
   open: Partial<Record<MeasureKey, boolean>>;
   why: Record<string, boolean>;
   drawer: boolean;
@@ -49,7 +51,7 @@ const initial: ConsoleState = {
   shares: Object.fromEntries(CREW.map((c) => [c.id, c.shares.slice()])),
   tone: "gentle", voice: true,
   log: false, alerts: false, logScope: "person", logRange: "three", logF: { flag: true, checkin: true, journal: true, obs: true },
-  hi: null, done: {}, extra: {}, convo: {}, draft: {}, open: {}, why: {},
+  hi: null, done: {}, extra: {}, convo: {}, draft: {}, ask: null, open: {}, why: {},
   drawer: false, tab: "conversation", settings: false, chatted: false, rev: 0,
 };
 
