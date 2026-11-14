@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { CREW, MISSION, P, crewEvents, crewById, day, hasBaseline, hm, solDate, type LogEvent } from "@/lib/console/data";
 import { FlagList } from "./FlagCard";
+import { SettingsDialog } from "./SettingsDialog";
 import { escalations, groundRows } from "@/lib/console/ground";
 import { tok } from "@/lib/console/plots";
 import { Icon, Num, Segmented, StatusMark, Toggle } from "@/components/ui";
@@ -54,6 +55,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
           <PedroThumb />
         </button>
       ) : null}
+      {s.role === "ground" ? null : <SettingsDialog />}
       <Tips />
       <div className="vh" aria-live="polite" aria-atomic="true">{live}</div>
     </>
@@ -99,6 +101,15 @@ function Header() {
         </span>
       </div>
       <div className="hdr__r">
+        {s.role === "ground" ? null : (
+          <button type="button" className="hdr__item hdr__set" aria-pressed={s.settings} aria-haspopup="dialog" onClick={() => set((p) => ({ settings: !p.settings }))}>
+            <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+              <circle cx="12" cy="12" r="3" />
+              <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 1 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 1 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 1 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 1 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" />
+            </svg>
+            <span>Settings</span>
+          </button>
+        )}
         <span className="hdr__sim" tabIndex={0} data-tip="Prototype running on simulated data. Not a medical device.">Simulated data</span>
         <details className="demo" ref={detRef}>
           <summary className="demo__btn" aria-label="Demo controls: who you are viewing as, and the look">

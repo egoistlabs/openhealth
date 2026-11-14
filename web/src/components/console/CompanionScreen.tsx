@@ -4,16 +4,15 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useCompanionChat } from "@/hooks/companion/mutations/use-companion-chat";
 import {
-  COMPANION_NAME, JOURNAL, KEYS, MEASURES, P, avg, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, overall, series,
+  COMPANION_NAME, JOURNAL, MEASURES, P, avg, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, overall, series,
   type ConvoRow, type VoicePhrase,
 } from "@/lib/console/data";
 import { Presence } from "@/lib/console/presence";
 import { codeReply, isStatusQuestion, readFacts } from "@/lib/brain/facts";
 import { holdEmotion, replyEmotion, restEmotion } from "@/lib/console/emotion";
-import { Num, Segmented, StatusMark, Toggle } from "@/components/ui";
+import { Num, StatusMark, Toggle } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
 import { FlagList } from "./FlagCard";
-import { toggleShare } from "./HomeScreen";
 import { Wave, usePresenceState } from "./Orb";
 import { VegaAvatar, type SpeechEvents, type VegaApi } from "./VegaAvatar";
 import { ROUTE } from "./Shell";
@@ -70,6 +69,14 @@ function CompanionStage() {
   /* rows already in the log when the screen opened are history: they are shown, not spoken */
   const spoken = useRef(rows.length);
   useEffect(() => { if (s.tab === "conversation" && trRef.current) trRef.current.scrollTop = trRef.current.scrollHeight; }, [rows.length, s.tab, s.drawer]);
+  /* whenever a new line lands in the conversation (a question or Pedro's answer, from any input path),
+     open the log on Conversation so the astronaut can read it */
+  const [trail, setTrail] = useState<string[]>([]);
+  const seen = useRef(rows.length);
+  useEffect(() => {
+    if (rows.length > seen.current && atPresent) set({ drawer: true, tab: "conversation" });
+    seen.current = rows.length;
+  }, [rows.length, atPresent, set]);
   useEffect(() => () => { window.clearTimeout(typeTimer.current); Presence.setState("idle"); }, []);
 
   const chat = useCompanionChat({
@@ -140,9 +147,11 @@ function CompanionStage() {
 
   const userSaid = (q: string, intent?: string) => {
     if (busy) return;
+    setTrail([]);
     vega.current?.stop();
     lastIntent.current = intent;
-    set({ chatted: true, settings: false });
+    // open the log on the conversation so the astronaut sees their question and the answer land
+    set({ chatted: true, settings: false, drawer: true, tab: "conversation" });
     c.addLines([{ who: "you", text: q }]);
     if (intent === "summary" || /summar|recap|my week/i.test(q)) {
       setBusy(true);
@@ -163,7 +172,7 @@ function CompanionStage() {
     setV(null);
     if (p.parse && p.parse.key !== "meals" && p.parse.key !== "sleep") {
       const key = p.parse.key, n = p.parse.v!;
-      set((prev) => ({ chatted: true, draft: { ...prev.draft, [key]: n } }));
+      set((prev) => ({ chatted: true, drawer: true, tab: "conversation", draft: { ...prev.draft, [key]: n } }));
       const b = c.st(key).base, usual = b ? Math.round(b.med) : null;
       c.addLines([
         { who: "you", text: p.text },
@@ -180,6 +189,10 @@ function CompanionStage() {
      - while the answer is being prepared: nothing but "Thinking…" (the streamed draft is never shown)
      - while the avatar speaks: the reply, revealed up to the word being said
      - otherwise: the last reply in full, with its sources */
+  /* live work trail for the log: each progress step Pedro passes through on this turn */
+  if (chat.progress && trail[trail.length - 1] !== chat.progress) setTrail([...trail, chat.progress]);
+  const working = chat.streaming || !!chat.progress ? (trail.length ? trail : ["thinking"]) : null;
+
   const lastReply = [...rows].reverse().find((x) => x.who === "companion" && x.text);
   const thinking = chat.streaming;
   const shown = thinking
@@ -197,10 +210,9 @@ function CompanionStage() {
         <section className="stage" aria-label={COMPANION_NAME}>
           <div className="stage__tools">
             <Toggle on={s.voice} label="Voice" onClick={() => { set((p) => ({ voice: !p.voice })); setTypeMode(false); }} />
-            <button type="button" className="ta ta--quiet" aria-pressed={s.settings} onClick={() => set((p) => ({ settings: !p.settings }))}>Settings</button>
             <button type="button" className="ta ta--quiet" aria-expanded={s.drawer} aria-controls="drawer" onClick={() => set((p) => ({ drawer: !p.drawer }))}>{s.drawer ? "Hide log" : "Show log"}</button>
           </div>
-          {s.settings ? <Settings /> : <>
+          {<>
             <VegaAvatar onSpeech={onSpeech} onReady={(api) => {
               vega.current = api;
               api?.setRestEmotion(restEmotion(worst));
@@ -246,7 +258,7 @@ function CompanionStage() {
       </div>
 
       <section className={`drawer${s.drawer ? " is-open" : ""}`} id="drawer" aria-label="Companion log" hidden={!s.drawer}>
-        {s.drawer ? <Drawer trRef={trRef} jSel={jSel} setJSel={setJSel} jSummary={jSummary} setJSummary={setJSummary} /> : null}
+        {s.drawer ? <Drawer working={working} trRef={trRef} jSel={jSel} setJSel={setJSel} jSummary={jSummary} setJSummary={setJSummary} /> : null}
       </section>
     </div>
   );
@@ -277,7 +289,7 @@ function Reply({ row, live, progress }: { row?: ConvoRow; live: boolean; progres
   const plain = live || row.escalation || row.noAnswer || row.stopped;
   const [lead, rest] = plain ? [row.text ?? "", ""] : splitLead(row.text ?? "");
   return (
-    <div className="grid max-h-[38vh] w-full max-w-[min(94%,88ch)] auto-rows-max content-start justify-items-center gap-3 overflow-y-auto text-center">
+    <div className="grid max-h-[46vh] w-full max-w-[min(96%,1100px)] auto-rows-max content-start justify-items-center gap-3 overflow-y-auto text-center">
       {row.escalation ? <EscalationNotice /> : null}
       {row.noAnswer && !live ? <p className="label">Not on board</p> : null}
       {row.stopped ? <p className="label">Stopped</p> : null}
@@ -338,32 +350,10 @@ function AnswerSources({ sources }: { sources?: ConvoRow["sources"] }) {
   );
 }
 
-/* ---------- settings: tone, voice, sharing ---------- */
-function Settings() {
-  const c = useConsole();
-  const { s, set } = c;
-  const sh = c.shared(s.me);
-  return (
-    <div className="settings" aria-label="Settings">
-      <h2 className="sec-t">Settings</h2>
-      <div className="set-row"><span className="label">Tone</span><div className="ctl">
-        <Segmented options={[["gentle", "Gentle"], ["direct", "Direct"]]} value={s.tone} label="Tone" onChange={(v) => set({ tone: v })} />
-        <span className="small t2">Changes how flags and suggestions are worded.</span></div></div>
-      <div className="set-row"><span className="label">Voice</span><div className="ctl">
-        <Segmented options={[["on", "On"], ["off", "Off"]]} value={s.voice ? "on" : "off"} label="Voice" onChange={(v) => set({ voice: v === "on" })} />
-        <span className="small t2">Speech always appears as text too.</span></div></div>
-      <div className="set-row"><span className="label">Sharing</span><div className="ctl">
-        <Segmented options={[["private", "Private"], ["share", "Share aggregates"]]} value={sh.length ? "share" : "private"} label="Sharing"
-          onChange={(v) => set((p) => ({ shares: { ...p.shares, [p.me]: v === "share" ? KEYS.slice() : [] } }))} />
-        <div className="mshare">{MEASURES.map((m) => <Toggle key={m.key} on={sh.includes(m.key)} label={m.name} onClick={() => toggleShare(c, m.key)} />)}</div>
-        <span className="small t2">Only aggregates reach Crew, and only when at least 2 crew share a measure.</span></div></div>
-      <p className="actions pt3"><button type="button" className="ta" onClick={() => set({ settings: false })}>Done</button></p>
-    </div>
-  );
-}
 
 /* ---------- companion log drawer: conversation, alerts, insights, journal ---------- */
-function Drawer({ trRef, jSel, setJSel, jSummary, setJSummary }: {
+function Drawer({ working, trRef, jSel, setJSel, jSummary, setJSummary }: {
+  working: string[] | null;
   trRef: React.RefObject<HTMLDivElement | null>; jSel: number; setJSel: (n: number) => void; jSummary: boolean; setJSummary: (b: boolean) => void;
 }) {
   const c = useConsole();
@@ -412,6 +402,7 @@ function Drawer({ trRef, jSel, setJSel, jSummary, setJSummary }: {
         return <div key={i} style={{ display: "contents" }}>{head}<TrRow r={r} /></div>;
       });
     }
+    if (working) pane = <>{pane}<WorkRow steps={working} /></>;
   }
 
   return <>
@@ -437,6 +428,32 @@ function Drawer({ trRef, jSel, setJSel, jSummary, setJSummary }: {
   </>;
 }
 type ConsoleTab = "conversation" | "alerts" | "insights" | "journal";
+
+/* Pedro at work: the steps done so far (ticked) and the current one (animated), with elapsed time. */
+function WorkRow({ steps }: { steps: string[] }) {
+  const { clockMin } = useConsole();
+  const [since] = useState(() => Date.now()); // mounts when the turn starts
+  const [now, setNow] = useState(since);
+  useEffect(() => { const id = window.setInterval(() => setNow(Date.now()), 500); return () => window.clearInterval(id); }, []);
+  const secs = Math.max(0, Math.round((now - since) / 1000));
+  return (
+    <div className="trow trow--companion trow--work" role="status">
+      <span className="trow__t">{hm(clockMin)}</span><span className="trow__s">{COMPANION_NAME}</span>
+      <span className="trow__x">
+        <ol className="work">
+          {steps.map((k, i) => {
+            const cur = i === steps.length - 1;
+            return <li key={k + i} className={cur ? "is-cur" : "is-done"}>
+              <span className="work__m" aria-hidden="true">{cur ? <span className="work__dots"><i /><i /><i /></span> : "✓"}</span>
+              {STEP[k] ?? k}{cur ? "…" : ""}
+            </li>;
+          })}
+        </ol>
+        {secs ? <span className="small t2">{secs}s</span> : null}
+      </span>
+    </div>
+  );
+}
 
 function TrRow({ r }: { r: ConvoRow }) {
   const { atPresent } = useConsole();
