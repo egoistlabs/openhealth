@@ -12,6 +12,8 @@ export type MeasureInfo = {
   affects: string[];
   /** how this app gets the number */
   how: string;
+  /** practical, general steps to move back toward the healthy side */
+  improve?: string[];
 };
 
 export const MEASURE_INFO: Partial<Record<MeasureKey, MeasureInfo>> = {
@@ -31,6 +33,7 @@ export const MEASURE_INFO: Partial<Record<MeasureKey, MeasureInfo>> = {
       "Caffeine late in the day, and screens close to bedtime",
     ],
     how: "Hours asleep, worked out from the sleep and wake times you give in your daily check-in.",
+    improve: ["Keep a fixed 8-hour sleep window, and protect it like any other task on the schedule.", "Dim screens and cabin lights for the last 30 minutes before sleep.", "Use an eye mask and earplugs to block light and fan noise.", "Avoid caffeine in the last 6 hours before sleep."],
   },
   rt: {
     why:
@@ -48,6 +51,7 @@ export const MEASURE_INFO: Partial<Record<MeasureKey, MeasureInfo>> = {
       "Distractions during the test, or a different device or posture",
     ],
     how: "The median of your taps in the optional reaction game at the end of your daily check-in. Take it in a quiet moment, the same way each day, for a fair comparison.",
+    improve: ["Sleep comes first: one good night usually brings reaction time back.", "Take the test at the same time each day, sitting, with no distractions.", "After a heavy shift, take a short break before precision tasks.", "Stay hydrated and take a few minutes of light movement before the test."],
   },
   timing: {
     why:
@@ -65,6 +69,7 @@ export const MEASURE_INFO: Partial<Record<MeasureKey, MeasureInfo>> = {
       "The longer Mars sol slowly pushing the body clock later",
     ],
     how: "The clock time halfway between the sleep and wake times you give in your check-in. Early and late drifts both count.",
+    improve: ["Wake at the same time every sol, even after a short night.", "Get bright light soon after waking; keep light dim in the evening.", "Start winding down at a fixed time instead of when the work runs out.", "Shift a schedule change by about 30 minutes a day, not all at once."],
   },
   mood: {
     why:
@@ -82,6 +87,7 @@ export const MEASURE_INFO: Partial<Record<MeasureKey, MeasureInfo>> = {
       "Monotony: the same people, food and routine day after day",
     ],
     how: "Your own 1 to 5 rating in the daily check-in. There is no right answer; an honest number is what makes the trend useful.",
+    improve: ["Talk to someone: a crewmate, family on the next call, or Pedro.", "Protect a little private time each day, even 15 minutes.", "Keep exercise, meals and sleep regular; they hold mood up.", "If low mood runs for several days, tell the flight surgeon. It is a normal part of long missions."],
   },
   load: {
     why:
@@ -99,6 +105,7 @@ export const MEASURE_INFO: Partial<Record<MeasureKey, MeasureInfo>> = {
       "Communication delays with ground and little time off",
     ],
     how: "Your own 1 to 5 rating of how heavy the day felt, counting both workload and stress.",
+    improve: ["Name the one task that matters most today and finish it first.", "Ask for a hand or a schedule swap early, before the load builds up.", "Take short breaks between demanding tasks.", "Flag a long run of heavy days to ground so the plan can be rebalanced."],
   },
   team: {
     why:
@@ -116,6 +123,7 @@ export const MEASURE_INFO: Partial<Record<MeasureKey, MeasureInfo>> = {
       "Cultural or language differences that go unspoken",
     ],
     how: "Your own 1 to 5 rating of how well the crew worked together, plus whether you shared a meal. Only crew totals ever leave this view, and only if you choose to share.",
+    improve: ["Share at least one meal a day with the crew.", "Raise small frictions early, calmly and in private.", "Make sure roles for the day are clear before work starts.", "Say thanks out loud; small recognition goes a long way in a small crew."],
   },
   engage: {
     why:
@@ -133,5 +141,6 @@ export const MEASURE_INFO: Partial<Record<MeasureKey, MeasureInfo>> = {
       "Talking more with crew or family instead, which is a good thing",
     ],
     how: "Counted automatically from your conversations with Pedro and your check-in history. The content of what you say is never scored, only how much.",
+    improve: ["Keep the daily check-in, even when it feels pointless.", "Say a few words to Pedro about your day, not only the numbers.", "Join one crew activity or call home this week.", "If you notice yourself pulling back, mention it. That is exactly what this measure is for."],
   },
 };

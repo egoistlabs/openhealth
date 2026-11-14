@@ -94,7 +94,7 @@ export function CrewScreen() {
               <span className="ctile__s">on shared measures</span></div>
           </div>
 
-          <h2 className="sec-t mt4">Crew at a glance<ColourKey refLabel="Own normal" /></h2>
+          <h2 className="sec-t mt4">Crew at a glance<ColourKey refLabel="Own normal band" /></h2>
           {/* same card look as Home's measure cards, but static: no drag grip, no stats modal */}
           <div className="mgrid mgrid--4" role="list" aria-label="Team areas">
             {blocks.map(({ k, label, t }) => (
