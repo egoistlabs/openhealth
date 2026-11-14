@@ -162,6 +162,14 @@ Keep this terminal window open while using the application.
 
 **Important:** If Ollama is already running as a background service, you do not need to execute `ollama serve` again.
 
+**Recommended:** start Ollama with two parallel slots, so the safety check and the reply each keep their prompt cached:
+
+```bash
+OLLAMA_NUM_PARALLEL=2 ollama serve
+```
+
+With one slot, each safety check reprocesses its prompt from scratch: a few seconds on an M-series Mac, about 35 seconds on a 2-core CPU.
+
 ## Running Pedro
 
 Once Ollama and MedGemma are ready, you can start the Next.js application.
@@ -194,7 +202,14 @@ OLLAMA_BASE_URL=http://localhost:11434
 OLLAMA_MODEL=medgemma:4b
 ```
 
-`web/.env` is git-ignored. Copy `web/.env.example` if you want a starting point.
+Optional safety-check settings:
+
+| Variable | Default | What it does |
+| --- | --- | --- |
+| `SAFETY_CLASSIFIER` | on | Set to `0` to turn off the model's safety label and use the keyword checks only |
+| `SAFETY_CLASSIFIER_TIMEOUT_MS` | `60000` | How long to wait for the safety label before the keyword checks decide alone |
+
+`web/.env` is git-ignored. `web/.env.example` lists every setting with its default: `cp web/.env.example web/.env`.
 
 #### Switching between Ollama and Claude
 
@@ -217,7 +232,7 @@ Unset `LOCAL_LLM` means `true`, so existing local setups keep working unchanged.
 
 Restart the dev server after changing `.env`; the values are read at startup.
 
-**Privacy:** with `LOCAL_LLM=false`, the question, chat history, the person's numbers and the selected brain excerpts are sent to the Anthropic API. The red-flag check and the answer audits still run locally in code, but inference no longer stays on the machine. The default local mode sends nothing off the machine.
+**Privacy:** with `LOCAL_LLM=false`, the question, chat history, the person's numbers and the selected brain excerpts are sent to the Anthropic API, and so is each message for the model's safety label. The keyword safety checks and the answer audits still run locally in code, but inference no longer stays on the machine. The default local mode sends nothing off the machine.
 
 ### 4. Start the Development Server
 

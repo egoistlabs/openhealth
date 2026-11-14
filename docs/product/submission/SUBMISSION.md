@@ -70,9 +70,9 @@ Pedro is an AI companion with medical knowledge, built for crews too far from Ea
 
 - **It catches what people don't report.** In our simulation, just asking crew how they felt caught 2% of the declines they hadn't noticed in themselves. Pedro's flag rule caught 98%.
 - **Nothing extra to fly.** No wearable, no sensors and no consumables: one laptop, offline by default.
-- **It doesn't guess.** Code does the maths and the safety checks and checks every reply. The AI model only writes the words.
+- **It doesn't guess.** Code does the maths and checks every reply. The AI model writes the words and helps spot emergencies, but code makes every safety decision.
 - **It keeps working if the AI fails.** Statuses, flags and emergency messages are all code, so they still work with the model switched off.
-- **We know where it falls short.** It raises too many false alarms, and its emergency phrase list is too narrow. Both are measured below, and both are our next steps.
+- **We know where it falls short.** It raises too many false alarms, both in the daily flags and in the emergency check, which sometimes treats serious distress as an emergency. Both are measured below, and both are our next steps.
 
 
 ### What it does: a two-minute daily check-in, compared with your own normal
@@ -106,7 +106,7 @@ Pedro also counts how much you talk to it and any missed check-ins.
 
 ![Crew view: crew-level numbers only](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-crew.png)
 
-### How it works: code does the maths and safety checks, the AI model only writes the words
+### How it works: code makes every decision, the AI model reads and writes the words
 
 ![What happens when you ask Pedro a question](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/answer-flow.png)
 
@@ -169,7 +169,7 @@ Each risk we weighed led to one design choice. The sections above describe how e
 - **Astronauts miss and under-report their own decline.** Pedro measures rather than only asks, against each person's own normal, since one astronaut's normal can be another's warning sign.
 - **Going quiet is part of the decline.** Pedro counts engagement instead of asking about it.
 - **Earth is too far away, and there is no internet.** Everything runs on the laptop.
-- **A small AI model can get numbers wrong, make things up, or play along with "pretend to be my doctor".** Code does the maths and the safety checks and checks every reply. The model only writes the words.
+- **A small AI model can get numbers wrong, make things up, or play along with "pretend to be my doctor".** Code does the maths, writes every safety message and checks every reply. The model writes the words, and its safety label can add a flag but never clear one.
 - **People don't describe an emergency in the words on a list.** An AI safety label reads the meaning, keywords stay as a floor, and the fixed emergency message is always written by code.
 - **In a crew of a few people, any number points to someone.** The crew view shows only crew-level numbers.
 - **Too many alerts get ignored.** One bad night never changes a status, and false alarms have a pass mark.
@@ -188,7 +188,7 @@ Each risk we weighed led to one design choice. The sections above describe how e
 - **Anthropic Claude API:** optional comparison mode, off by default.
 - **Web Speech API:** voice input and spoken replies.
 - **Node.js:** test suites and the crew simulator.
-- **Mermaid:** the flow diagram above.
+- **HTML + headless Chrome:** the flow diagram above.
 - **Hardware:** one laptop, a MacBook M4 with 16 GB. No sensors.
 
 ---
@@ -199,7 +199,8 @@ Yes. We used SI tools in two different ways, and we keep them apart below: **(A)
 
 ### A. SI inside the product
 
-- **Pedro's replies: MedGemma 4B** (Google, open weights), run locally with **Ollama**. It writes replies from sourced material. It does **not** compute statuses, decide emergencies or invent numbers: code does all of that and checks every reply (see the seven steps in Field 5).
+- **Pedro's replies: MedGemma 4B** (Google, open weights), run locally with **Ollama**. It writes replies from sourced material. It does **not** compute statuses or invent numbers: code does that and checks every reply (see the seven steps in Field 5).
+- **Safety label: the same MedGemma 4B.** For every message it fills in a fixed form (emergency and which kind, distress, boundary), and Ollama forces the answer into that JSON shape. It can add an emergency, distress or boundary flag on top of the keyword checks but never clear one. A boundary label counts only after a second yes/no question agrees. The emergency and decline messages are always fixed text written by code.
 - **Optional comparison mode: Anthropic Claude** through the API (`LOCAL_LLM=false`). Same pipeline and same checks. Off by default. Sends data off the laptop, which the README states.
 - **Voice:** browser **speech recognition and speech synthesis** (Web Speech API). Turns speech into text and reads the checked reply aloud. Pedro's voice is computer-generated, and the app labels Pedro as an SI companion.
 - **Check-in by voice:** the same local model (stage `01-checkin-parse`). Turns a spoken answer such as "slept around 1:40, up at 8" into fields. You review the result before it is saved.
@@ -215,7 +216,7 @@ How SI output is marked inside the product:
 
 **Claude Code** (Anthropic; Claude Fable 5.2 and Claude Opus 5.5 models)
 
-- **What we used it for:** finding and summarising published research and NASA pages; drafting the docs (tech spec, eval design, user stories); writing and editing parts of the code and the test scripts; drafting the brain's knowledge files from cited sources; drafting this submission text; turning our real test output into the terminal screenshots shown here; drawing the flow diagram in Field 5.
+- **What we used it for:** finding and summarising published research and NASA pages; drafting the docs (tech spec, eval design, user stories); writing and editing parts of the code and the test scripts; drafting the brain's knowledge files from cited sources; writing the safety label's instructions and examples; drafting this submission text; turning our real test output into the terminal screenshots shown here; drawing the flow diagram in Field 5.
 - **What people did:** the team chose the challenge, the hazards (isolation and confinement, distance from Earth), the seven measures and the scope in our own brainstorming document. Team members reviewed, edited and tested what was generated and decided what went in.
 
 `[TODO: each teammate adds their tools, e.g. other coding assistants or chatbots, with what they used them for]`
