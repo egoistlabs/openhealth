@@ -4,18 +4,289 @@ A local-LLM companion for astronauts on long missions, built for the NASA Space 
 
 The spec is still being locked. Until it lands in `docs/`, this repo is the place to collect everyone's work.
 
+## Tech Stack
+
+- **Frontend:** Next.js
+- **AI Runtime:** Ollama
+- **AI Model:** MedGemma 4B
+- **Architecture:** Fully local inference (no external LLM API required)
+
 ## Where things go
 
 | Folder | What belongs there |
 | --- | --- |
-| [`context/`](context/) | Raw material: research, notes, references, meeting notes, challenge info. Unpolished is fine. |
-| [`docs/product/`](docs/product/) | What we are building and why: scope, users, features, demo script. |
-| [`docs/design/`](docs/design/) | How it looks and feels: flows, wireframes, mockups, brand, copy. |
-| [`docs/tech-spec/`](docs/tech-spec/) | How it is built: architecture, data model, model setup, decisions. |
+| `context/` | Raw material: research, notes, references, meeting notes, challenge info. Unpolished is fine. |
+| `docs/product/` | What we are building and why: scope, users, features, demo script. |
+| `docs/design/` | How it looks and feels: flows, wireframes, mockups, brand, copy. |
+| `docs/tech-spec/` | How it is built: architecture, data model, model setup, decisions. |
 
 Code will live at the repo root (for example `app/`) once the spec is locked.
 
-## Adding your work
+## Prerequisites
+
+Before running OpenHealth, make sure you have:
+
+- [Node.js](https://nodejs.org/) installed.
+- [pnpm](https://pnpm.io/installation) installed.
+- [Ollama](https://ollama.com/download) installed.
+- At least 8 GB of system RAM recommended for experimenting with the 4B model. More available memory is preferable.
+
+## Setting Up Ollama
+
+Ollama runs MedGemma locally on your machine. You do not need Python, Docker, or a separate AI backend to run the model.
+
+### 1. Install Ollama
+
+Choose your operating system.
+
+**macOS**
+
+Option A: Download the application.
+
+1. Visit [Ollama Downloads](https://ollama.com/download).
+2. Download the macOS version.
+3. Open the downloaded `.dmg` file.
+4. Drag Ollama into your Applications folder.
+5. Open Ollama and allow it to run in the background.
+
+Option B: Install using Terminal.
+
+```bash
+curl -fsSL https://ollama.com/install.sh | sh
+```
+
+Verify the installation:
+
+```bash
+ollama --version
+```
+
+**Windows**
+
+Option A: Download the installer.
+
+1. Visit [Ollama Downloads](https://ollama.com/download).
+2. Download the Windows installer.
+3. Run `OllamaSetup.exe`.
+4. Follow the installation instructions.
+5. Open Ollama from the Start Menu.
+
+Option B: Install using PowerShell.
+
+```powershell
+irm https://ollama.com/install.ps1 | iex
+```
+
+Verify the installation by opening PowerShell:
+
+```powershell
+ollama --version
+```
+
+### 2. Download MedGemma 4B
+
+Once Ollama is installed, open your Terminal (macOS) or PowerShell (Windows).
+
+Run:
+
+```bash
+ollama pull medgemma:4b
+```
+
+This downloads the MedGemma 4B model to your local machine.
+
+**Model information:**
+
+| Property | Value |
+| --- | --- |
+| Model | MedGemma |
+| Parameters | 4B |
+| Quantization | Q4_K_M |
+| Download size | Approximately 3.3 GB |
+| Context window | 128K |
+| Capabilities | Text and image understanding |
+
+Model reference: https://ollama.com/library/medgemma:4b
+
+### 3. Run MedGemma
+
+After downloading the model, start it:
+
+```bash
+ollama run medgemma:4b
+```
+
+You should now be able to interact with MedGemma directly from your terminal.
+
+Try sending a message:
+
+```text
+Hello! Introduce yourself as an AI companion for astronauts.
+```
+
+To exit the interactive session:
+
+```text
+/bye
+```
+
+### 4. Verify Ollama is Running
+
+Ollama normally runs automatically in the background after launching its desktop application.
+
+To check downloaded models:
+
+```bash
+ollama list
+```
+
+To check currently running models:
+
+```bash
+ollama ps
+```
+
+To check whether the local API is responding:
+
+```bash
+curl http://localhost:11434/api/tags
+```
+
+If Ollama is not running, start the server manually:
+
+```bash
+ollama serve
+```
+
+Keep this terminal window open while using the application.
+
+**Important:** If Ollama is already running as a background service, you do not need to execute `ollama serve` again.
+
+## Running OpenHealth
+
+Once Ollama and MedGemma are ready, you can start the Next.js application.
+
+### 1. Clone the Repository
+
+```bash
+git clone <repository-url>
+```
+
+Navigate into the project:
+
+```bash
+cd openhealth
+```
+
+### 2. Install Dependencies
+
+```bash
+pnpm install
+```
+
+### 3. Configure Environment Variables
+
+Create a `.env.local` file in the project root:
+
+```env
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=medgemma:4b
+```
+
+These variables configure the local Ollama server and the model used by the application.
+
+### 4. Start the Development Server
+
+```bash
+pnpm dev
+```
+
+Open your browser:
+
+```text
+http://localhost:3000
+```
+
+Make sure Ollama is running before testing AI conversations.
+
+## Connecting Next.js to Ollama
+
+OpenHealth communicates with Ollama through its local REST API.
+
+**Chat endpoint:**
+
+```text
+POST http://localhost:11434/api/chat
+```
+
+Example request:
+
+```json
+{
+  "model": "medgemma:4b",
+  "messages": [
+    {
+      "role": "user",
+      "content": "Hello, how are you?"
+    }
+  ],
+  "stream": false
+}
+```
+
+For the application, requests should go through Next.js API routes or server-side code rather than directly from browser components.
+
+This keeps the Ollama connection on the server side and avoids exposing unnecessary backend configuration.
+
+Official API documentation: https://docs.ollama.com/api
+
+## Useful Ollama Commands
+
+| Command | Description |
+| --- | --- |
+| `ollama --version` | Check Ollama version |
+| `ollama list` | List downloaded models |
+| `ollama pull medgemma:4b` | Download MedGemma 4B |
+| `ollama run medgemma:4b` | Start an interactive session |
+| `ollama ps` | Show running models |
+| `ollama stop medgemma:4b` | Stop the running model |
+| `ollama serve` | Start the Ollama server |
+
+## Troubleshooting
+
+**Ollama is not recognized as a command**
+
+- Make sure Ollama is installed.
+- Restart your terminal after installation.
+- On Windows, verify that Ollama is available in your system PATH.
+
+**Cannot connect to localhost:11434**
+
+- Make sure the Ollama desktop application is running.
+- Try starting the server using `ollama serve` if it is not already running.
+- Check whether port `11434` is being used by another application.
+
+**MedGemma is not found**
+
+Run:
+
+```bash
+ollama pull medgemma:4b
+```
+
+**The model responds slowly**
+
+- Close unnecessary applications.
+- Make sure sufficient system memory is available.
+- Avoid running multiple large models simultaneously.
+
+## Important Notes
+
+- OpenHealth is designed to run AI inference locally through Ollama.
+- No external LLM API key is required.
+- Model performance depends on the machine's available RAM and hardware acceleration.
+
+## Adding Your Work
 
 1. Put the file in the folder that fits. If unsure, use `context/`.
 2. Name it in lowercase with hyphens, for example `sleep-research-notes.md`.
