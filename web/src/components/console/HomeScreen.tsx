@@ -29,7 +29,7 @@ export function HomeScreen() {
     ? <button type="button" className="btn-primary" onClick={() => set({ sol: P })}>Return to today <Icon name="arrow" /></button>
     : due
       ? <Link className="btn-primary" href={ROUTE.checkin}>Start daily check-in <Icon name="arrow" /></Link>
-      : <Link className="btn-primary" href={ROUTE.companion}>Talk to the companion <Icon name="arrow" /></Link>;
+      : <Link className="btn-primary" href={ROUTE.companion}>Talk to Pedro <Icon name="arrow" /></Link>;
 
   return (
     <>

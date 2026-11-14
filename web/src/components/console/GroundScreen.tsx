@@ -94,7 +94,7 @@ export function GroundScreen() {
         <aside className="sec__margin">
           <div>
             <h2 className="sec-t sec-t--rule">What reaches Earth</h2>
-            <p className="t2">Each crew member chooses, per measure, what is shared. Two things override that, by name: a measure at Act (5+ days outside their own normal), and the companion giving the emergency notice. Ground gets that it happened, never the values or what was said.</p>
+            <p className="t2">Each crew member chooses, per measure, what is shared. Two things override that, by name: a measure at Act (5+ days outside their own normal), and Pedro giving the emergency notice. Ground gets that it happened, never the values or what was said.</p>
           </div>
         </aside>
       </section>
@@ -201,7 +201,7 @@ export function GroundScreen() {
 
 function CompanionBlock({ report, err }: { report: GroundReport | null; err: boolean }) {
   if (err) return <p className="t2">The companion report could not be read.</p>;
-  if (!report) return <p className="t2">Reading the companion log…</p>;
+  if (!report) return <p className="t2">Reading Pedro&apos;s log…</p>;
   const c = report.companion;
   if (!c) return <p className="t2">Turn logging is off on this machine, so there is nothing to count.</p>;
   if (!c.turns) return <p className="t2">No companion questions logged yet.</p>;
@@ -224,7 +224,7 @@ function CompanionBlock({ report, err }: { report: GroundReport | null; err: boo
         <h3 className="sec-t mt6 small">Red-flag categories matched</h3>
         <ul className="gl">{c.redFlags.map((x) => <li key={x.category}><span>{x.category}</span><span className="num t2">{x.n}</span></li>)}</ul>
       </> : null}
-      <p className="small t2 mt3">From the companion turn log on this machine. Questions, answers and who asked are never sent.</p>
+      <p className="small t2 mt3">From Pedro&apos;s turn log on this machine. Questions, answers and who asked are never sent.</p>
     </>
   );
 }

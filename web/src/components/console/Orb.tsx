@@ -12,7 +12,7 @@ export function OrbCanvas({ kind = "view", label }: { kind?: "view" | "wave"; la
   const ref = useRef<HTMLCanvasElement>(null);
   const state = usePresenceState();
   useEffect(() => (ref.current ? Presence.attach(ref.current, kind) : undefined), [kind]);
-  return label ? <canvas ref={ref} role="img" aria-label={`Companion, ${state}`} /> : <canvas ref={ref} aria-hidden="true" />;
+  return label ? <canvas ref={ref} role="img" aria-label={`Pedro, ${state}`} /> : <canvas ref={ref} aria-hidden="true" />;
 }
 
 export function Avatar() {

@@ -70,7 +70,7 @@ export function escalations(sol: number, shares: Shares, convo: Record<string, C
 }
 export const escalationText = (e: Escalation) =>
   e.kind === "companion"
-    ? "The companion gave the emergency notice. What was said stays on board."
+    ? "Pedro gave the emergency notice. What was said stays on board."
     : `${MKEY[e.key].name} at Act, ${e.k} ${MKEY[e.key].unitWord} outside their own normal${e.shared ? "" : ". Measure not shared, so no values"}.`;
 
 /* ---------- crew-level numbers for the written downlink summary (C7: aggregates only) ---------- */
