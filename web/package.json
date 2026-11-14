@@ -14,13 +14,18 @@
     "evals:emergencies": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/evals-emergencies.ts",
     "evals:detection": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/evals-detection.ts",
     "sim:mission": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/sim-mission.ts",
-    "brain:add": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/brain-add.ts"
+    "brain:add": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/brain-add.ts",
+    "postinstall": "node scripts/copy-somakine-assets.mjs",
+    "body:head-neck": "node scripts/build-head-neck-extension.mjs"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.105",
     "@ai-sdk/openai": "^4.0.118",
     "@ai-sdk/react": "^4.0.177",
     "@radix-ui/react-progress": "^1.2.1",
+    "@somakine/bodyparts3d-musculoskeletal": "^0.2.0",
+    "@somakine/react": "^0.2.0",
+    "@somakine/viewer": "^0.2.0",
     "ai": "^7.0.173",
     "clsx": "^2.1.1",
     "lucide-react": "^1.73.0",
@@ -29,7 +34,7 @@
     "react-dom": "19.3.0",
     "swapy": "^1.0.5",
     "tailwind-merge": "^3.7.0",
-    "three": "^0.170.0",
+    "three": "^0.180.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
@@ -37,7 +42,7 @@
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",
-    "@types/three": "^0.170.0",
+    "@types/three": "^0.180.0",
     "eslint": "^9",
     "eslint-config-next": "16.4.6",
     "tailwindcss": "4.3.3",

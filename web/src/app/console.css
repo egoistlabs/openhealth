@@ -1211,14 +1211,6 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
 .th-ref.is-earth { stroke: var(--c-info); stroke-dasharray: 5 3; }
 .th-dot { fill: var(--c-text); }
 .mcard__ref { font-size: 10px; line-height: 1.3; color: var(--c-text-3); }
-.mgrid__foot { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--s-1) var(--s-4); margin-top: var(--s-2); }
-.th-legend { display: inline-flex; flex-wrap: wrap; gap: var(--s-1) var(--s-4); font-size: var(--fs-label); color: var(--c-text-2); }
-.th-legend > span { display: inline-flex; align-items: center; gap: 6px; }
-.th-sw { display: inline-block; width: 14px; height: 8px; }
-.th-sw--line { height: 0; border-top: 1.5px solid var(--c-text); }
-.th-sw--ref { height: 0; border-top: 1.5px dashed var(--c-info); }
-.th-sw--good { background: var(--c-normal); opacity: .5; }
-.th-sw--bad { background: var(--c-watch); opacity: .55; }
 /* colour key beside the "Today" heading */
 .ckey { display: inline-flex; flex-wrap: wrap; align-items: center; gap: var(--s-1) var(--s-4); font: var(--fw-regular) var(--fs-label) / var(--lh-label) var(--f-sans); color: var(--c-text-2); }
 .ckey > span { display: inline-flex; align-items: center; gap: 6px; }

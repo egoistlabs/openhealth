@@ -1,0 +1,1293 @@
+{
+ "schemaVersion": "0.1.0",
+ "id": "openhealth-head-neck",
+ "version": "1.0.0",
+ "title": "OpenHealth head and neck muscles",
+ "description": "Jaw and neck muscles from BodyParts3D 4.0, plus approximate face muscles shaped over the BodyParts3D skull (BodyParts3D has no facial or jaw muscles).",
+ "createdAt": "2026-11-14T17:14:09.165Z",
+ "namespace": "openhealth",
+ "targetPack": {
+  "id": "somakine-bodyparts3d-musculoskeletal",
+  "version": "4.0.0-somakine.2"
+ },
+ "sources": [
+  {
+   "id": "openhealth-bodyparts3d-4",
+   "title": "BodyParts3D (IS-A tree OBJ)",
+   "version": "4.0",
+   "url": "https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html",
+   "retrievedAt": "2026-11-15T00:00:00Z"
+  },
+  {
+   "id": "openhealth-face-approximation",
+   "title": "OpenHealth approximate face muscles over the BodyParts3D 4.0 skull",
+   "version": "1.0.0",
+   "url": "https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html",
+   "retrievedAt": "2026-11-15T00:00:00Z"
+  }
+ ],
+ "licenses": [
+  {
+   "id": "openhealth-CC-BY-4.0",
+   "name": "Creative Commons Attribution 4.0 International",
+   "url": "https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html",
+   "attribution": "BodyParts3D, © The Database Center for Life Science licensed under CC Attribution 4.0 International. Face muscle shapes are OpenHealth approximations derived from the BodyParts3D skull.",
+   "redistribution": "attribution"
+  }
+ ],
+ "regions": [],
+ "structures": [
+  {
+   "id": "somakine:structure:openhealth-masseter",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {},
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "face",
+    "approximate-shape"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-temporalis",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {},
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "face",
+    "approximate-shape"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-frontalis",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {},
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "face",
+    "approximate-shape"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-orbicularis-oculi",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {},
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "face",
+    "approximate-shape"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-zygomaticus-major",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {},
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "face",
+    "approximate-shape"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-orbicularis-oris",
+   "type": "muscle",
+   "laterality": "midline",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {},
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "face",
+    "approximate-shape"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-mentalis",
+   "type": "muscle",
+   "laterality": "midline",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {},
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "face",
+    "approximate-shape"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-occipitalis",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {},
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed",
+   "groups": [
+    "face",
+    "approximate-shape"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-digastric",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA46293",
+    "fmaRight": "FMA46292"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-mylohyoid",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA46322",
+    "fmaRight": "FMA46321"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-splenius-capitis",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA22729",
+    "fmaRight": "FMA22728"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-splenius-cervicis",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA22727",
+    "fmaRight": "FMA22726"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-semispinalis-capitis",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA22877",
+    "fmaRight": "FMA22876"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-scalenus-anterior",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA13393",
+    "fmaRight": "FMA13392"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-scalenus-medius",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA13391",
+    "fmaRight": "FMA13390"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-scalenus-posterior",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA13389",
+    "fmaRight": "FMA13388"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-longus-capitis",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA46310",
+    "fmaRight": "FMA46309"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-rectus-capitis-posterior-major",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA32531",
+    "fmaRight": "FMA32530"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-rectus-capitis-posterior-minor",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA32533",
+    "fmaRight": "FMA32532"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-obliquus-capitis-superior",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA32535",
+    "fmaRight": "FMA32534"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-obliquus-capitis-inferior",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA32537",
+    "fmaRight": "FMA32536"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-sternohyoid",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA13347",
+    "fmaRight": "FMA13346"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  },
+  {
+   "id": "somakine:structure:openhealth-omohyoid",
+   "type": "muscle",
+   "laterality": "paired",
+   "regionIds": [
+    "somakine:region:head-neck"
+   ],
+   "externalIds": {
+    "fmaLeft": "FMA13349",
+    "fmaRight": "FMA13348"
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed",
+   "groups": [
+    "head-neck"
+   ]
+  }
+ ],
+ "relations": [],
+ "assets": [
+  {
+   "id": "somakine:asset:openhealth:head-neck",
+   "kind": "gltf",
+   "uri": "head-neck.glb",
+   "mediaType": "model/gltf-binary",
+   "sha256": "bbd474c7a358028cd6795df385985a05dcc16ea030342c8e1b2eccebc233ebb9",
+   "bytes": 4581176,
+   "geometry": {
+    "vertices": 105118,
+    "gpuBytes": 2522832
+   },
+   "sourceIds": [
+    "openhealth-bodyparts3d-4",
+    "openhealth-face-approximation"
+   ],
+   "licenseId": "openhealth-CC-BY-4.0"
+  }
+ ],
+ "meshInstances": [
+  {
+   "id": "somakine:instance:openhealth-masseter-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:masseter:left:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-masseter-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:masseter:right:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-temporalis-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:temporalis:left:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-temporalis-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:temporalis:right:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-frontalis-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:frontalis:left:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-frontalis-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:frontalis:right:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-orbicularis-oculi-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:orbicularis-oculi:left:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-orbicularis-oculi-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:orbicularis-oculi:right:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-zygomaticus-major-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:zygomaticus-major:left:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-zygomaticus-major-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:zygomaticus-major:right:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-orbicularis-oris-none",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "none",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:orbicularis-oris:none:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-mentalis-none",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "none",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:mentalis:none:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-occipitalis-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:occipitalis:left:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-occipitalis-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:occipitalis:right:approx"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-digastric-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:digastric:left:isa:FJ1555"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-digastric-left-1",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:digastric:left:isa:FJ1560"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-digastric-left-2",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:digastric:left:isa:FJ1578"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-digastric-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:digastric:right:isa:FJ1556"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-digastric-right-1",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:digastric:right:isa:FJ1579"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-mylohyoid-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:mylohyoid:left:isa:FJ1562"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-mylohyoid-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:mylohyoid:right:isa:FJ1583"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-splenius-capitis-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:splenius-capitis:left:isa:FJ1545M"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-splenius-capitis-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:splenius-capitis:right:isa:FJ1545"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-splenius-cervicis-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:splenius-cervicis:left:isa:FJ1546M"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-splenius-cervicis-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:splenius-cervicis:right:isa:FJ1546"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-semispinalis-capitis-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:semispinalis-capitis:left:isa:FJ1538M"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-semispinalis-capitis-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:semispinalis-capitis:right:isa:FJ1538"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-scalenus-anterior-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:scalenus-anterior:left:isa:FJ1570"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-scalenus-anterior-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:scalenus-anterior:right:isa:FJ1592"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-scalenus-medius-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:scalenus-medius:left:isa:FJ1571"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-scalenus-medius-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:scalenus-medius:right:isa:FJ1593"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-scalenus-posterior-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:scalenus-posterior:left:isa:FJ1572"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-scalenus-posterior-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:scalenus-posterior:right:isa:FJ1594"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-longus-capitis-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:longus-capitis:left:isa:FJ1561"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-longus-capitis-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:longus-capitis:right:isa:FJ1582"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-rectus-capitis-posterior-major-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:rectus-capitis-posterior-major:left:isa:FJ1567"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-rectus-capitis-posterior-major-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:rectus-capitis-posterior-major:right:isa:FJ1589"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-rectus-capitis-posterior-minor-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:rectus-capitis-posterior-minor:left:isa:FJ1568"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-rectus-capitis-posterior-minor-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:rectus-capitis-posterior-minor:right:isa:FJ1590"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-obliquus-capitis-superior-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:obliquus-capitis-superior:left:isa:FJ1564"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-obliquus-capitis-superior-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:obliquus-capitis-superior:right:isa:FJ1585"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-obliquus-capitis-inferior-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:obliquus-capitis-inferior:left:isa:FJ1563"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-obliquus-capitis-inferior-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:obliquus-capitis-inferior:right:isa:FJ1584"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-sternohyoid-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:sternohyoid:left:isa:FJ1574"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-sternohyoid-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:sternohyoid:right:isa:FJ1596"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-omohyoid-left",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "left",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:omohyoid:left:isa:FJ1565"
+   }
+  },
+  {
+   "id": "somakine:instance:openhealth-omohyoid-right",
+   "assetId": "somakine:asset:openhealth:head-neck",
+   "laterality": "right",
+   "selector": {
+    "kind": "node-name",
+    "value": "openhealth:omohyoid:right:isa:FJ1586"
+   }
+  }
+ ],
+ "representations": [
+  {
+   "id": "somakine:representation:openhealth-masseter",
+   "structureId": "somakine:structure:openhealth-masseter",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-masseter-left",
+    "somakine:instance:openhealth-masseter-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-temporalis",
+   "structureId": "somakine:structure:openhealth-temporalis",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-temporalis-left",
+    "somakine:instance:openhealth-temporalis-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-frontalis",
+   "structureId": "somakine:structure:openhealth-frontalis",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-frontalis-left",
+    "somakine:instance:openhealth-frontalis-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-orbicularis-oculi",
+   "structureId": "somakine:structure:openhealth-orbicularis-oculi",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-orbicularis-oculi-left",
+    "somakine:instance:openhealth-orbicularis-oculi-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-zygomaticus-major",
+   "structureId": "somakine:structure:openhealth-zygomaticus-major",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-zygomaticus-major-left",
+    "somakine:instance:openhealth-zygomaticus-major-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-orbicularis-oris",
+   "structureId": "somakine:structure:openhealth-orbicularis-oris",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-orbicularis-oris-none"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-mentalis",
+   "structureId": "somakine:structure:openhealth-mentalis",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-mentalis-none"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-occipitalis",
+   "structureId": "somakine:structure:openhealth-occipitalis",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-occipitalis-left",
+    "somakine:instance:openhealth-occipitalis-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-face-approximation"
+   ],
+   "reviewState": "unreviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-digastric",
+   "structureId": "somakine:structure:openhealth-digastric",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-digastric-left",
+    "somakine:instance:openhealth-digastric-left-1",
+    "somakine:instance:openhealth-digastric-left-2",
+    "somakine:instance:openhealth-digastric-right",
+    "somakine:instance:openhealth-digastric-right-1"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-mylohyoid",
+   "structureId": "somakine:structure:openhealth-mylohyoid",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-mylohyoid-left",
+    "somakine:instance:openhealth-mylohyoid-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-splenius-capitis",
+   "structureId": "somakine:structure:openhealth-splenius-capitis",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-splenius-capitis-left",
+    "somakine:instance:openhealth-splenius-capitis-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-splenius-cervicis",
+   "structureId": "somakine:structure:openhealth-splenius-cervicis",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-splenius-cervicis-left",
+    "somakine:instance:openhealth-splenius-cervicis-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-semispinalis-capitis",
+   "structureId": "somakine:structure:openhealth-semispinalis-capitis",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-semispinalis-capitis-left",
+    "somakine:instance:openhealth-semispinalis-capitis-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-scalenus-anterior",
+   "structureId": "somakine:structure:openhealth-scalenus-anterior",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-scalenus-anterior-left",
+    "somakine:instance:openhealth-scalenus-anterior-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-scalenus-medius",
+   "structureId": "somakine:structure:openhealth-scalenus-medius",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-scalenus-medius-left",
+    "somakine:instance:openhealth-scalenus-medius-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-scalenus-posterior",
+   "structureId": "somakine:structure:openhealth-scalenus-posterior",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-scalenus-posterior-left",
+    "somakine:instance:openhealth-scalenus-posterior-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-longus-capitis",
+   "structureId": "somakine:structure:openhealth-longus-capitis",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-longus-capitis-left",
+    "somakine:instance:openhealth-longus-capitis-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-rectus-capitis-posterior-major",
+   "structureId": "somakine:structure:openhealth-rectus-capitis-posterior-major",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-rectus-capitis-posterior-major-left",
+    "somakine:instance:openhealth-rectus-capitis-posterior-major-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-rectus-capitis-posterior-minor",
+   "structureId": "somakine:structure:openhealth-rectus-capitis-posterior-minor",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-rectus-capitis-posterior-minor-left",
+    "somakine:instance:openhealth-rectus-capitis-posterior-minor-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-obliquus-capitis-superior",
+   "structureId": "somakine:structure:openhealth-obliquus-capitis-superior",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-obliquus-capitis-superior-left",
+    "somakine:instance:openhealth-obliquus-capitis-superior-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-obliquus-capitis-inferior",
+   "structureId": "somakine:structure:openhealth-obliquus-capitis-inferior",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-obliquus-capitis-inferior-left",
+    "somakine:instance:openhealth-obliquus-capitis-inferior-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-sternohyoid",
+   "structureId": "somakine:structure:openhealth-sternohyoid",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-sternohyoid-left",
+    "somakine:instance:openhealth-sternohyoid-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  },
+  {
+   "id": "somakine:representation:openhealth-omohyoid",
+   "structureId": "somakine:structure:openhealth-omohyoid",
+   "mode": "direct",
+   "instanceIds": [
+    "somakine:instance:openhealth-omohyoid-left",
+    "somakine:instance:openhealth-omohyoid-right"
+   ],
+   "contextStructureIds": [],
+   "sourceIds": [
+    "openhealth-bodyparts3d-4"
+   ],
+   "reviewState": "source-reviewed"
+  }
+ ],
+ "locales": [
+  {
+   "locale": "en",
+   "labels": {
+    "somakine:structure:openhealth-masseter": "Masseter",
+    "somakine:structure:openhealth-temporalis": "Temporalis",
+    "somakine:structure:openhealth-frontalis": "Frontalis",
+    "somakine:structure:openhealth-orbicularis-oculi": "Orbicularis oculi",
+    "somakine:structure:openhealth-zygomaticus-major": "Zygomaticus major",
+    "somakine:structure:openhealth-orbicularis-oris": "Orbicularis oris",
+    "somakine:structure:openhealth-mentalis": "Mentalis",
+    "somakine:structure:openhealth-occipitalis": "Occipitalis",
+    "somakine:structure:openhealth-digastric": "Digastric",
+    "somakine:structure:openhealth-mylohyoid": "Mylohyoid",
+    "somakine:structure:openhealth-splenius-capitis": "Splenius capitis",
+    "somakine:structure:openhealth-splenius-cervicis": "Splenius cervicis",
+    "somakine:structure:openhealth-semispinalis-capitis": "Semispinalis capitis",
+    "somakine:structure:openhealth-scalenus-anterior": "Scalenus anterior",
+    "somakine:structure:openhealth-scalenus-medius": "Scalenus medius",
+    "somakine:structure:openhealth-scalenus-posterior": "Scalenus posterior",
+    "somakine:structure:openhealth-longus-capitis": "Longus capitis",
+    "somakine:structure:openhealth-rectus-capitis-posterior-major": "Rectus capitis posterior major",
+    "somakine:structure:openhealth-rectus-capitis-posterior-minor": "Rectus capitis posterior minor",
+    "somakine:structure:openhealth-obliquus-capitis-superior": "Obliquus capitis superior",
+    "somakine:structure:openhealth-obliquus-capitis-inferior": "Obliquus capitis inferior",
+    "somakine:structure:openhealth-sternohyoid": "Sternohyoid",
+    "somakine:structure:openhealth-omohyoid": "Omohyoid"
+   },
+   "aliases": {}
+  },
+  {
+   "locale": "zh-CN",
+   "labels": {
+    "somakine:structure:openhealth-masseter": "咬肌",
+    "somakine:structure:openhealth-temporalis": "颞肌",
+    "somakine:structure:openhealth-frontalis": "额肌",
+    "somakine:structure:openhealth-orbicularis-oculi": "眼轮匝肌",
+    "somakine:structure:openhealth-zygomaticus-major": "颧大肌",
+    "somakine:structure:openhealth-orbicularis-oris": "口轮匝肌",
+    "somakine:structure:openhealth-mentalis": "颏肌",
+    "somakine:structure:openhealth-occipitalis": "枕肌",
+    "somakine:structure:openhealth-digastric": "二腹肌",
+    "somakine:structure:openhealth-mylohyoid": "下颌舌骨肌",
+    "somakine:structure:openhealth-splenius-capitis": "头夹肌",
+    "somakine:structure:openhealth-splenius-cervicis": "颈夹肌",
+    "somakine:structure:openhealth-semispinalis-capitis": "头半棘肌",
+    "somakine:structure:openhealth-scalenus-anterior": "前斜角肌",
+    "somakine:structure:openhealth-scalenus-medius": "中斜角肌",
+    "somakine:structure:openhealth-scalenus-posterior": "后斜角肌",
+    "somakine:structure:openhealth-longus-capitis": "头长肌",
+    "somakine:structure:openhealth-rectus-capitis-posterior-major": "头后大直肌",
+    "somakine:structure:openhealth-rectus-capitis-posterior-minor": "头后小直肌",
+    "somakine:structure:openhealth-obliquus-capitis-superior": "头上斜肌",
+    "somakine:structure:openhealth-obliquus-capitis-inferior": "头下斜肌",
+    "somakine:structure:openhealth-sternohyoid": "胸骨舌骨肌",
+    "somakine:structure:openhealth-omohyoid": "肩胛舌骨肌"
+   },
+   "aliases": {}
+  }
+ ],
+ "mappings": []
+}

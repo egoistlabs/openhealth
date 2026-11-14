@@ -19,7 +19,7 @@ const TOURS: Array<{ match: (p: string) => boolean; title: string; steps: Step[]
     steps: [
       { sel: ".idn-wrap", text: "This is you: your role, age, blood type and how you are doing against your own normal." },
       { sel: ".cicard", text: "This is your daily check-in. Once a day we have a quick talk, about 2 minutes, and it keeps your personal baseline up to date." },
-      { sel: ".cicard", text: "I ask five things: when you slept and woke, your mood, how heavy the day was, how well the crew worked together, and whether you shared a meal. Then an optional reaction game." },
+      { sel: ".cicard", text: "I ask when you slept and woke, then you tap anywhere that hurts on a body map. Then your mood, how heavy the day was, how well the crew worked together, and whether you shared a meal. Then an optional reaction game." },
       { sel: ".cicard", text: "Why it matters: every answer is compared with your own last 14 sols, never with other crew. Small drifts show up early as Watch flags, so you can act before they add up." },
       { sel: ".cicard", text: "You can tap the answers or just talk to me in plain words. Everything stays private unless you choose to share totals with the crew." },
       { sel: ".mgrid", text: "Today's measures. Click any card to see its full history. Drag the grip to reorder." },

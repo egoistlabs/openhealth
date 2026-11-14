@@ -41,3 +41,6 @@ next-env.d.ts
 
 # companion turn log: holds what a crew member typed, stays on this machine
 /.logs/
+
+# BodyParts3D GLBs, copied from node_modules on postinstall
+/public/somakine/

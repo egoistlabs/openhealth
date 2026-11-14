@@ -87,7 +87,7 @@ export function HomeScreen() {
               {atPresent ? <Link className="ta" href={`${ROUTE.checkin}?step=review`}>Review or correct</Link> : null}
             </> : <>
               <p className="cicard__lead">A 2-minute daily talk with Pedro that keeps your personal baseline up to date.</p>
-              <p className="t2">Five quick questions: sleep, mood, day load, teamwork and shared meals. Then an optional reaction game.</p>
+              <p className="t2">Sleep, then a quick body map of anything sore, then mood, day load, teamwork and shared meals. Then an optional reaction game.</p>
               {atPresent
                 ? <Link className="btn-primary btn-primary--wide" href={ROUTE.checkin}>Start daily check-in <Icon name="arrow" /></Link>
                 : <p className="small t2">No check-in was logged on this sol.</p>}

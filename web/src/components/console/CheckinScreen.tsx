@@ -14,14 +14,16 @@ import { ReactionGame } from "./ReactionGame";
 import { saveCheckin } from "@/lib/console/store";
 import { ROUTE, ReplayNote } from "./Shell";
 import { CheckinPedro, type PedroLine } from "./CheckinPedro";
+import { BodyMap, needsNote, type PainMark } from "./BodyMap";
 
-const STEPS = ["sleep", "mood", "load", "team", "meals", "game", "review"] as const;
-const LABEL: Record<(typeof STEPS)[number], string> = { sleep: "Sleep", mood: "Mood", load: "Day load", team: "Teamwork", meals: "Shared meals", game: "Reaction game", review: "Review" };
+const STEPS = ["sleep", "body", "mood", "load", "team", "meals", "game", "review"] as const;
+const LABEL: Record<(typeof STEPS)[number], string> = { sleep: "Sleep", body: "Body", mood: "Mood", load: "Day load", team: "Teamwork", meals: "Shared meals", game: "Reaction game", review: "Review" };
 type Step = (typeof STEPS)[number];
-type Vals = { onset: number; wake: number; mood: number | null; load: number | null; team: number | null; meals: number | null; rt: number | null; slow: number | null };
+type Vals = { pain: PainMark[]; noPain: boolean; onset: number; wake: number; mood: number | null; load: number | null; team: number | null; meals: number | null; rt: number | null; slow: number | null };
 /* what Pedro says when each step opens */
 const ASK: Record<(typeof STEPS)[number], string> = {
   sleep: "When did you fall asleep, and when did you wake up?",
+  body: "Anything sore or aching today? Tap the part of the body that hurts, then rate it. Or tap No pain today.",
   mood: "How's your mood today, 1 to 5?",
   load: "How heavy was today, 1 to 5? Count both workload and stress.",
   team: "How well did the crew work together, 1 to 5?",
@@ -49,7 +51,7 @@ export function CheckinScreen({ step }: { step?: string }) {
     const idx = step ? Math.max(0, STEPS.indexOf((step === "timing" ? "sleep" : step) as Step)) : 0;
     return {
       step: idx,
-      vals: { onset: d?.onset ?? 0, wake: d?.wake ?? 420, mood: s.draft.mood ?? d?.mood ?? null, load: s.draft.load ?? d?.load ?? null, team: s.draft.team ?? d?.team ?? null, meals: d?.meals ?? null, rt: d?.rt ?? null, slow: d?.slow ?? null } as Vals,
+      vals: { pain: [], noPain: false, onset: d?.onset ?? 0, wake: d?.wake ?? 420, mood: s.draft.mood ?? d?.mood ?? null, load: s.draft.load ?? d?.load ?? null, team: s.draft.team ?? d?.team ?? null, meals: d?.meals ?? null, rt: d?.rt ?? null, slow: d?.slow ?? null } as Vals,
       skipped: {} as Record<string, boolean>,
       pick: 0,
     };
@@ -89,7 +91,7 @@ export function CheckinScreen({ step }: { step?: string }) {
 
   const k = STEPS[ci.step], i = ci.step;
   const vals = ci.vals;
-  const answered = (key: Step) => key === "sleep" ? vals.onset != null && vals.wake != null : key === "game" || key === "review" ? true : vals[key as "mood"] != null;
+  const answered = (key: Step) => key === "sleep" ? vals.onset != null && vals.wake != null : key === "body" ? vals.noPain || (vals.pain.length > 0 && !vals.pain.some(needsNote)) : key === "game" || key === "review" ? true : vals[key as "mood"] != null;
   const setVal = (patch: Partial<Vals>, clear?: string) => setCi((p) => {
     const skipped = { ...p.skipped };
     if (clear) delete skipped[clear];
@@ -115,12 +117,13 @@ export function CheckinScreen({ step }: { step?: string }) {
     setToday(s.me, today);
     const flags = c.flagsFor();
     const added: LogEvent[] = [{ sol: P, min: clockMin, type: "checkin", sev: "info", code: "CI-01", text: "You completed your check-in." }];
+    if (!ci.skipped.body && vals.pain.length) added.push({ sol: P, min: clockMin - 2, type: "checkin", sev: "info", code: "PN-01", text: `Pain logged: ${vals.pain.map((p) => `${p.region.toLowerCase()} ${p.level}/10 (${p.note?.trim()})`).join(", ")}.`, pain: vals.pain });
     if (vals.rt != null) added.push({ sol: P, min: clockMin - 1, type: "tap", sev: "info", code: "PF-02", text: `Your reaction test median was ${vals.rt} ms.` });
     // kept on this device, so it is still there after a reload (lib/console/store.ts)
     const stored = saveCheckin({ id: s.me, sol: P, savedAt: new Date().toISOString(), day: today, events: added });
     set((p) => {
       // a resubmission replaces today's earlier log lines rather than adding a second set
-      const kept = (p.extra[p.me] || []).filter((e) => !(e.sol === P && (e.code === "CI-01" || e.code === "PF-02")));
+      const kept = (p.extra[p.me] || []).filter((e) => !(e.sol === P && (e.code === "CI-01" || e.code === "PF-02" || e.code === "PN-01")));
       return { draft: {}, extra: { ...p.extra, [p.me]: [...kept, ...added] }, rev: p.rev + 1 };
     });
     c.addLines([{ who: "companion", text: flags.length ? `Thanks. Logged. ${7 - flags.length} of 7 within your normal; ${MKEY[flags[0].key].short} is still on watch.` : "Thanks. Logged. Everything sits within your normal." }]);
@@ -308,6 +311,17 @@ export function CheckinScreen({ step }: { step?: string }) {
     );
   };
 
+  /* pain pins from the last 14 sols (logged by earlier check-ins on this device) */
+  const painHistory: PainMark[] = (s.extra[s.me] || []).filter((e) => e.code === "PN-01" && e.sol >= P - 14 && e.sol < P).flatMap((e) => e.pain ?? []);
+  const stepBody = () => <>
+    <h1 className="ci__q focus-visible:outline-none" ref={qRef} tabIndex={-1}>Anything sore or aching today?</h1>
+    <p className="ci__hint">Drag to turn the body and tap the muscle or bone that hurts, or pick an area below. Rate it 1 to 10 in the panel. An amber glow means it hurt on earlier sols.</p>
+    <BodyMap value={vals.pain} history={painHistory} noPain={vals.noPain}
+      onChange={(pain) => setVal({ pain, noPain: false }, "body")}
+      onNoPain={() => setVal({ pain: [], noPain: true }, "body")} />
+    {vals.pain.some(needsNote) ? <p className="ci__hint" role="status" style={{ color: "#F2701D" }}>Add when it hurts for {vals.pain.filter(needsNote).map((p) => p.region).join(", ")} before you continue.</p> : null}
+  </>;
+
   const stepRating = (key: "mood" | "load" | "team") => {
     const Q = { mood: ["How's your mood today, 1 to 5?", "Low", "High"], load: ["How heavy was today, 1 to 5?", "Light", "Heavy"], team: ["How well did the crew work together, 1 to 5?", "Poorly", "Very well"] }[key];
     const cur = vals[key], b = baseline(s.me, key, P), usual = b ? Math.round(b.med) : null;
@@ -362,6 +376,7 @@ export function CheckinScreen({ step }: { step?: string }) {
     const sh = c.shared(s.me);
     return <>
       <h1 className="ci__q focus-visible:outline-none" ref={qRef} tabIndex={-1}>Here is today, against your own normal.</h1>
+      <p className="small"><b>Pain:</b> {ci.skipped.body ? <span className="t2">Skipped</span> : vals.pain.length ? vals.pain.map((p) => `${p.region} ${p.level}/10, ${p.note?.trim()}`).join("; ") : <span className="t2">None today</span>}</p>
       <p className="ci__hint">Submitting writes today to your baseline log. Sharing: {sh.length ? `${sh.length} measures as aggregates` : "private"}. Simulated data.</p>
       <div className="tscroll">
         <table className="sumt">
@@ -383,7 +398,7 @@ export function CheckinScreen({ step }: { step?: string }) {
     </>;
   };
 
-  const body = k === "sleep" ? stepSleep() : k === "game" ? stepGame() : k === "review" ? stepReview() : k === "meals" ? stepMeals() : stepRating(k);
+  const body = k === "sleep" ? stepSleep() : k === "body" ? stepBody() : k === "game" ? stepGame() : k === "review" ? stepReview() : k === "meals" ? stepMeals() : stepRating(k);
   const progress: ProgressStep[] = STEPS.map((key, n) => {
     const past = n < i, skipped = key === "game" ? vals.rt == null : !!ci.skipped[key];
     return {
@@ -409,13 +424,13 @@ export function CheckinScreen({ step }: { step?: string }) {
           {body}
         </div>
         <aside className="ci__rail" aria-label={COMPANION_NAME}>
-          <CheckinPedro line={line} voiceOn={s.voice} canListen={k !== "game" && k !== "review"} onHeard={hear} />
+          <CheckinPedro line={line} voiceOn={s.voice} canListen={k !== "game" && k !== "review" && k !== "body"} onHeard={hear} />
         </aside>
       </div>
       <div className={k === "sleep" ? "ci__foot ci__foot--rule" : "ci__foot"}>
         <div className="actions">{i > 0 ? <button type="button" className="ta ta--quiet" disabled={hearing} onClick={() => go(i - 1)}><Icon name="back" />Back</button> : null}</div>
         <div className="actions">
-          {i < 5 ? <button type="button" className="ta ta--quiet" disabled={hearing} onClick={() => { setCi((p) => ({ ...p, skipped: { ...p.skipped, [k]: true } })); go(i + 1); }}>Skip</button> : null}
+          {k !== "game" && k !== "review" ? <button type="button" className="ta ta--quiet" disabled={hearing} onClick={() => { setCi((p) => ({ ...p, skipped: { ...p.skipped, [k]: true } })); go(i + 1); }}>Skip</button> : null}
           <button type="button" className={k === "game" && vals.rt == null ? "btn btn--lg" : "btn-primary btn--lg"} disabled={primaryDisabled}
             onClick={() => (k === "review" ? submit() : answered(k) && go(i + 1))}>
             {nextLabel} <Icon name="arrow" />
