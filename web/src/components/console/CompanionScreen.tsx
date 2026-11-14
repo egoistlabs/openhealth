@@ -234,7 +234,8 @@ function CompanionStage() {
                 placeholder={s.voice && !typeMode ? "Type a message, or hold the mic to talk" : "Type a message"} maxLength={2000} />
               {s.voice ? <>
                 <Wave />
-                <HoldButton ctx="companion" enabled={s.voice && !busy} onPhrase={onPhrase} setV={setV} tip="Hold to talk. Simulated: there is no microphone yet." />
+                <HoldButton ctx="companion" live enabled={s.voice && !busy} onPhrase={onPhrase} setV={setV}
+                  onStart={() => { vega.current?.stop(); Presence.setState("idle"); }} tip="Hold to talk" />
               </> : null}
               {chat.streaming ? (
                 <button type="button" className="ta" onClick={chat.stop}>Stop</button>
