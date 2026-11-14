@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useCompanionChat } from "@/hooks/companion/mutations/use-companion-chat";
 import {
   JOURNAL, KEYS, MEASURES, MKEY, P, avg, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, listJoin, overall, series,
@@ -14,7 +14,7 @@ import { useConsole } from "./ConsoleProvider";
 import { FlagList } from "./FlagCard";
 import { toggleShare } from "./HomeScreen";
 import { Wave, usePresenceState } from "./Orb";
-import { VegaAvatar, type VegaApi } from "./VegaAvatar";
+import { VegaAvatar, type SpeechEvents, type VegaApi } from "./VegaAvatar";
 import { ROUTE } from "./Shell";
 import { HoldButton, VoiceState, type VState } from "./Voice";
 
@@ -46,6 +46,24 @@ function CompanionStage() {
   const typeTimer = useRef(0);
   const lastIntent = useRef<string | undefined>(undefined);
   const vega = useRef<VegaApi | null>(null);
+  /* live captions: the reply being spoken, revealed up to the word the avatar is saying */
+  const [reveal, setReveal] = useState<{ row: ConvoRow; upto: number } | null>(null);
+  const said = useRef<{ row: ConvoRow; text: string; base: number; cursor: number; upto: number } | null>(null);
+  const onSpeech: SpeechEvents = {
+    sentence: (sentence) => {
+      const sp = said.current; if (!sp) return;
+      const i = sp.text.indexOf(sentence, sp.cursor);
+      sp.base = i >= 0 ? i : sp.cursor;
+      sp.cursor = sp.base + sentence.length;
+      setReveal({ row: sp.row, upto: sp.upto }); // first sentence: show the (still empty) caption straight away
+    },
+    word: (w) => {
+      const sp = said.current; if (!sp) return;
+      sp.upto = Math.max(sp.upto, Math.min(sp.text.length, sp.base + w.start + w.text.length));
+      setReveal({ row: sp.row, upto: sp.upto });
+    },
+    end: () => { said.current = null; setReveal(null); },
+  };
 
   const rows = c.convo();
   /* rows already in the log when the screen opened are history: they are shown, not spoken */
@@ -74,13 +92,16 @@ function CompanionStage() {
   useEffect(() => {
     vega.current?.hold(holdEmotion({ working: busy, listening: pstate === "listening", typing: text.trim().length > 0 }));
   }, [busy, pstate, text]);
-  /* speak each new companion reply aloud, with the face for its scenario */
-  useEffect(() => {
+  /* speak each new companion reply aloud, with the face for its scenario. A layout effect, so the
+     reply is hidden before the first paint and then revealed word by word as it is said. */
+  useLayoutEffect(() => {
     if (rows.length <= spoken.current) return;
     const fresh = rows.slice(spoken.current);
     spoken.current = rows.length;
     const reply = [...fresh].reverse().find((r) => r.who === "companion" && r.text);
-    if (reply && vega.current) vega.current.speak(reply.text!, { emotion: replyEmotion(reply, worst), silent: !s.voice });
+    if (!reply || !vega.current) return;
+    said.current = { row: reply, text: reply.text!, base: 0, cursor: 0, upto: 0 };
+    vega.current.speak(reply.text!, { emotion: replyEmotion(reply, worst), silent: !s.voice });
   }, [rows, worst, s.voice]);
 
   /* local reply from the person's own numbers: used for "sum up my week" and when the model is off (C9) */
@@ -158,12 +179,19 @@ function CompanionStage() {
     userSaid(p.text, p.intent);
   };
 
+  /* What shows under the avatar:
+     - while the answer is being prepared: nothing but "Thinking…" (the streamed draft is never shown)
+     - while the avatar speaks: the reply, revealed up to the word being said
+     - otherwise: the last reply in full, with its sources */
   const lastReply = [...rows].reverse().find((x) => x.who === "companion" && x.text);
-  const shown = speaking != null
-    ? { who: "companion" as const, text: speaking, sol: P, min: 0 }
-    : chat.streaming
-      ? { who: "companion" as const, text: chat.liveText, sol: P, min: 0 }
-      : lastReply;
+  const thinking = chat.streaming;
+  const shown = thinking
+    ? undefined
+    : reveal
+      ? { ...reveal.row, text: reveal.row.text!.slice(0, reveal.upto) }
+      : speaking != null
+        ? { who: "companion" as const, text: speaking, sol: P, min: 0 }
+        : lastReply;
 
   return (
     <div className={`cstage${s.drawer ? " has-drawer" : ""}`}>
@@ -176,11 +204,11 @@ function CompanionStage() {
             <button type="button" className="ta ta--quiet" aria-expanded={s.drawer} aria-controls="drawer" onClick={() => set((p) => ({ drawer: !p.drawer }))}>{s.drawer ? "Hide log" : "Show log"}</button>
           </div>
           {s.settings ? <Settings /> : <>
-            <VegaAvatar onReady={(api) => {
+            <VegaAvatar onSpeech={onSpeech} onReady={(api) => {
               vega.current = api;
               api?.setRestEmotion(restEmotion(worst));
             }} />
-            <Reply row={shown} live={speaking != null || chat.streaming} />
+            <Reply row={shown} thinking={thinking} live={reveal != null || speaking != null} />
           </>}
         </section>
 
@@ -227,13 +255,14 @@ function CompanionStage() {
 }
 
 /* The answer under the orb: escalation notice above, sources below (A9, C8, C10, C11) */
-function Reply({ row, live }: { row?: ConvoRow; live: boolean }) {
+function Reply({ row, live, thinking }: { row?: ConvoRow; live: boolean; thinking?: boolean }) {
+  if (thinking) return <p className="stage__reply t2" role="status">Thinking…</p>;
   if (!row) return <p className="stage__reply">Nothing said yet. Hold to speak or type below.</p>;
   return (
-    <div className="grid w-full max-w-[56ch] justify-items-center gap-3 text-center">
+    <div className="grid w-full max-w-[min(94%,88ch)] justify-items-center gap-3 text-center">
       {row.escalation ? <EscalationNotice /> : null}
       {row.noAnswer && !live ? <p className="label">Not on board</p> : null}
-      <p className="stage__reply line-clamp-none max-h-[30vh] overflow-y-auto">
+      <p className="stage__reply line-clamp-none max-w-none max-h-[30vh] overflow-y-auto">
         {row.text}{live ? <span className="caret" aria-hidden="true" /> : null}
       </p>
       {!live && row.offline ? <p className="small t2">The companion model is off. This answer comes from your own numbers only.</p> : null}
