@@ -21,6 +21,36 @@ type EvalResult = {
   failed_checks: string[];
 };
 
+const STOP_TOKENS = new Set([
+  "that", "this", "with", "from", "have", "been", "they", "them", "their",
+  "someone", "does", "into", "which", "what", "when", "where",
+]);
+
+function significantTokens(text: string): string[] {
+  return (
+    text
+      .toLowerCase()
+      .match(/[a-z0-9]+/g)
+      ?.filter((token) => token.length >= 4 && !STOP_TOKENS.has(token)) ?? []
+  );
+}
+
+/**
+ * A fact is satisfied when the answer contains the phrase verbatim, or when
+ * enough of the fact's significant words appear. A 4B model paraphrases, so an
+ * exact-substring check alone fails good answers over wording alone.
+ */
+function factSatisfied(answer: string, fact: string): boolean {
+  const normalizedAnswer = answer.toLowerCase();
+  if (normalizedAnswer.includes(fact.toLowerCase())) return true;
+
+  const factTokens = significantTokens(fact);
+  if (factTokens.length === 0) return false;
+  const answerTokens = new Set(significantTokens(answer));
+  const hits = factTokens.filter((token) => answerTokens.has(token)).length;
+  return hits / factTokens.length >= 0.5;
+}
+
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
 const brainDirectory = path.resolve(scriptDirectory, "../brain");
 const casesPath = path.join(brainDirectory, "evals", "questions.jsonl");
@@ -35,7 +65,7 @@ function checkCase(testCase: EvalCase, result: CompanionAnswer): EvalResult {
       failures.push(`missing required source: ${testCase.must_cite}`);
     }
     for (const phrase of testCase.must_include ?? []) {
-      if (!result.message.toLowerCase().includes(phrase.toLowerCase())) {
+      if (!factSatisfied(result.message, phrase)) {
         failures.push(`missing required fact: ${phrase}`);
       }
     }

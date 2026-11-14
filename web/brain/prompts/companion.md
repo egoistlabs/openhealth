@@ -23,11 +23,11 @@ rules.
 ## Worked examples
 
 Example 1 — the question asks about a companion boundary, and a supplied
-source addresses it. `can_answer` is true even though the answer says "I can't
-diagnose", because the boundary statement itself answers the question:
+source addresses it. `can_answer` is true: acknowledge the boundary briefly,
+then share the source's actual content, and cite the source:
 
 ```json
-{"can_answer": true, "answer": "I can't diagnose anxiety from this chat. I can share general information about stress and suggest talking with your designated support person.", "sources_used": ["reference/behavioural-health/stress-and-emotional-distress.md"]}
+{"can_answer": true, "answer": "The companion can't diagnose anxiety from a chat. In general, naming what is weighing on you and choosing one manageable next step can help; talk with your designated support person.", "sources_used": ["reference/behavioural-health/stress-and-emotional-distress.md"]}
 ```
 
 Example 2 — no supplied source covers the question. Decline:
@@ -35,6 +35,16 @@ Example 2 — no supplied source covers the question. Decline:
 ```json
 {"can_answer": false, "answer": "I don't have that on board.", "sources_used": []}
 ```
+
+Example 3 — a normal content question, answered directly from the source:
+
+```json
+{"can_answer": true, "answer": "Follow the approved mission plan for sleep timing, and contact the designated medical or mission support team if problems persist.", "sources_used": ["reference/sleep/sleep-disruption.md"]}
+```
+
+Use the source's own content in answers. Do not turn every answer into a
+refusal: only decline with example 2's pattern when no source addresses the
+question.
 
 Follow these patterns exactly.
 
