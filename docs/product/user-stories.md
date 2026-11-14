@@ -2,7 +2,7 @@
 
 The locked scope as user stories, split into four tracks with one owner each.
 
-Last updated: 14 Nov 2026. Deadline: 15 Nov 2026, 11:59 PM.
+Last updated: 14 Nov 2026 (A6 and B4 to B8 aligned with the screens prototype). Deadline: 15 Nov 2026, 11:59 PM.
 
 ## Who owns what
 
@@ -38,7 +38,7 @@ Every screen is built from a sample data file and uses only the design tokens.
 | A3 | I play the reaction game and see my result. | The target, tap feedback and result screen exist. |
 | A4 | I see me vs my baseline for seven measures. | Each measure shows a status, a trend and a one-line reason. A line appears when self-rated and measured values disagree. |
 | A5 | I see a flag as a card with what changed and one suggested action. | The card has a Done button and a text status label. |
-| A6 | I see the crew view. | Four crew-level tiles and a summary area. No names or individual values anywhere. |
+| A6 | I see the crew view. | A verdict, an anonymous list of who is worth checking in on, four area tiles (Sleep, Mood, Workload, Teamwork) and a "This week" summary. No names or individual values anywhere. |
 | A7 | I see and hear a companion with a 3D look. | Idle, listening, working and speaking states exist. There is a voice on/off switch, and a simple fallback if the 3D look runs over time. |
 | A8 | (Presenter) I switch crew member and mission day. | A crew switcher, a day slider and a permanent "Simulated data" label exist. |
 | A9 | I see where an answer came from. | Each answer shows its sources underneath. The escalation notice and the "I don't have that on board" reply are designed. |
@@ -52,11 +52,11 @@ Every story passes with all models stopped.
 | B1 | (Team) We share one written data shape for check-ins, statuses, flags and crew numbers. | It is agreed before anyone else builds. |
 | B2 | My check-in is saved for my crew member and mission day. | Saving twice on one day replaces the first. |
 | B3 | My reaction taps are timed. | The median time and the slow-tap count are stored. |
-| B4 | My engagement is measured without asking me. | Words per day and check-ins missed in 7 days are counted. |
-| B5 | Each measure has my own baseline. | It is computed from my first 14 check-ins. |
-| B6 | Each measure gets a status of Normal, Watch or Act. | One bad day never changes a status. |
+| B4 | My engagement is measured without asking me. | Words per day and check-ins missed in 7 days are counted. 2 missed check-ins in 7 days is Watch, 3 or more is Act. |
+| B5 | Each measure has my own baseline. | It is the median of my previous 14 days, with a band for my usual day-to-day spread. It needs at least 3 values in that window, and missed days are skipped. |
+| B6 | Each measure gets a status of Normal, Watch or Act. | One bad day never changes a status: Watch needs 2 days in a row outside my band, Act needs 5. |
 | B7 | A flag carries the suggested action for its measure. | The action text comes from D2. Tapping Done is recorded. |
-| B8 | The crew numbers are computed from everyone's check-ins. | Teamwork average, shared meals, sleep in sync and check-ins done are shown. With fewer than three answers it shows "not enough answers". |
+| B8 | The crew numbers are computed from the measures each person chooses to share. | Area tiles for Sleep, Mood, Workload and Teamwork, plus a weekly summary: checked in, shared meals, engagement and open flags. A measure appears once at least 2 crew share it; otherwise it shows "Not enough shared". Sharing is off until I turn it on, per measure. |
 | B9 | (Presenter) The simulated mission loads and follows the crew switcher and day slider. | Every screen recalculates for the chosen person and day. |
 
 ## C. Companion (Patrick Perez)

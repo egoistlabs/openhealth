@@ -1,0 +1,119 @@
+/* Companion Console design tokens (v5).
+   Components use ONLY these variables. A look = set data-theme on <html>.
+   Default (no attribute) = Mission console. */
+:root {
+  /* color */
+  --c-bg: #0C0D0E;
+  --c-surface: #121517;
+  --c-surface-2: #171B1E;
+  --c-hair: #242A2E;
+  --c-hair-strong: #343C41;
+  --c-text: #E6EDF0;    /* 15.6:1 on bg */
+  --c-text-2: #9AA5AB;  /* 7.6:1 */
+  --c-text-3: #7C878E;  /* 5.3:1 on bg, 4.7:1 on surface-2 */
+  --c-dim: #4E585E;     /* hairlines and grid only, never text */
+  --c-action: #6FA8A0;  /* the one primary button + focus ring */
+  --c-action-hover: #7DB4AC;
+  --c-on-action: #0C0D0E;
+  --c-normal: #7FA650;
+  --c-watch: #C9A227;
+  --c-act: #B5483C;
+  --c-act-text: #D9725F; /* act hue at 5:1 for words */
+  --c-info: #5F8F94;
+  --c-info-text: #8FB5B9;
+  --o-band: 0.14;
+  --o-band-strong: 0.2;
+
+  /* type */
+  --f-sans: var(--font-plex-sans), system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono: var(--font-plex-mono), ui-monospace, "SFMono-Regular", Consolas, monospace;
+  --fs-th: 11px;      --lh-th: 16px;   --tr-th: 0.06em;
+  --fs-label: 12px;   --lh-label: 16px;
+  --fs-body: 14px;    --lh-body: 20px; --lh-read: 22px;
+  --fs-lead: 16px;    --lh-lead: 24px;
+  --fs-title: 20px;   --lh-title: 28px;
+  --fs-readout: 28px; --lh-readout: 32px;
+  --fs-hero: 44px;    --lh-hero: 48px;
+  --fw-regular: 400;  --fw-medium: 500; --fw-semi: 600;
+
+  /* space (4px base) */
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px; --s-6: 24px; --s-8: 32px; --s-12: 48px;
+
+  /* radius + border */
+  --r-control: 2px;
+  --bw: 1px;
+  --bw-status: 2px;
+
+  /* motion */
+  --ease: cubic-bezier(0.2, 0.7, 0.2, 1);
+  --dur: 150ms;
+  --dur-panel: 180ms;
+
+  /* layout */
+  --hdr-h: 52px;
+  --spine-w: 32px;
+  --nav-w: 180px;
+  --log-w: 320px;
+  --side-w: 360px;
+  --panel-left: 224px;
+  --avatar: 128px;     /* ~2x the corner orb */
+  --orb: 56px;
+  --target: 44px;
+  --ctl: 32px;
+  --ctl-lg: 40px;
+  --mark: 8px;
+  --scale-cell: 72px;
+  --tap-field: 240px;
+  --tr-time: 44px;
+  --tr-who: 96px;
+  --measure-col: 160px;
+  --plot-trend: 132px;
+  --plot-team: 64px;
+  --plot-spark: 20px;
+  --plot-rail: 16px;
+  --tip-w: 280px;
+  --chart-label-gutter: 48px;
+  --chart-right-gutter: 120px;
+
+  color-scheme: dark;
+
+  --f-display: var(--f-sans);
+  --fw-display: 400;
+  --tr-display: -0.01em;
+  --fs-hero-h: 32px;
+  --r-card: 2px;
+  --r-pill: 999px;
+  --shadow-card: none;
+  --shadow-pop: 0 16px 40px rgba(0, 0, 0, 0.55);
+  --hero-bg: var(--c-surface);
+  --hero-rule: 3px;
+  --grid-gap: 0px;
+  --grid-bl: 0;
+  --grid-cl: var(--bw) solid var(--c-hair-strong);
+  --r-cell: 0px;
+  --c-select: color-mix(in srgb, var(--c-action) 18%, var(--c-surface));
+  --page-w: 1040px;
+  --orb-gain: 1;
+}
+
+:root[data-theme="clinic"] {
+  --c-bg: #F4F6F5; --c-surface: #FFFFFF; --c-surface-2: #EDF2EF;
+  --c-hair: #E0E6E2; --c-hair-strong: #C8D1CC;
+  --c-text: #16201B; --c-text-2: #4C5853; --c-text-3: #66726C; --c-dim: #A7B2AC;
+  --c-action: #2E7D6B; --c-action-hover: #256B5B; --c-on-action: #FFFFFF;
+  --c-normal: #3A7C2B; --c-watch: #A66900; --c-act: #B3362B; --c-act-text: #A5322A;
+  --c-info: #3D7C86; --c-info-text: #2E6670; --o-band: 0.12; --o-band-strong: 0.18;
+  --f-sans: var(--font-inter), system-ui, sans-serif; --f-mono: var(--font-jetbrains-mono), ui-monospace, monospace;
+  --f-display: var(--font-inter), system-ui, sans-serif; --fw-display: 600; --tr-display: -0.025em;
+  --fs-body: 15px; --lh-body: 22px; --fs-lead: 17px; --lh-lead: 26px; --fs-hero-h: 34px;
+  --r-control: 8px; --r-card: 16px;
+  --shadow-card: 0 1px 2px rgba(16, 32, 24, 0.04), 0 6px 24px rgba(16, 32, 24, 0.06);
+  --shadow-pop: 0 16px 48px rgba(16, 32, 24, 0.16);
+  --hero-rule: 0px; --grid-gap: 6px; --grid-bl: var(--bw) solid var(--c-hair-strong); --grid-cl: 0; --r-cell: 8px;
+}
+
+
+
+
+
+:root[data-theme="clinic"] { --orb-gain: 2.4; color-scheme: light; }

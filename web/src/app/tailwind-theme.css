@@ -1,0 +1,49 @@
+/* Tailwind v4 bridge. In app/globals.css:
+     @import "tailwindcss";
+     @import "./tokens.css";          (copy of tokens/tokens.css)
+     @import "./tailwind-theme.css";  (this file)
+   Utilities then read the live CSS variables, so switching data-theme on <html>
+   re-skins every component with no class changes.
+   Tailwind v3: put the same mappings under theme.extend in tailwind.config.ts. */
+@theme inline {
+  --color-bg: var(--c-bg);
+  --color-surface: var(--c-surface);
+  --color-surface-2: var(--c-surface-2);
+  --color-hair: var(--c-hair);
+  --color-hair-strong: var(--c-hair-strong);
+  --color-text: var(--c-text);
+  --color-text-2: var(--c-text-2);
+  --color-text-3: var(--c-text-3);
+  --color-dim: var(--c-dim);
+  --color-action: var(--c-action);
+  --color-action-hover: var(--c-action-hover);
+  --color-on-action: var(--c-on-action);
+  --color-select: var(--c-select);
+  --color-normal: var(--c-normal);
+  --color-watch: var(--c-watch);
+  --color-act: var(--c-act);
+  --color-act-text: var(--c-act-text);
+  --color-info: var(--c-info);
+  --color-info-text: var(--c-info-text);
+
+  --font-sans: var(--f-sans);
+  --font-mono: var(--f-mono);
+  --font-display: var(--f-display);
+
+  --text-th: var(--fs-th);
+  --text-label: var(--fs-label);
+  --text-body: var(--fs-body);
+  --text-lead: var(--fs-lead);
+  --text-title: var(--fs-title);
+  --text-readout: var(--fs-readout);
+  --text-hero: var(--fs-hero-h);
+
+  --radius-control: var(--r-control);
+  --radius-card: var(--r-card);
+  --radius-pill: var(--r-pill);
+
+  --shadow-card: var(--shadow-card);
+  --shadow-pop: var(--shadow-pop);
+
+  --ease-ui: var(--ease);
+}
