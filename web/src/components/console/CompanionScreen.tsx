@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
+import { useSendMessage } from "@/hooks/companion/mutations/use-send-message";
+import { useChatHistory } from "@/hooks/companion/queries/use-chat-history";
 import {
-  JOURNAL, KEYS, MEASURES, MKEY, P, avg, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, listJoin, series,
+  JOURNAL, KEYS, MEASURES, MKEY, P, avg, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, listJoin, series,
   type ConvoRow, type VoicePhrase,
 } from "@/lib/console/data";
 import { Presence } from "@/lib/console/presence";
@@ -18,15 +20,6 @@ import { HoldButton, VoiceState, type VState } from "./Voice";
 /* Starter questions (D7). Replace with Paul's starter-question list when it lands. */
 const CHIPS: Array<[string, string]> = [["How did I sleep?", "sleep"], ["Anything I should watch?", "watch"], ["Sum up my week", "summary"]];
 
-type ChatResponse = {
-  success?: boolean;
-  error?: string;
-  can_answer: boolean;
-  message: string;
-  sources: NonNullable<ConvoRow["sources"]>;
-  escalation: { required: boolean; categories?: string[] };
-};
-
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 /* Companion: talk to the companion (A7, A2, A9; C5, C10, C11). */
@@ -34,6 +27,8 @@ export function CompanionScreen() {
   const c = useConsole();
   const { s, set, atPresent } = c;
   const pstate = usePresenceState();
+  const { send } = useSendMessage();
+  const history = useChatHistory();
   const [busy, setBusy] = useState(false);
   const [speaking, setSpeaking] = useState<string | null>(null);
   const [v, setV] = useState<VState>(null);
@@ -98,13 +93,7 @@ export function CompanionScreen() {
       return;
     }
     try {
-      const res = await fetch("/api/ai/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: q, numbers: companionNumbers(s.me, s.sol) }),
-      });
-      const data = (await res.json()) as ChatResponse;
-      if (!res.ok) throw new Error(data.error || `HTTP ${res.status}`);
+      const data = await send({ message: q, history });
       speak({
         who: "companion",
         text: data.message,

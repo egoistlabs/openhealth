@@ -121,7 +121,7 @@ async function main() {
 
   for (const testCase of cases) {
     try {
-      const answer = await answerQuestion(testCase.question);
+      const answer = await answerQuestion({ question: testCase.question });
       results.push(checkCase(testCase, answer));
     } catch (error) {
       results.push({

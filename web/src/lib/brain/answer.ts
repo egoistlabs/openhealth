@@ -3,7 +3,7 @@ import { checkRedFlags } from "./safety.ts";
 import { searchBrain } from "./search.ts";
 import { generateGroundedAnswer } from "../ollama/client.ts";
 import { numbersIn } from "../text.ts";
-import type { ScoredDocument } from "./types.ts";
+import type { ChatTurn, ScoredDocument } from "./types.ts";
 
 export const DECLINE_MESSAGE = "I don't have that on board.";
 
@@ -36,13 +36,24 @@ export function verifyGroundedAnswer(
     ...numbersIn(allowedSources.map((source) => source.body).join("\n")),
     ...numbersIn(JSON.stringify(numbers)),
   ]);
-  return [...numbersIn(answer.answer)].every((number) => allowedNumbers.has(number));
+  /* A 4B model restates a negative delta in words: "-0.9" becomes "0.9 hours
+     less than normal". The magnitude is grounded, so an unsigned number in the
+     answer passes when its magnitude is allowed. Invented magnitudes still fail. */
+  const allowedMagnitudes = new Set([...allowedNumbers].map((n) => n.replace(/^-/, "")));
+  return [...numbersIn(answer.answer)].every(
+    (number) => allowedNumbers.has(number) || allowedMagnitudes.has(number),
+  );
 }
 
-export async function answerQuestion(
-  question: string,
-  numbers: Record<string, unknown> = {},
-): Promise<CompanionAnswer> {
+export type CompanionAnswerInput = {
+  question: string;
+  numbers?: Record<string, unknown>;
+  history?: ChatTurn[];
+  tone?: "gentle" | "direct";
+};
+
+export async function answerQuestion(input: CompanionAnswerInput): Promise<CompanionAnswer> {
+  const { question, numbers = {}, history = [], tone = "gentle" } = input;
   const redFlag = await checkRedFlags(question);
   if (redFlag.matched) {
     return {
@@ -55,7 +66,14 @@ export async function answerQuestion(
   }
 
   const documents = await loadBrainDocuments();
-  const sources = searchBrain(question, documents);
+  /* Retrieval sees the recent user turns as well, so short follow-ups like
+     "why?" still find the right sources. The model's own question stays
+     standalone; only the search query is widened. */
+  const retrievalQuery = [
+    ...history.filter((turn) => turn.role === "user").map((turn) => turn.text),
+    question,
+  ].join(" ");
+  const sources = searchBrain(retrievalQuery, documents);
   if (sources.length === 0) {
     return {
       can_answer: false,
@@ -76,6 +94,8 @@ export async function answerQuestion(
     sources,
     numbers,
     question,
+    history,
+    tone,
   });
 
   if (

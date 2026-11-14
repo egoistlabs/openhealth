@@ -86,7 +86,7 @@ async function main() {
       let reply: string | undefined;
       if (withModel) {
         const { answerQuestion } = await import("../src/lib/brain/answer.ts");
-        reply = (await answerQuestion(testCase.message)).message;
+        reply = (await answerQuestion({ question: testCase.message })).message;
       }
       outcomes.push({
         id: testCase.id,

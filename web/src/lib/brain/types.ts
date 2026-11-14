@@ -11,3 +11,6 @@ export type BrainDocument = {
 };
 
 export type ScoredDocument = BrainDocument & { score: number };
+
+/* one prior turn of the companion conversation, as sent to the model */
+export type ChatTurn = { role: "user" | "assistant"; text: string };

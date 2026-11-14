@@ -1,4 +1,4 @@
-import type { ScoredDocument } from "../brain/types.ts";
+import type { ChatTurn, ScoredDocument } from "../brain/types.ts";
 import { buildAnswerMessages } from "../brain/prompt.ts";
 
 const OLLAMA_BASE_URL = (process.env.OLLAMA_BASE_URL ?? "http://localhost:11434")
@@ -11,7 +11,7 @@ export type ModelAnswer = {
   sources_used: string[];
 };
 
-export type ChatMessage = { role: "system" | "user"; content: string };
+export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
 const ANSWER_FORMAT = {
   type: "object",
@@ -112,6 +112,8 @@ export async function generateGroundedAnswer(input: {
   sources: ScoredDocument[];
   numbers?: Record<string, unknown>;
   question: string;
+  history?: ChatTurn[];
+  tone?: "gentle" | "direct";
 }): Promise<{ answer: ModelAnswer; model: string }> {
   const { data, model } = await generateJson({
     messages: buildAnswerMessages(input),
