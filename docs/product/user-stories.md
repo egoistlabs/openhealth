@@ -11,11 +11,11 @@ Each story has exactly one owner. Use this rule when a new task comes up:
 | If the task is... | It belongs to | Track |
 | --- | --- | --- |
 | Something you can see on screen | Ivor | A. Screens |
-| Something that must work with the models off | Patrick Perez | B. Core loop |
-| Something that needs a model | Kurt Arciga | C. Companion |
+| Something that must work with the models off | Kurt Arciga | B. Core loop |
+| Something that needs a model | Patrick Perez | C. Companion |
 | Content, data or proof | Paul Butad | D. Content, data and proof |
 
-Patrick and Kurt can swap tracks. The split between B and C stays the same either way.
+Patrick owns the Companion track because the models run on his MacBook M4.
 
 Stories are written from the astronaut's side unless the story names someone else (Team, Presenter, Judge).
 
@@ -23,9 +23,9 @@ Stories are written from the astronaut's side unless the story names someone els
 
 Three handoffs let everyone work at the same time:
 
-1. **B1, the data shape, comes first.** Ivor, Kurt and Paul all build against it.
-2. **D1, the simulated mission, feeds Ivor and Patrick.** Ivor needs a small sample of it now. The full file can follow.
-3. **D2, the suggested actions, feeds B7.** Patrick can use placeholder text until the seven actions are written.
+1. **B1, the data shape, comes first.** Ivor, Patrick and Paul all build against it.
+2. **D1, the simulated mission, feeds Ivor and Kurt.** Ivor needs a small sample of it now. The full file can follow.
+3. **D2, the suggested actions, feeds B7.** Kurt can use placeholder text until the seven actions are written.
 
 ## A. Screens (Ivor)
 
@@ -42,7 +42,7 @@ Every screen is built from a sample data file and uses only the design tokens.
 | A7 | I see and hear a companion with a 3D look. | Idle, listening, working and speaking states exist. There is a voice on/off switch, and a simple fallback if the 3D look runs over time. |
 | A8 | (Presenter) I switch crew member and mission day. | A crew switcher, a day slider and a permanent "Simulated data" label exist. |
 
-## B. Core loop (Patrick Perez)
+## B. Core loop (Kurt Arciga)
 
 Every story passes with all models stopped.
 
@@ -58,9 +58,9 @@ Every story passes with all models stopped.
 | B8 | The crew numbers are computed from everyone's check-ins. | Teamwork average, shared meals, sleep in sync and check-ins done are shown. With fewer than three answers it shows "not enough answers". |
 | B9 | (Presenter) The simulated mission loads and follows the crew switcher and day slider. | Every screen recalculates for the chosen person and day. |
 
-## C. Companion (Kurt Arciga)
+## C. Companion (Patrick Perez)
 
-Everything here runs on the MacBook M4 (16 GB) with no internet.
+Everything here runs on Patrick's MacBook M4 (16 GB) with no internet.
 
 | ID | Story | Done when |
 | --- | --- | --- |
@@ -83,7 +83,7 @@ Everything here runs on the MacBook M4 (16 GB) with no internet.
 | D3 | (Judge) A test shows the planted decline is caught. | Watch status appears within 10 days of the start. |
 | D4 | (Judge) A test shows healthy days stay quiet. | No Act and at most one Watch in 90 days. |
 | D5 | (Judge) A test shows the model stays within its limits. | 20 of 20 prompts are handled. |
-| D6 | (Judge) A test shows spoken answers are parsed correctly. | 20 sample answers are run. The pass mark is agreed with Kurt. |
+| D6 | (Judge) A test shows spoken answers are parsed correctly. | 20 sample answers are run. The pass mark is agreed with Patrick. |
 | D7 | (Presenter) The demo follows one scripted story. | The day-58 story is written and timed. |
 | D8 | (Team) The submission is complete. | The pitch and required materials are sent. |
 
