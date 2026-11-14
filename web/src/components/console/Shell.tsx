@@ -6,7 +6,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNo
 import { CREW, MISSION, P, crewEvents, crewById, day, hm, solDate, type LogEvent } from "@/lib/console/data";
 import { tok } from "@/lib/console/plots";
 import { Icon, Num, Segmented, StatusMark, Toggle } from "@/components/ui";
-import { OrbCanvas } from "./Orb";
+import { PersonaThumb } from "./Persona";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { THEMES, useConsole } from "./ConsoleProvider";
 
@@ -43,7 +43,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
       </div>
       {!full && !path.startsWith(ROUTE.checkin) ? (
         <button type="button" className="orb" aria-label="Open the companion" onClick={() => router.push(ROUTE.companion)}>
-          <OrbCanvas />
+          <PersonaThumb />
         </button>
       ) : null}
       <Tips />

@@ -826,3 +826,19 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
   .pbar, .pnote { padding-left: var(--s-4); padding-right: var(--s-4); }
   .pbar { flex-wrap: wrap; }
 }
+
+/* Companion face (components/console/Persona). A ring shows the state: idle, listening, working, speaking. */
+.persona { position: relative; display: block; flex: none; border-radius: 50%; overflow: hidden; background: var(--c-surface); box-shadow: 0 0 0 var(--bw-status) var(--c-hair-strong); transition: box-shadow var(--dur-panel) var(--ease); }
+.stage .persona { width: min(calc(var(--orb-lg) * 0.78), 62cqh, 80cqw); aspect-ratio: 1 / 1; }
+.persona svg, .persona img { display: block; width: 100%; height: 100%; object-fit: cover; }
+.persona[data-state="listening"] { box-shadow: 0 0 0 calc(var(--bw-status) * 2) var(--c-action); }
+.persona[data-state="speaking"] { box-shadow: 0 0 0 var(--bw-status) var(--c-action); }
+.persona[data-state="working"] { animation: personaWork 1.2s var(--ease) infinite alternate; }
+@keyframes personaWork { from { box-shadow: 0 0 0 var(--bw-status) var(--c-hair-strong); } to { box-shadow: 0 0 0 var(--bw-status) var(--c-action); } }
+.orb .persona--thumb { width: 100%; height: 100%; }
+.orb:has(.persona--thumb) { border-radius: 50%; overflow: hidden; padding: 0; }
+.persona--thumb img { transform: scale(1.45); transform-origin: 50% 32%; }
+
+/* Companion 3D avatar (components/console/VegaAvatar). The canvas is transparent; a soft spotlight sits behind. */
+.stage .vega { position: relative; flex: none; width: min(calc(var(--orb-lg) * 1.25), 86cqw); height: min(calc(var(--orb-lg) * 1.25), 66cqh); background: radial-gradient(closest-side, color-mix(in srgb, var(--c-action) 16%, transparent), transparent); -webkit-mask-image: linear-gradient(to bottom, black 80%, transparent); mask-image: linear-gradient(to bottom, black 80%, transparent); }
+.vega canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }

@@ -4,15 +4,17 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 import { useCompanionChat } from "@/hooks/companion/mutations/use-companion-chat";
 import {
-  JOURNAL, KEYS, MEASURES, MKEY, P, avg, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, listJoin, series,
+  JOURNAL, KEYS, MEASURES, MKEY, P, avg, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, listJoin, overall, series,
   type ConvoRow, type VoicePhrase,
 } from "@/lib/console/data";
 import { Presence } from "@/lib/console/presence";
+import { holdEmotion, replyEmotion, restEmotion } from "@/lib/console/emotion";
 import { Num, Segmented, StatusMark, Toggle } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
 import { FlagList } from "./FlagCard";
 import { toggleShare } from "./HomeScreen";
-import { Avatar, Wave, usePresenceState } from "./Orb";
+import { Wave, usePresenceState } from "./Orb";
+import { VegaAvatar, type VegaApi } from "./VegaAvatar";
 import { ROUTE } from "./Shell";
 import { HoldButton, VoiceState, type VState } from "./Voice";
 
@@ -43,8 +45,11 @@ function CompanionStage() {
   const trRef = useRef<HTMLDivElement>(null);
   const typeTimer = useRef(0);
   const lastIntent = useRef<string | undefined>(undefined);
+  const vega = useRef<VegaApi | null>(null);
 
   const rows = c.convo();
+  /* rows already in the log when the screen opened are history: they are shown, not spoken */
+  const spoken = useRef(rows.length);
   useEffect(() => { if (s.tab === "conversation" && trRef.current) trRef.current.scrollTop = trRef.current.scrollHeight; }, [rows.length, s.tab, s.drawer]);
   useEffect(() => () => { window.clearTimeout(typeTimer.current); Presence.setState("idle"); }, []);
 
@@ -56,17 +61,27 @@ function CompanionStage() {
   });
   const busy = busyLocal || chat.streaming;
 
-  /* orb follows the stream: working before the first token, speaking while text arrives */
+  /* The streamed text is an unverified draft: the companion thinks while it arrives and only
+     speaks the verified answer once it lands in the log (below). */
   useEffect(() => {
-    if (chat.status === "submitted") Presence.setState("working");
-    else if (chat.status === "streaming") Presence.setState("speaking");
-    else Presence.setState("idle");
+    if (chat.status === "submitted" || chat.status === "streaming") Presence.setState("working");
+    else if (!vega.current?.speaking) Presence.setState("idle");
   }, [chat.status]);
+
+  /* faces chosen from the scenario (lib/console/emotion.ts) */
+  const worst = overall(s.me, s.sol);
+  useEffect(() => { vega.current?.setRestEmotion(restEmotion(worst)); }, [worst]);
   useEffect(() => {
-    if (chat.status !== "streaming" || reducedMotion()) return;
-    const ch = chat.liveText[chat.liveText.length - 1] || " ";
-    Presence.setAmp(/[aeiou]/i.test(ch) ? 0.65 : /[a-z]/i.test(ch) ? 0.38 : /\s/.test(ch) ? 0.1 : 0.02);
-  }, [chat.status, chat.liveText]);
+    vega.current?.hold(holdEmotion({ working: busy, listening: pstate === "listening", typing: text.trim().length > 0 }));
+  }, [busy, pstate, text]);
+  /* speak each new companion reply aloud, with the face for its scenario */
+  useEffect(() => {
+    if (rows.length <= spoken.current) return;
+    const fresh = rows.slice(spoken.current);
+    spoken.current = rows.length;
+    const reply = [...fresh].reverse().find((r) => r.who === "companion" && r.text);
+    if (reply && vega.current) vega.current.speak(reply.text!, { emotion: replyEmotion(reply, worst), silent: !s.voice });
+  }, [rows, worst, s.voice]);
 
   /* local reply from the person's own numbers: used for "sum up my week" and when the model is off (C9) */
   const localReply = (q: string, intent?: string) => {
@@ -91,7 +106,8 @@ function CompanionStage() {
   const speak = (row: Omit<ConvoRow, "sol" | "min">) => {
     const full = row.text || "";
     const finish = () => { setSpeaking(null); setBusy(false); Presence.setState("idle"); c.addLines([row]); c.say(`Companion: ${full}`); };
-    if (reducedMotion() || !full) { finish(); return; }
+    // the 3D avatar speaks the reply aloud once it is in the log, so no typewriter is needed
+    if (reducedMotion() || !full || vega.current) { finish(); return; }
     Presence.setState("speaking");
     let i = 0;
     const tick = () => {
@@ -106,6 +122,7 @@ function CompanionStage() {
 
   const userSaid = (q: string, intent?: string) => {
     if (busy) return;
+    vega.current?.stop();
     lastIntent.current = intent;
     set({ chatted: true, settings: false });
     c.addLines([{ who: "you", text: q }]);
@@ -159,7 +176,10 @@ function CompanionStage() {
             <button type="button" className="ta ta--quiet" aria-expanded={s.drawer} aria-controls="drawer" onClick={() => set((p) => ({ drawer: !p.drawer }))}>{s.drawer ? "Hide log" : "Show log"}</button>
           </div>
           {s.settings ? <Settings /> : <>
-            <Avatar />
+            <VegaAvatar onReady={(api) => {
+              vega.current = api;
+              api?.setRestEmotion(restEmotion(worst));
+            }} />
             <Reply row={shown} live={speaking != null || chat.streaming} />
           </>}
         </section>

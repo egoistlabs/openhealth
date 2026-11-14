@@ -41,6 +41,18 @@ const views = new Set<HTMLCanvasElement>(), waves = new Set<HTMLCanvasElement>()
 let raf = 0, slowFrames = 0, staticKey = "";
 const listeners: Array<(why: string) => void> = [];
 const stateListeners = new Set<(s: PresenceState) => void>();
+/* per-frame subscribers (the talking avatar): get the smoothed voice level each frame */
+export type PresenceFrame = { t: number; amp: number; state: PresenceState; still: boolean };
+const tickers = new Set<(f: PresenceFrame) => void>();
+/* real speech audio (Kokoro), when connected: its loudness drives the voice level */
+let audio: { el: HTMLMediaElement; an: AnalyserNode; buf: Uint8Array<ArrayBuffer> } | null = null;
+function audioLevel() {
+  if (!audio || audio.el.paused || audio.el.ended) return null;
+  audio.an.getByteTimeDomainData(audio.buf);
+  let sum = 0;
+  for (let i = 0; i < audio.buf.length; i++) { const v = (audio.buf[i] - 128) / 128; sum += v * v; }
+  return Math.min(1, Math.sqrt(sum / audio.buf.length) * 4); // RMS, scaled so speech sits around 0.3–0.9
+}
 
 const flat = () => reduced || slow;
 function fit(cv: HTMLCanvasElement) {
@@ -122,7 +134,10 @@ function frame(now: number) {
     slowFrames = dt > 0.05 ? slowFrames + 1 : Math.max(0, slowFrames - 2);
     if (slowFrames > 90) { slow = true; staticKey = ""; listeners.forEach((f) => f("slow")); }
   }
+  const lvl = audioLevel();
+  if (lvl != null) target = lvl;
   amp += (simAmp(t) - amp) * Math.min(1, dt * 14);
+  tickers.forEach((f) => f({ t, amp, state, still: reduced }));
   rot += dt * (state === "working" ? 0.28 : state === "listening" ? 0.2 : state === "speaking" ? 0.16 : 0.1);
   if (state === "listening" && t > nextPulse) { pulses.push(t); nextPulse = t + 0.55; }
   for (let i = pulses.length - 1; i >= 0; i--) if (t - pulses[i] > 1.6) pulses.splice(i, 1);
@@ -132,6 +147,9 @@ function frame(now: number) {
     if (key !== staticKey) { staticKey = key; vis.forEach(drawFlat); }
   } else vis.forEach((cv) => draw3d(cv, t));
   drawWaves();
+}
+function stopIfIdle() {
+  if (!views.size && !waves.size && !tickers.size && raf) { cancelAnimationFrame(raf); raf = 0; }
 }
 function start() {
   if (started) return;
@@ -150,8 +168,25 @@ export const Presence = {
     if (!raf) raf = requestAnimationFrame(frame);
     return () => {
       views.delete(cv); waves.delete(cv);
-      if (!views.size && !waves.size && raf) { cancelAnimationFrame(raf); raf = 0; }
+      stopIfIdle();
     };
+  },
+  /* call cb every animation frame with the voice level and state; returns an unsubscribe */
+  onFrame(cb: (f: PresenceFrame) => void) {
+    start();
+    tickers.add(cb);
+    if (!raf) raf = requestAnimationFrame(frame);
+    return () => { tickers.delete(cb); stopIfIdle(); };
+  },
+  /* Lip-sync from real speech: pass the <audio> element Kokoro's reply plays in.
+     While it plays, its loudness drives the avatar's mouth (set the state to "speaking" too). */
+  connectAudio(el: HTMLMediaElement) {
+    if (audio?.el === el) return;
+    const ctx = new AudioContext();
+    const src = ctx.createMediaElementSource(el), an = ctx.createAnalyser();
+    an.fftSize = 1024;
+    src.connect(an); an.connect(ctx.destination);
+    audio = { el, an, buf: new Uint8Array(an.fftSize) };
   },
   setState(s: PresenceState) {
     if (s === state) return;
