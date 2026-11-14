@@ -43,7 +43,7 @@ replaces:
 
 ## Changing the brain safely
 
-Every change follows the same loop:
+Every change follows the same loop. Run the commands from the `web/` folder.
 
 1. **Change** a file, or add one, using the template above. Replace old
    guidance by adding a new file and marking the old one `status: replaced`.
@@ -53,7 +53,7 @@ Every change follows the same loop:
 3. **Check** with `pnpm brain:check`. It takes a second and does not use the
    model.
 4. **Evaluate** with `pnpm evals`.
-5. **Release** with `pnpm brain:release "what changed"`, only if red flags are
+5. **Release** with `pnpm brain:release <intent> "what changed"`, only if red flags are
    at 100%, declines at 95% or more, and no question that passed before now
    fails.
 
@@ -86,15 +86,27 @@ What still depends on people:
 The brain has a version number, kept in `version.json`. Every eval report
 records the brain version it ran against, so two scores can be compared fairly.
 
-- `pnpm brain:version` shows the current version, and whether files changed
-  since it was released.
-- `pnpm brain:release "what changed"` records the brain as it is now as the
-  next version and adds a line to `changelog.md`.
+Each release states an intent: why the change was made. The intent decides
+which part of the number goes up, so the number itself tells you what kind of
+change it was.
 
-A brain with unreleased edits shows as `v1+changes`. Run the evals on it as
+| Intent | Use it when | Version |
+| --- | --- | --- |
+| `fix` | Something already there was tuned or corrected: wording, keywords, prompt tuning. Nothing new is known. | 1.0.0 to 1.0.1 |
+| `add` | The companion knows something new: a new file, a new topic, a new red-flag term. | 1.0.0 to 1.1.0 |
+| `change` | Guidance, behaviour or safety rules are different: a file was replaced or retired, the identity changed, a red flag was removed. | 1.0.0 to 2.0.0 |
+
+- `pnpm brain:version` shows the current version and lists the files that
+  changed since it was released.
+- `pnpm brain:release <intent> "what changed"` records the brain as it is now
+  as the next version, for example
+  `pnpm brain:release fix "Tuned the answer prompt"`. It adds an entry to
+  `changelog.md` with the intent, the files and the eval score.
+
+A brain with unreleased edits shows as `v1.0.0+changes`. Run the evals on it as
 often as you like while editing. Release a new version when the edits are ones
 you want to keep. The release picks up the score from the newest eval run on
-those exact files and writes it into `changelog.md`.
+those exact files.
 
 The version covers identity, reference, procedures, measures, prompts and
 safety. The question set in `evals/` is tracked separately, by its own

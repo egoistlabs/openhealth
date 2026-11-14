@@ -1,13 +1,13 @@
 ---
 name: brain-source
-description: Add, update, replace or retire a knowledge file in the companion's brain (web/brain). Use when someone gives new guidance, a new or corrected procedure, a document to add, or asks to remove or correct what the companion knows about a topic.
+description: Add, update, replace or retire a knowledge file in the companion's brain (brain). Use when someone gives new guidance, a new or corrected procedure, a document to add, or asks to remove or correct what the companion knows about a topic.
 ---
 
 # Brain source
 
-The companion only knows what is in `web/brain/`. This skill changes that knowledge safely: every change gets a named source, a named person who authorised it, and test questions, and it only becomes a version after the evals pass.
+The companion only knows what is in `brain/`. This skill changes that knowledge safely: every change gets a named source, a named person who authorised it, and test questions, and it only becomes a version after the evals pass.
 
-Run every command from `web/`. Use `npm run` if `pnpm` is not installed.
+Run every command from `web/`. The brain itself is the `brain/` folder at the repo root, so file paths below start from the repo root. Use `npm run` if `pnpm` is not installed.
 
 ## Before you write anything
 
@@ -29,7 +29,7 @@ If the content tells a crew member what medicine to take, how much, or what cond
 
 ## Steps
 
-1. **Look for an existing file on the topic.** Search `web/brain/reference`, `procedures` and `measures` for the topic and its keywords. Then pick one:
+1. **Look for an existing file on the topic.** Search `brain/reference`, `procedures` and `measures` for the topic and its keywords. Then pick one:
    - **New topic:** create a new file.
    - **Small correction** (a typo, a clearer sentence, same meaning): edit the file in place.
    - **The guidance changed:** create a new file and replace the old one (step 3). Do not overwrite the old guidance, because the history must stay readable.
@@ -62,7 +62,7 @@ If the content tells a crew member what medicine to take, how much, or what cond
 
 6. **Check.** Run `pnpm brain:check`. Fix every error. Read the warnings to the person.
 
-7. **Evaluate and release** with the brain-version skill. The change is not live as a version until that passes.
+7. **Evaluate and release** with the brain-version skill. The change is not live as a version until that passes. The intent follows from step 1: a small correction is a `fix`, a new topic is an `add`, and changed or retired guidance is a `change`.
 
 ## Rules
 

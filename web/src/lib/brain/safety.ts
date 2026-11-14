@@ -6,7 +6,7 @@ type RedFlagConfiguration = {
   categories: Array<{ id: string; terms: string[] }>;
 };
 
-const RED_FLAGS_PATH = path.join(process.cwd(), "brain", "safety", "red-flags.json");
+const RED_FLAGS_PATH = path.join(process.cwd(), "..", "brain", "safety", "red-flags.json");
 
 export async function checkRedFlags(
   message: string,

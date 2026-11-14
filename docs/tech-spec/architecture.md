@@ -117,7 +117,7 @@ Steps 5 and 6 still apply to them.
 
 ## The brain folder
 
-The brain lives at `web/brain/`, next to the app that reads it. Its `README.md` explains how to edit it and how versions work.
+The brain lives at `brain/` at the repo root, so that people who do not write code can find and edit it. Its `README.md` explains how to edit it and how versions work.
 
 ```
 brain/
@@ -140,7 +140,7 @@ brain/
 │   ├── questions.jsonl  the test set
 │   └── results/         one result file per run, named after the brain version
 ├── version.json         the current brain version and its fingerprint
-└── changelog.md         one entry per version
+└── changelog.md         one entry per version, with its intent (fix, add or change)
 ```
 
 Crew data (check-ins, baselines, flags) is not in the brain. It belongs to the core loop, and code passes the numbers in at step 2.
@@ -198,7 +198,7 @@ The set is rerun whenever the brain, a prompt or the pipeline changes.
 
 Each report records three things, so that two scores can be compared fairly:
 
-- the brain version, for example `v2`, or `v2+changes` when files were edited after the release
+- the brain version, for example `v1.2.0`, or `v1.2.0+changes` when files were edited after the release
 - a fingerprint of the question set
 - the commit of the pipeline code
 

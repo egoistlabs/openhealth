@@ -1,13 +1,13 @@
 ---
 name: brain-evals
-description: Add, change or review the eval questions that test the companion's brain (web/brain/evals/questions.jsonl), and read eval results. Use when adding test questions for a new brain file, when a real question got a bad answer, when asked to improve or audit eval coverage, or when asked why an eval failed.
+description: Add, change or review the eval questions that test the companion's brain (brain/evals/questions.jsonl), and read eval results. Use when adding test questions for a new brain file, when a real question got a bad answer, when asked to improve or audit eval coverage, or when asked why an eval failed.
 ---
 
 # Brain evals
 
-The question set in `web/brain/evals/questions.jsonl` is the safety net for every brain change. It is only useful if it is honest, so the main rule is: a question changes because the question was wrong, never because the companion failed it.
+The question set in `brain/evals/questions.jsonl` is the safety net for every brain change. It is only useful if it is honest, so the main rule is: a question changes because the question was wrong, never because the companion failed it.
 
-Run every command from `web/`. Use `npm run` if `pnpm` is not installed.
+Run every command from `web/`. The brain itself is the `brain/` folder at the repo root, so file paths below start from the repo root. Use `npm run` if `pnpm` is not installed.
 
 ## The three kinds of question
 

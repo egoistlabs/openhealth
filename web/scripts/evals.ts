@@ -54,7 +54,7 @@ function factSatisfied(answer: string, fact: string): boolean {
 }
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
-const brainDirectory = path.resolve(scriptDirectory, "../brain");
+const brainDirectory = path.resolve(scriptDirectory, "../../brain");
 const casesPath = path.join(brainDirectory, "evals", "questions.jsonl");
 const resultsDirectory = path.join(brainDirectory, "evals", "results");
 

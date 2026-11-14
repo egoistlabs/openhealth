@@ -5,7 +5,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkBrain } from "../src/lib/brain/check.ts";
 
-const brainDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../brain");
+const brainDirectory = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../../brain");
 
 checkBrain(brainDirectory).then(({ errors, warnings }) => {
   for (const warning of warnings) console.log(`warning  ${warning}`);

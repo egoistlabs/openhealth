@@ -1,15 +1,27 @@
 // Show or release the brain version.
-//   pnpm brain:version                 show the current version and whether files changed since
-//   pnpm brain:release "what changed"  record the brain as it is now as the next version
+//   pnpm brain:version                          show the version and what changed since
+//   pnpm brain:release <intent> "what changed"  record the brain as it is now as the next version
+//
+// The intent says why the version was made, and decides the number:
+//   fix    1.0.0 -> 1.0.1   add    1.0.0 -> 1.1.0   change 1.0.0 -> 2.0.0
 
 import { appendFile, readFile, readdir, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { checkBrain } from "../src/lib/brain/check.ts";
-import { fingerprintBrain, readBrainVersion, readVersionFile } from "../src/lib/brain/version.ts";
+import {
+  INTENTS,
+  hashBrainFiles,
+  nextVersion,
+  readBrainVersion,
+  readVersionFile,
+  type BrainChanges,
+  type Intent,
+} from "../src/lib/brain/version.ts";
 
 const scriptDirectory = path.dirname(fileURLToPath(import.meta.url));
-const brainDirectory = path.resolve(scriptDirectory, "../brain");
+const brainDirectory = path.resolve(scriptDirectory, "../../brain");
+const CONTENT = ["reference/", "procedures/", "measures/"];
 
 type Score = { passed: number; total: number };
 
@@ -32,6 +44,28 @@ async function scoreFor(fingerprint: string): Promise<string | null> {
   return `answerable ${answerable.passed}/${answerable.total}, decline ${decline.passed}/${decline.total}, red flag ${red_flag.passed}/${red_flag.total}`;
 }
 
+function printChanges(changes: BrainChanges) {
+  for (const file of changes.added) console.log(`  added    ${file}`);
+  for (const file of changes.edited) console.log(`  edited   ${file}`);
+  for (const file of changes.removed) console.log(`  removed  ${file}`);
+}
+
+function printIntents() {
+  for (const [name, meaning] of Object.entries(INTENTS)) console.log(`  ${name.padEnd(7)}${meaning}`);
+}
+
+// The intent is the person's call, except where the files plainly say otherwise.
+function intentProblem(intent: Intent, changes: BrainChanges): string | null {
+  const isContent = (file: string) => CONTENT.some((folder) => file.startsWith(folder));
+  if (intent === "fix" && changes.added.some(isContent)) {
+    return 'A knowledge file was added, so this is not a fix. Use "add", or "change" if it replaces older guidance.';
+  }
+  if (intent !== "change" && changes.removed.length > 0) {
+    return 'A file was deleted. Brain files should be marked "status: replaced", not deleted. If the deletion is intended, use "change".';
+  }
+  return null;
+}
+
 async function main() {
   const [command, ...rest] = process.argv.slice(2);
 
@@ -39,17 +73,24 @@ async function main() {
     const current = await readBrainVersion(brainDirectory);
     const released = await readVersionFile(brainDirectory);
     console.log(`Brain ${current.label} (fingerprint ${current.fingerprint})`);
-    if (released) console.log(`Last release: v${released.version} on ${released.released}: ${released.note}`);
+    if (released) {
+      console.log(`Last release: v${released.version} (${released.intent}) on ${released.released}: ${released.note}`);
+    }
     console.log(`Eval score for these files: ${(await scoreFor(current.fingerprint)) ?? "not run yet"}`);
     if (current.modified) {
-      console.log('Files changed since the last release. Run: pnpm brain:release "what changed"');
+      console.log("\nChanged since the last release:");
+      printChanges(current.changes);
+      console.log('\nTo release: pnpm brain:release <intent> "what changed"');
+      printIntents();
     }
     return;
   }
 
-  const note = rest.join(" ").trim();
-  if (!note) {
-    console.error('Say what changed: pnpm brain:release "what changed"');
+  const intent = rest[0] as Intent;
+  const note = rest.slice(1).join(" ").trim();
+  if (!(intent in INTENTS) || !note) {
+    console.error('Give an intent and say what changed: pnpm brain:release <intent> "what changed"');
+    printIntents();
     process.exitCode = 1;
     return;
   }
@@ -57,6 +98,13 @@ async function main() {
   const current = await readBrainVersion(brainDirectory);
   if (!current.modified) {
     console.log(`Nothing changed since ${current.label}. No new version was made.`);
+    return;
+  }
+
+  const problem = intentProblem(intent, current.changes);
+  if (problem) {
+    console.error(problem);
+    process.exitCode = 1;
     return;
   }
 
@@ -68,20 +116,25 @@ async function main() {
     return;
   }
 
-  const version = current.version + 1;
+  const version = nextVersion(current.version, intent);
   const released = new Date().toISOString().slice(0, 10);
-  const fingerprint = await fingerprintBrain(brainDirectory);
-  const score = (await scoreFor(fingerprint)) ?? "not run";
+  const score = (await scoreFor(current.fingerprint)) ?? "not run";
+  const files = await hashBrainFiles(brainDirectory);
 
   await writeFile(
     path.join(brainDirectory, "version.json"),
-    `${JSON.stringify({ version, released, fingerprint, note, score }, null, 2)}\n`,
+    `${JSON.stringify({ version, intent, released, note, score, fingerprint: current.fingerprint, files }, null, 2)}\n`,
   );
+  const changed = [
+    ...current.changes.added.map((file) => `added ${file}`),
+    ...current.changes.edited.map((file) => `edited ${file}`),
+    ...current.changes.removed.map((file) => `removed ${file}`),
+  ];
   await appendFile(
     path.join(brainDirectory, "changelog.md"),
-    `\n## v${version}, ${released}\n\n- ${note}\n- Evals: ${score}\n- Fingerprint: ${fingerprint}\n`,
+    `\n## v${version} (${intent}), ${released}\n\n- ${note}\n- Files: ${changed.join(", ")}\n- Evals: ${score}\n- Fingerprint: ${current.fingerprint}\n`,
   );
-  console.log(`Released brain v${version} (fingerprint ${fingerprint}). Evals: ${score}.`);
+  console.log(`Released brain v${version} (${intent}). Evals: ${score}.`);
 }
 
 main().catch((error) => {

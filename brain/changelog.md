@@ -10,7 +10,8 @@
   operational use.
 - Authorized by: project team review pending.
 
-## v1, 2026-11-14
+## v1.0.0 (first), 2026-11-14
 
 - First team brain: identity, 12 reference files, 3 procedures, 7 measures, prompts and red flags
+- Evals: answerable 12/25, decline 10/10, red flag 5/5
 - Fingerprint: 0d14a8cab348

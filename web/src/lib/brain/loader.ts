@@ -2,7 +2,7 @@ import { readFile, readdir } from "node:fs/promises";
 import path from "node:path";
 import type { BrainDocument } from "./types.ts";
 
-const BRAIN_ROOT = path.join(process.cwd(), "brain");
+const BRAIN_ROOT = path.join(process.cwd(), "..", "brain");
 const CONTENT_DIRECTORIES = ["reference", "procedures", "measures"] as const;
 
 function parseList(value: string | undefined): string[] {

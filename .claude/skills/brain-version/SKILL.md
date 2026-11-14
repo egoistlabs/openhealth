@@ -1,21 +1,29 @@
 ---
 name: brain-version
-description: Version the companion's brain folder (web/brain) and tie each version to an eval score. Use after editing, adding or replacing any brain file, when asked to release, version or bump the brain, or when asked how a brain change affected the eval scores.
+description: Version the companion's brain folder (brain) and tie each version to an eval score. Use after editing, adding or replacing any brain file, when asked to release, version or bump the brain, or when asked how a brain change affected the eval scores.
 ---
 
 # Brain version
 
-The brain in `web/brain/` has a version number. A version is only worth having if it has an eval score next to it, so releasing always goes: check, evaluate, compare, release.
+The brain in `brain/` has a version number. Each version records an intent (why it was made) and an eval score, so anyone reading the changelog can see what kind of change it was and whether it helped. Releasing always goes: check, evaluate, compare, release.
 
-Run every command from `web/`. Use `npm run` if `pnpm` is not installed.
+Run every command from `web/`. The brain itself is the `brain/` folder at the repo root, so file paths below start from the repo root. Use `npm run` if `pnpm` is not installed.
 
 ## Steps
 
 1. **Check.** Run `pnpm brain:version`.
-   - If it shows a plain version such as `v2`, nothing changed. Say so and stop.
-   - If it shows `v2+changes`, carry on.
+   - If it shows a plain version such as `v1.2.0`, nothing changed. Say so and stop.
+   - If it shows `v1.2.0+changes`, it also lists the files that changed. Carry on.
 
-2. **See what changed.** Run `git status --short -- brain` and `git diff -- brain`. Write one plain sentence that says what changed. This becomes the release note.
+2. **See what changed and why.** Run `git diff -- ../brain` on the listed files. Then:
+   - Write one plain sentence that says what changed. This becomes the release note.
+   - Pick the intent from the table below. If two fit, use the larger one. If you cannot tell why the change was made, ask the person.
+
+   | Intent | Use it when | Version |
+   | --- | --- | --- |
+   | `fix` | Something already there was tuned or corrected: wording, keywords, prompt tuning. The companion knows nothing new. | 1.0.0 to 1.0.1 |
+   | `add` | The companion knows something new: a new file, a new topic, a new red-flag term. | 1.0.0 to 1.1.0 |
+   | `change` | Guidance, behaviour or safety rules are different: a file was replaced or retired, the identity changed, a red flag was removed. | 1.0.0 to 2.0.0 |
 
 3. **Check.** Run `pnpm brain:check`. It takes a second and does not use the model. Fix every error before going on. The release command refuses to run while there are errors.
 
@@ -32,7 +40,7 @@ Run every command from `web/`. Use `npm run` if `pnpm` is not installed.
 
    The person can still choose to release. Ask them. Never release past a red-flag failure.
 
-7. **Release.** Run `pnpm brain:release "<the sentence from step 2>"`. It writes `brain/version.json` and adds an entry with the eval score to `brain/changelog.md`.
+7. **Release.** Run `pnpm brain:release <intent> "<the sentence from step 2>"`, for example `pnpm brain:release fix "Tuned the answer prompt to keep answers short"`. It writes `brain/version.json` and adds an entry to `brain/changelog.md` with the intent, the files that changed and the eval score. It refuses a `fix` that adds a knowledge file.
 
 8. **Report** the new version, its scores and the comparison from step 5. Commit `brain/version.json`, `brain/changelog.md`, the changed brain files and the new report together, but only when the person asks for a commit.
 
