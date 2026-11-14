@@ -17,11 +17,15 @@
     "brain:add": "node --disable-warning=MODULE_TYPELESS_PACKAGE_JSON --experimental-strip-types scripts/brain-add.ts"
   },
   "dependencies": {
+    "@ai-sdk/openai": "^4.0.118",
+    "@ai-sdk/react": "^4.0.177",
+    "ai": "^7.0.173",
     "clsx": "^2.1.1",
     "next": "16.4.6",
     "react": "19.3.0",
     "react-dom": "19.3.0",
-    "tailwind-merge": "^3.7.0"
+    "tailwind-merge": "^3.7.0",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@tailwindcss/turbopack": "4.3.3",

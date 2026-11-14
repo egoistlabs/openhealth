@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
-import { useSendMessage } from "@/hooks/companion/mutations/use-send-message";
-import { useChatHistory } from "@/hooks/companion/queries/use-chat-history";
+import { useCompanionChat } from "@/hooks/companion/mutations/use-companion-chat";
 import {
   JOURNAL, KEYS, MEASURES, MKEY, P, avg, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, listJoin, series,
   type ConvoRow, type VoicePhrase,
@@ -24,12 +23,16 @@ const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)"
 
 /* Companion: talk to the companion (A7, A2, A9; C5, C10, C11). */
 export function CompanionScreen() {
+  const { s } = useConsole();
+  /* remount per person/sol so the seeded history matches the log being shown */
+  return <CompanionStage key={`${s.me}-${s.sol}`} />;
+}
+
+function CompanionStage() {
   const c = useConsole();
   const { s, set, atPresent } = c;
   const pstate = usePresenceState();
-  const { send } = useSendMessage();
-  const history = useChatHistory();
-  const [busy, setBusy] = useState(false);
+  const [busyLocal, setBusy] = useState(false);
   const [speaking, setSpeaking] = useState<string | null>(null);
   const [v, setV] = useState<VState>(null);
   const [typeMode, setTypeMode] = useState(false);
@@ -39,10 +42,31 @@ export function CompanionScreen() {
   const inputRef = useRef<HTMLInputElement>(null);
   const trRef = useRef<HTMLDivElement>(null);
   const typeTimer = useRef(0);
+  const lastIntent = useRef<string | undefined>(undefined);
 
   const rows = c.convo();
   useEffect(() => { if (s.tab === "conversation" && trRef.current) trRef.current.scrollTop = trRef.current.scrollHeight; }, [rows.length, s.tab, s.drawer]);
   useEffect(() => () => { window.clearTimeout(typeTimer.current); Presence.setState("idle"); }, []);
+
+  const chat = useCompanionChat({
+    onOffline: (q) => {
+      const fallback = localReply(q, lastIntent.current);
+      speak({ who: "companion", offline: true, text: fallback ?? "The companion model is not running, so I can't answer that right now. Your check-in and measures still work." });
+    },
+  });
+  const busy = busyLocal || chat.streaming;
+
+  /* orb follows the stream: working before the first token, speaking while text arrives */
+  useEffect(() => {
+    if (chat.status === "submitted") Presence.setState("working");
+    else if (chat.status === "streaming") Presence.setState("speaking");
+    else Presence.setState("idle");
+  }, [chat.status]);
+  useEffect(() => {
+    if (chat.status !== "streaming" || reducedMotion()) return;
+    const ch = chat.liveText[chat.liveText.length - 1] || " ";
+    Presence.setAmp(/[aeiou]/i.test(ch) ? 0.65 : /[a-z]/i.test(ch) ? 0.38 : /\s/.test(ch) ? 0.1 : 0.02);
+  }, [chat.status, chat.liveText]);
 
   /* local reply from the person's own numbers: used for "sum up my week" and when the model is off (C9) */
   const localReply = (q: string, intent?: string) => {
@@ -80,10 +104,14 @@ export function CompanionScreen() {
     tick();
   };
 
-  const ask = async (q: string, intent?: string) => {
-    setBusy(true);
-    Presence.setState("working");
+  const userSaid = (q: string, intent?: string) => {
+    if (busy) return;
+    lastIntent.current = intent;
+    set({ chatted: true, settings: false });
+    c.addLines([{ who: "you", text: q }]);
     if (intent === "summary" || /summar|recap|my week/i.test(q)) {
+      setBusy(true);
+      Presence.setState("working");
       window.setTimeout(() => {
         Presence.setState("idle"); setBusy(false);
         c.addLines([{ who: "companion", text: "Your week summary is in the log." }, { who: "summary" }]);
@@ -92,26 +120,7 @@ export function CompanionScreen() {
       }, reducedMotion() ? 80 : 600);
       return;
     }
-    try {
-      const data = await send({ message: q, history });
-      speak({
-        who: "companion",
-        text: data.message,
-        sources: data.sources,
-        escalation: data.escalation?.required,
-        noAnswer: !data.can_answer && !data.escalation?.required,
-      });
-    } catch {
-      const fallback = localReply(q, intent);
-      speak({ who: "companion", offline: true, text: fallback ?? "The companion model is not running, so I can't answer that right now. Your check-in and measures still work." });
-    }
-  };
-
-  const userSaid = (q: string, intent?: string) => {
-    if (busy) return;
-    set({ chatted: true, settings: false });
-    c.addLines([{ who: "you", text: q }]);
-    void ask(q, intent);
+    chat.send(q);
   };
 
   /* voice on the companion: a rating heard in speech goes into today's check-in draft (C3) */
@@ -133,7 +142,11 @@ export function CompanionScreen() {
   };
 
   const lastReply = [...rows].reverse().find((x) => x.who === "companion" && x.text);
-  const shown = speaking != null ? { who: "companion" as const, text: speaking, sol: P, min: 0 } : lastReply;
+  const shown = speaking != null
+    ? { who: "companion" as const, text: speaking, sol: P, min: 0 }
+    : chat.streaming
+      ? { who: "companion" as const, text: chat.liveText, sol: P, min: 0 }
+      : lastReply;
 
   return (
     <div className={`cstage${s.drawer ? " has-drawer" : ""}`}>
@@ -147,7 +160,7 @@ export function CompanionScreen() {
           </div>
           {s.settings ? <Settings /> : <>
             <Avatar />
-            <Reply row={shown} live={speaking != null} />
+            <Reply row={shown} live={speaking != null || chat.streaming} />
           </>}
         </section>
 
@@ -175,7 +188,11 @@ export function CompanionScreen() {
                 <Wave />
                 <HoldButton ctx="companion" enabled={s.voice && !busy} onPhrase={onPhrase} setV={setV} tip="Hold to talk. Simulated: there is no microphone yet." />
               </> : null}
-              <button type="submit" className="btn-primary" disabled={busy}>Send</button>
+              {chat.streaming ? (
+                <button type="button" className="ta" onClick={chat.stop}>Stop</button>
+              ) : (
+                <button type="submit" className="btn-primary" disabled={busy}>Send</button>
+              )}
             </form>
             <p className="presence vh">Companion: <span id="pstate">{{ idle: "Idle", listening: "Listening", working: "Working", speaking: "Speaking" }[pstate]}</span></p>
           </>}
@@ -345,6 +362,7 @@ function TrRow({ r }: { r: ConvoRow }) {
       <span className="trow__t">{hm(r.min)}</span><span className="trow__s">{who}</span>
       <span className="trow__x">
         {r.escalation ? <span className="sw sw--act"><StatusMark state="act" />Escalated </span> : null}
+        {r.stopped ? <span className="label">Stopped </span> : null}
         {r.text}
         {r.sources?.length ? <span className="small t2 block">Sources: {r.sources.map((x) => x.title).join(", ")}</span> : null}
       </span>

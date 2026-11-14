@@ -2,6 +2,7 @@
 
 import { useMemo } from "react";
 import type { ChatTurn } from "@/lib/brain/types";
+import type { CompanionUIMessage } from "@/lib/chat/types";
 import { useConsole } from "@/components/console/ConsoleProvider";
 
 /* The turns before the current question, taken from the conversation log.
@@ -19,4 +20,17 @@ export function useChatHistory(limit = 6): ChatTurn[] {
       text: r.text!,
     }));
   }, [convo, limit]);
+}
+
+/* Seeds useChat so the model still sees the conversation that was already in
+   the log when the companion was opened. */
+export function toSeedMessages(
+  turns: ChatTurn[],
+  sol: number,
+): CompanionUIMessage[] {
+  return turns.map((turn, index) => ({
+    id: `seed-${sol}-${index}`,
+    role: turn.role === "user" ? "user" : "assistant",
+    parts: [{ type: "text", text: turn.text }],
+  }));
 }

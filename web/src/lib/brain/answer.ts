@@ -1,6 +1,7 @@
 import { loadBrainDocuments, loadCompanionInstructions, loadIdentity } from "./loader.ts";
 import { checkRedFlags } from "./safety.ts";
 import { searchBrain } from "./search.ts";
+import { buildAnswerMessages } from "./prompt.ts";
 import { generateGroundedAnswer } from "../ollama/client.ts";
 import { numbersIn } from "../text.ts";
 import type { ChatTurn, ScoredDocument } from "./types.ts";
@@ -52,16 +53,29 @@ export type CompanionAnswerInput = {
   tone?: "gentle" | "direct";
 };
 
-export async function answerQuestion(input: CompanionAnswerInput): Promise<CompanionAnswer> {
+/* Everything needed to stream one grounded turn, or an answer that needs no
+   model call (red flag, nothing relevant on board). */
+export type PreparedTurn =
+  | { immediate: CompanionAnswer }
+  | {
+      sources: ScoredDocument[];
+      messages: Array<{ role: "system" | "user" | "assistant"; content: string }>;
+    };
+
+export async function prepareCompanionTurn(
+  input: CompanionAnswerInput,
+): Promise<PreparedTurn> {
   const { question, numbers = {}, history = [], tone = "gentle" } = input;
   const redFlag = await checkRedFlags(question);
   if (redFlag.matched) {
     return {
-      can_answer: false,
-      message: redFlag.escalationMessage,
-      model: null,
-      sources: [],
-      escalation: { required: true, categories: redFlag.categories },
+      immediate: {
+        can_answer: false,
+        message: redFlag.escalationMessage,
+        model: null,
+        sources: [],
+        escalation: { required: true, categories: redFlag.categories },
+      },
     };
   }
 
@@ -76,11 +90,13 @@ export async function answerQuestion(input: CompanionAnswerInput): Promise<Compa
   const sources = searchBrain(retrievalQuery, documents);
   if (sources.length === 0) {
     return {
-      can_answer: false,
-      message: DECLINE_MESSAGE,
-      model: null,
-      sources: [],
-      escalation: { required: false },
+      immediate: {
+        can_answer: false,
+        message: DECLINE_MESSAGE,
+        model: null,
+        sources: [],
+        escalation: { required: false },
+      },
     };
   }
 
@@ -88,24 +104,37 @@ export async function answerQuestion(input: CompanionAnswerInput): Promise<Compa
     loadIdentity(),
     loadCompanionInstructions(),
   ]);
-  const result = await generateGroundedAnswer({
-    identity,
-    instructions,
+  return {
     sources,
-    numbers,
-    question,
-    history,
-    tone,
-  });
+    messages: buildAnswerMessages({
+      identity,
+      instructions,
+      sources,
+      numbers,
+      question,
+      history,
+      tone,
+    }),
+  };
+}
 
+/* The authoritative answer, after the model's output (streamed or not) has
+   been parsed. Verification is identical for both paths. */
+export function finalizeCompanionAnswer(
+  answer: { can_answer: boolean; answer: string; sources_used: string[] } | null,
+  allowedSources: ScoredDocument[],
+  numbers: Record<string, unknown>,
+  model: string | null,
+): CompanionAnswer {
   if (
-    !verifyGroundedAnswer(result.answer, sources, numbers) ||
-    !result.answer.can_answer
+    !answer ||
+    !verifyGroundedAnswer(answer, allowedSources, numbers) ||
+    !answer.can_answer
   ) {
     return {
       can_answer: false,
       message: DECLINE_MESSAGE,
-      model: result.model,
+      model,
       sources: [],
       escalation: { required: false },
     };
@@ -113,10 +142,10 @@ export async function answerQuestion(input: CompanionAnswerInput): Promise<Compa
 
   return {
     can_answer: true,
-    message: result.answer.answer.trim(),
-    model: result.model,
-    sources: sources
-      .filter((source) => result.answer.sources_used.includes(source.id))
+    message: answer.answer.trim(),
+    model,
+    sources: allowedSources
+      .filter((source) => answer.sources_used.includes(source.id))
       .map(({ id, title, source, added, authorisedBy }) => ({
         id,
         title,
@@ -126,4 +155,19 @@ export async function answerQuestion(input: CompanionAnswerInput): Promise<Compa
       })),
     escalation: { required: false },
   };
+}
+
+export async function answerQuestion(input: CompanionAnswerInput): Promise<CompanionAnswer> {
+  const prepared = await prepareCompanionTurn(input);
+  if ("immediate" in prepared) return prepared.immediate;
+
+  const { numbers = {} } = input;
+  const result = await generateGroundedAnswer({
+    sources: prepared.sources,
+    numbers,
+    question: input.question,
+    messages: prepared.messages,
+  });
+
+  return finalizeCompanionAnswer(result.answer, prepared.sources, numbers, result.model);
 }

@@ -93,6 +93,7 @@ export type ConvoRow = {
   escalation?: boolean;
   noAnswer?: boolean;
   offline?: boolean;
+  stopped?: boolean;
 };
 
 export const P = 142; // present sol

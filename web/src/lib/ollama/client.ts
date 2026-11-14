@@ -13,7 +13,7 @@ export type ModelAnswer = {
 
 export type ChatMessage = { role: "system" | "user" | "assistant"; content: string };
 
-const ANSWER_FORMAT = {
+export const ANSWER_FORMAT = {
   type: "object",
   properties: {
     can_answer: { type: "boolean" },
@@ -24,7 +24,7 @@ const ANSWER_FORMAT = {
   additionalProperties: false,
 };
 
-function parseModelAnswer(value: unknown): ModelAnswer | null {
+export function parseModelAnswer(value: unknown): ModelAnswer | null {
   if (typeof value !== "object" || value === null) return null;
   const parsed = value as Partial<ModelAnswer>;
   if (
@@ -107,16 +107,28 @@ export async function generateJson<Result>(input: {
 }
 
 export async function generateGroundedAnswer(input: {
-  identity: string;
-  instructions: string;
+  identity?: string;
+  instructions?: string;
   sources: ScoredDocument[];
   numbers?: Record<string, unknown>;
   question: string;
   history?: ChatTurn[];
   tone?: "gentle" | "direct";
+  /* prebuilt prompt messages, used when the caller already assembled them */
+  messages?: ChatMessage[];
 }): Promise<{ answer: ModelAnswer; model: string }> {
   const { data, model } = await generateJson({
-    messages: buildAnswerMessages(input),
+    messages:
+      input.messages ??
+      buildAnswerMessages({
+        identity: input.identity ?? "",
+        instructions: input.instructions ?? "",
+        sources: input.sources,
+        numbers: input.numbers,
+        question: input.question,
+        history: input.history,
+        tone: input.tone,
+      }),
     schema: ANSWER_FORMAT,
     validate: parseModelAnswer,
     retryHint:
