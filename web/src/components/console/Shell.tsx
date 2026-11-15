@@ -12,6 +12,7 @@ import { tok } from "@/lib/console/plots";
 import { Icon, Num, Segmented, StatusMark, Toggle } from "@/components/ui";
 import { DotPattern } from "@/components/ui/dot-pattern";
 import { THEMES, useConsole } from "./ConsoleProvider";
+import { EarthToast } from "./EarthToast";
 
 export const ROUTE = { home: "/", checkin: "/check-in", companion: "/companion", crew: "/crew", ground: "/ground", groundEsc: "/ground/escalations", groundReports: "/ground/reports" } as const;
 
@@ -53,6 +54,7 @@ export function ConsoleShell({ children }: { children: ReactNode }) {
       ) : null}
       {s.role === "ground" ? null : <SettingsDialog />}
       <Tips />
+      <EarthToast companionRoute={ROUTE.companion} />
       <div className="vh" aria-live="polite" aria-atomic="true">{live}</div>
     </>
   );

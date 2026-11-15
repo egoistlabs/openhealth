@@ -25,6 +25,9 @@
   --color-act-text: var(--c-act-text);
   --color-info: var(--c-info);
   --color-info-text: var(--c-info-text);
+  /* inverted surface for toasts: near-black card with light text in every look */
+  --color-invert: #18181B;
+  --color-invert-foreground: #FAFAFA;
 
   /* shadcn names, so copied shadcn components (components/ui) pick up the console tokens */
   --color-foreground: var(--c-text);

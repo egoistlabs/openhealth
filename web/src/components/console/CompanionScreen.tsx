@@ -12,6 +12,7 @@ import { codeReply, isStatusQuestion, readFacts } from "@/lib/brain/facts";
 import { holdEmotion, replyEmotion, restEmotion } from "@/lib/console/emotion";
 import { Num, StatusMark, Toggle } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
+import { READ_EARTH } from "./EarthToast";
 import { FlagList } from "./FlagCard";
 import { Wave, usePresenceState } from "./Orb";
 import { VegaAvatar, type SpeechEvents, type VegaApi } from "./VegaAvatar";
@@ -206,14 +207,16 @@ function CompanionStage() {
     chat.send(q);
   };
 
-  /* a question typed in the Pedro launcher on another screen: send it once on arrival */
+  /* a question typed in the Pedro launcher on another screen, or "Open message from Earth" on the toast:
+     send it once on arrival (the guard resets once it is cleared, so a later one on this screen works too) */
   const asked = useRef(false);
   useEffect(() => {
-    if (asked.current || !s.ask || !atPresent) return;
+    if (!s.ask || !atPresent) { asked.current = false; return; }
+    if (asked.current || busy) return;
     asked.current = true;
     const q = s.ask;
     set({ ask: null });
-    userSaid(q);
+    userSaid(q, q === READ_EARTH ? "earth" : undefined); // the toast always means "read Earth's messages", never a reply
   });
 
   /* voice on the companion: a rating heard in speech goes into today's check-in draft (C3) */

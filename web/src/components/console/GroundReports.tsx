@@ -231,7 +231,8 @@ function EarthAdvice({ crewId, first, sol }: { crewId: string; first: string; so
   const pickRef = useRef<HTMLInputElement>(null);
   const [threads, setThreads] = useState(false);
   const live = sol === P && s.sol === P; // only today, and not while replaying the timeline
-  const delay = lightDelayMin(sol);
+  const realDelay = lightDelayMin(sol); // the true one-way light time today
+  const delay = DEMO_DELAY_MIN; // shortened for the demo, so the astronaut gets the note (and its toast) quickly
   const canSend = (draft.trim() || files.length) && !busy;
   const pick = (list: FileList | null) => {
     if (!list) return;
@@ -267,7 +268,7 @@ function EarthAdvice({ crewId, first, sol }: { crewId: string; first: string; so
         </ul>
       ) : (
         <p className="ea__empty" style={EA.empty}>
-          {live ? <>No advice sent to {first} today. <span className="t2">Notes reach Mars after the light delay; PDFs and images can be attached.</span></> : <>No advice on this sol. <span className="t2">Pick Today to write.</span></>}
+          {live ? <>No advice sent to {first} today. <span className="t2">In this demo notes reach Mars within {DEMO_DELAY_MIN} minute (the real light delay is up to 20 minutes); PDFs and images can be attached.</span></> : <>No advice on this sol. <span className="t2">Pick Today to write.</span></>}
         </p>
       )}
       {threads ? <ThreadsModal startWith={crewId} onClose={() => setThreads(false)} /> : null}
@@ -295,7 +296,7 @@ function EarthAdvice({ crewId, first, sol }: { crewId: string; first: string; so
           ) : null}
           <input ref={pickRef} type="file" accept={FILE_ACCEPT} multiple hidden onChange={(e) => { pick(e.target.files); e.target.value = ""; }} />
           <div className="ea__row">
-            <span className="small t2">{err ?? `Arrives in ~${delay} min · Ctrl+Enter`}</span>
+            <span className="small t2">{err ?? <>Arrives within <Num>{delay}</Num> min in this demo · real Earth–Mars delay today is ~<Num>{realDelay}</Num> min · Ctrl+Enter</>}</span>
             <span className="ea__btns">
               <button type="button" className="btn btn-sm" onClick={() => pickRef.current?.click()} disabled={busy || files.length >= FILES_PER_NOTE}
                 title="Attach a PDF, image or text file (up to 3, 10 MB each)">Attach file</button>
@@ -325,6 +326,10 @@ const QUICK: Array<[string, string]> = [
   ["Lighter workload", "Ask for a lighter workload tomorrow if the plan allows."],
   ["8 h sleep", "Protect an 8-hour sleep window tonight."],
 ];
+
+/* Notes sent from this panel reach Mars after 1 minute instead of the real light delay (up to 20 min),
+   so the demo shows the astronaut's notification without a long wait. Sample notes keep the real delay. */
+const DEMO_DELAY_MIN = 1;
 
 /* one note: author, send time, transit status, text and attachments (used in the panel and the threads modal) */
 function NoteItem({ n }: { n: EarthNote }) {
