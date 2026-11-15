@@ -331,6 +331,8 @@ function NoteItem({ n }: { n: EarthNote }) {
   const { s, clockMin } = useConsole();
   const arrived = n.sol < P || s.sol > n.sol || clockMin >= n.arriveMin;
   const crew = n.from === "crew"; // a reply from the astronaut, passed on by Pedro
+  /* a sample reply later today has not been written yet */
+  if (crew && n.sol === P && s.sol <= P && clockMin < n.sentMin) return null;
   /* a reply still on its way has not reached Earth yet, so Ground cannot read it */
   if (crew && !arrived) return (
     <li className="ea__note" style={{ marginLeft: 24, borderLeftColor: "var(--c-normal)", opacity: 0.75 }}>

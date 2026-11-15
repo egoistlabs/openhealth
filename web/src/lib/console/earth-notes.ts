@@ -52,10 +52,29 @@ const SAMPLE_RAW: Array<[crewId: string, sol: number, sentMin: number, text: str
   ["sato", 140, 11 * 60, "Reaction time is a little slow after the long core-logging sessions. Try a short break away from the microscope every hour."],
   ["sato", 142, 8 * 60 + 15, "Your HRV has been low for three nights. Ask for a lighter workload tomorrow if the plan allows."],
 ];
-const SAMPLES: EarthNote[] = SAMPLE_RAW.map(([crewId, sol, sentMin, text, file], i) => ({
-  id: `sim-${crewId}-${sol}-${i}`, crewId, sol, sentMin, arriveMin: sentMin + lightDelayMin(sol), author: "Flight surgeon", text,
-  ...(file ? { attachments: [file] } : null),
-}));
+/* Sample replies from the astronauts, sent through Pedro after Earth's note had arrived on Mars.
+   Arrival on Earth = send time + that sol's one-way light time. */
+const NAMES: Record<string, string> = { okafor: "Adaeze Okafor", lindqvist: "Mattias Lindqvist", sato: "Kenji Sato", reyes: "Daniela Reyes" };
+const REPLY_RAW: Array<[crewId: string, sol: number, sentMin: number, text: string]> = [
+  ["okafor", 139, 12 * 60 + 30, "Thanks. Logging takes two minutes after dinner, happy to keep it up."],
+  ["okafor", 142, 9 * 60 + 35, "Will do. Stretching before every harness run from today."],
+  ["lindqvist", 140, 13 * 60 + 5, "Fair. I'll ask the commander to move the rover filter swap to Sol 144."],
+  ["lindqvist", 141, 11 * 60 + 10, "Got the care sheet. No overhead lifts; the crew medical officer will look at the shoulder tonight."],
+  ["lindqvist", 142, 8 * 60 + 30, "Understood. Lights out at 22:00 tonight."],
+  ["reyes", 141, 10 * 60, "Checked: 37.6 °C on the kit thermometer. A bit tired, otherwise fine."],
+  ["reyes", 142, 7 * 60 + 50, "Spoke to the crew medical officer. Resting in quarters this afternoon and working through the checklist."],
+  ["sato", 140, 13 * 60 + 40, "Trying hourly breaks. The core logging is due Sol 143, so it should ease after that."],
+  ["sato", 142, 9 * 60 + 10, "Asked the commander. Tomorrow's core logging is cut to half a shift."],
+];
+const SAMPLES: EarthNote[] = [
+  ...SAMPLE_RAW.map(([crewId, sol, sentMin, text, file], i) => ({
+    id: `sim-${crewId}-${sol}-${i}`, crewId, sol, sentMin, arriveMin: sentMin + lightDelayMin(sol), author: "Flight surgeon", text,
+    ...(file ? { attachments: [file] } : null),
+  })),
+  ...REPLY_RAW.map(([crewId, sol, sentMin, text], i): EarthNote => ({
+    id: `sim-reply-${crewId}-${sol}-${i}`, crewId, sol, sentMin, arriveMin: sentMin + lightDelayMin(sol), author: NAMES[crewId], text, from: "crew",
+  })),
+];
 
 /* notes sent on this device (storage only, never the samples) */
 function readStored(): EarthNote[] {
