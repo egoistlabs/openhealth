@@ -9,7 +9,7 @@
 - [ ] Confirm where Pedro's portrait (`web/public/companion/base.png`) came from. If an SI tool made it, it needs a **visible watermark** under the rules (see FIELD 6), and its source and licence go in FIELD 8.
 - [ ] The images below use GitHub links, so they only work once `docs/product/submission/` is pushed to `main`. Otherwise, upload the PNGs from this folder straight onto the Project page (JPG/PNG up to 10 MB).
 - [ ] If the images don't load from GitHub, upload `nasa-five-hazards.png` with the other PNGs.
-- [ ] Retake the four app screenshots: the current ones still show the old OpenHealth name. Add new ones for the body map, the Ground dashboard and Pedro reports, the "New message from Earth" notification, the Advice from Earth threads, and the top bar with the distance and light time.
+- [x] Retake the four app screenshots: the current ones still show the old OpenHealth name. Add new ones for the body map, the Ground dashboard and Pedro reports, the "New message from Earth" notification, the Advice from Earth threads, and the top bar with the distance and light time.
 - [ ] Rerun `npm run evals` after the brain update (7 new files, 22 new questions) and put the new score in FIELD 5 "Answer test".
 - [x] The 98% is reported as "as designed" everywhere, matching FIELD 5: the detection test scores the design-spec flag rule, not the app's own code.
 - [ ] Open every link in a private browser window.
@@ -91,7 +91,7 @@ Pedro runs on one laptop, offline by default. It compares what each astronaut lo
 
 Pedro also counts how much you talk to it and any missed check-ins.
 
-![Daily check-in](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-check-in.png)
+![Daily check-in, sleep step: Pedro asks Kenji Sato when he fell asleep and woke up; last night shows 6 h 15 min of sleep, 1 h 10 min shorter than his normal, with his sleep midpoint 51 min later](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-check-in.png)
 
 **2. Home: you against your own normal.** Your normal for each measure is the middle value of your previous 14 days, and the band around it is how much you usually vary.
 
@@ -100,15 +100,15 @@ Pedro also counts how much you talk to it and any missed check-ins.
 - Every flag says what changed and gives one action, for example "Sleep midpoint shifted 51 min later over 3 nights" → "Start wind-down at 23:30 tonight".
 - A measure reaches Earth only if you choose to share it. A measure at Act reaches Earth by name either way, without values if you don't share it.
 
-![Home screen: personal view against your own baseline](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-home.png)
+![Home screen for Kenji Sato: his seven measures against his own normal, three on Watch, with the sleep timing flag open and its one action, "Start wind-down at 23:30 tonight"](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-home.png)
 
 **3. Talk to Pedro.** Type or speak. Ask "How did I sleep?" or "Why is my reaction time flagged?" and Pedro answers out loud, showing each source with where it came from, its date and who approved it. You can also talk without asking anything: Pedro offers small reflection or connection ideas, but states no fact that a source doesn't back.
 
-![Talking to Pedro](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-companion.png)
+![Pedro answering "Why is my reaction time flagged?" with the numbers behind the answer and its four sources, each showing where it came from, the date added and its approval status](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-companion.png)
 
 **4. Crew view.** Crew-level numbers only, with no names or individual values, and a measure appears only when at least 2 crew members share it. It shows whether the team is drifting (for example "1 of 3 sharing crew outside their normal" on teamwork), with support prompts and a team log.
 
-![Crew view: crew-level numbers only](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-crew.png)
+![Crew view: each shared measure as a count of crew outside their own normal, with no names or individual values](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-crew.png)
 
 **5. Wearable vitals, if the crew has one: changes the person can't feel yet.** Five overnight readings: resting heart rate, heart rate variability, blood oxygen, skin temperature and breathing rate, the kind the CSA's Bio-Monitor records on the ISS ([CSA](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp)).
 
@@ -116,12 +116,16 @@ Pedro also counts how much you talk to it and any missed check-ins.
 - Blood oxygen also has fixed floors: below 95% Watch, 92% or lower Urgent ([MedlinePlus](https://medlineplus.gov/lab-tests/pulse-oximetry/)).
 - The readings are simulated for now, tied to each person's simulated day: short sleep and heavy workload push heart rate up and HRV down. A real device would connect over Bluetooth Low Energy, starting with the standard heart-rate service.
 
+![Pedro's wearable summary for Daniela Reyes: five overnight readings against her normal, with heart rate and skin temperature marked Urgent and breathing rate on Watch](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-wearable.png)
+
 **6. 3D body map: tap where it hurts.** No sensor measures pain or a rash, and the challenge suggests "a human figure where each part of the body is clickable", so the check-in has a 3D body (BodyParts3D anatomy).
 
 - Tap a muscle, bone or joint for pain, or turn on Skin to mark a rash, bite, cut, bruise, burn, blister or swelling.
 - Every mark needs a 1–10 rating and a note on when it happens, typed or spoken.
 - Past marks glow, so a pain that keeps coming back is easy to see, and the marks reach the flight surgeon.
 - It records where and how much. It doesn't diagnose.
+
+![Body map entry in Pedro's log: a mark on the left quadriceps rated 6 out of 10, noted as hurting during exercise](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-body-map.png)
 
 **7. Earth: the flight surgeon's console, across the delay.** A second role in the app, always a delayed view ("Last downlink", "Light time", "Next pass").
 
@@ -131,7 +135,9 @@ Pedro also counts how much you talk to it and any missed check-ins.
 - **Simulated for now:** both sides run in one browser, and in the demo messages arrive within 1 minute so a judge can watch a full exchange. A real mission would carry them over NASA's Delay/Disruption Tolerant Networking ([NASA DTN](https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/)).
 - **What Earth never gets:** journals, or the astronaut's own words to Pedro.
 
-![Ground: the flight surgeon's console](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-ground.png)
+![Pedro reading the flight surgeon's advice to Daniela Reyes, with the distance from Earth (297 million km) and the one-way light time (17 min) in the top bar](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-earth-message.png)
+
+![Ground: the flight surgeon's dashboard with each astronaut's wearable readings, open escalations and crew-level charts](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-ground.png)
 
 ### How it works: code makes every decision, the AI model reads and writes the words
 
@@ -246,30 +252,26 @@ pnpm dev                            # open http://localhost:3000
 
 **App settings** (in `web/.env`; restart `pnpm dev` after a change). Only the first three are needed, and they are already filled in by `.env.example`.
 
-| Setting | Default | What it does |
-| --- | --- | --- |
-| `LOCAL_LLM` | `true` | `true`: Ollama on the laptop, nothing leaves it. `false`: the Anthropic Claude API, which sends messages off the laptop. No silent fallback. |
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Where Ollama is running |
-| `OLLAMA_MODEL` | `medgemma:4b` | Which local model writes replies and the safety label |
-| `OLLAMA_API_KEY` | none | Only if your Ollama endpoint needs a key |
-| `ANTHROPIC_API_KEY` | none | Needed when `LOCAL_LLM=false` |
-| `ANTHROPIC_MODEL` | `claude-sonnet-5` | Claude model when `LOCAL_LLM=false` |
-| `SAFETY_CLASSIFIER` | on | `0` turns off the AI safety label: keyword checks only |
-| `SAFETY_CLASSIFIER_TIMEOUT_MS` | `60000` | How long to wait for the safety label before the keywords decide alone |
-| `COMPANION_TURN_LOG` | `.logs/companion-turns.jsonl` | Where each chat turn is logged; `off` stops logging |
-| `BRAIN_DIR` | found automatically | Path to the `brain/` knowledge folder |
+- `LOCAL_LLM` (default: `true`): `true`: Ollama on the laptop, nothing leaves it. `false`: the Anthropic Claude API, which sends messages off the laptop. No silent fallback.
+- `OLLAMA_BASE_URL` (default: `http://localhost:11434`): Where Ollama is running
+- `OLLAMA_MODEL` (default: `medgemma:4b`): Which local model writes replies and the safety label
+- `OLLAMA_API_KEY` (default: none): Only if your Ollama endpoint needs a key
+- `ANTHROPIC_API_KEY` (default: none): Needed when `LOCAL_LLM=false`
+- `ANTHROPIC_MODEL` (default: `claude-sonnet-5`): Claude model when `LOCAL_LLM=false`
+- `SAFETY_CLASSIFIER` (default: on): `0` turns off the AI safety label: keyword checks only
+- `SAFETY_CLASSIFIER_TIMEOUT_MS` (default: `60000`): How long to wait for the safety label before the keywords decide alone
+- `COMPANION_TURN_LOG` (default: `.logs/companion-turns.jsonl`): Where each chat turn is logged; `off` stops logging
+- `BRAIN_DIR` (default: found automatically): Path to the `brain/` knowledge folder
 
 **Ollama setting.** `OLLAMA_NUM_PARALLEL=2` is optional but recommended. Each message makes two model calls, the safety label and then the reply; with one slot, each pushes the other's prompt out of Ollama's cache, so each safety label takes a few extra seconds on an M4 Mac, or about 35 seconds on the Ryzen laptop. It is a setting of Ollama, not of `web/.env`, so set it before Ollama starts. With the Ollama Mac app, run `launchctl setenv OLLAMA_NUM_PARALLEL 2` and reopen the app.
 
 **Tests** (run from `web/`):
 
-| Command | What it runs | Ollama needed |
-| --- | --- | --- |
-| `npm run evals:detection` | The detection test: 1,300 simulated crew members over 90 days. `EVAL_SPLIT=tune` uses the tuning seeds, `EVAL_SWEEP=1` tries stricter settings, `EVAL_PEOPLE=50` runs a smaller crew. | No |
-| `npm run evals:emergencies` | The emergency test with the AI safety label. `EVAL_WITH_MODEL=1` also writes the full reply for every missed emergency, to check it names someone to contact. `SAFETY_CLASSIFIER=0` scores the keyword list alone, in about a second. | Yes, unless `SAFETY_CLASSIFIER=0` |
-| `npm run evals:false-alarms` | The false-alarm experiment: asks the AI to label every look-alike, keyword-caught emergency and distress message, to show what would change if it could overrule the keywords. `RUNS=3` labels each message 3 times instead of 2. | Yes |
-| `npm run evals` | The answer test. `EVAL_STRICT=1` fails on any single wrong case, `EVAL_BASELINE=<report>` lists cases that got worse than an earlier run. | Yes |
-| `npm run sim:mission` | Generates the simulated crew data shown in the app | No |
+- `npm run evals:detection`: The detection test: 1,300 simulated crew members over 90 days. `EVAL_SPLIT=tune` uses the tuning seeds, `EVAL_SWEEP=1` tries stricter settings, `EVAL_PEOPLE=50` runs a smaller crew. Ollama needed: No.
+- `npm run evals:emergencies`: The emergency test with the AI safety label. `EVAL_WITH_MODEL=1` also writes the full reply for every missed emergency, to check it names someone to contact. `SAFETY_CLASSIFIER=0` scores the keyword list alone, in about a second. Ollama needed: Yes, unless `SAFETY_CLASSIFIER=0`.
+- `npm run evals:false-alarms`: The false-alarm experiment: asks the AI to label every look-alike, keyword-caught emergency and distress message, to show what would change if it could overrule the keywords. `RUNS=3` labels each message 3 times instead of 2. Ollama needed: Yes.
+- `npm run evals`: The answer test. `EVAL_STRICT=1` fails on any single wrong case, `EVAL_BASELINE=<report>` lists cases that got worse than an earlier run. Ollama needed: Yes.
+- `npm run sim:mission`: Generates the simulated crew data shown in the app. Ollama needed: No.
 
 ---
 
