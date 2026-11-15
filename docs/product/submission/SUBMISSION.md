@@ -104,7 +104,7 @@ Pedro also counts how much you talk to it and any missed check-ins.
 
 **3. Talk to Pedro.** Type or speak. Ask "How did I sleep?" or "Why is my reaction time flagged?" and Pedro answers out loud, showing each source with where it came from, its date and who approved it. You can also talk without asking anything: Pedro offers small reflection or connection ideas, but states no fact that a source doesn't back.
 
-![Pedro answering "Why is my reaction time flagged?" with the numbers behind the answer and its four sources, each showing where it came from, the date added and its approval status](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-companion.png)
+![Pedro answering "Why is my reaction time flagged?" with the number behind the answer, one action to try, and its two sources, each showing where it came from, the date added and its approval status](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-companion.png)
 
 **4. Crew view.** Crew-level numbers only, with no names or individual values, and a measure appears only when at least 2 crew members share it. It shows whether the team is drifting (for example "1 of 3 sharing crew outside their normal" on teamwork), with support prompts and a team log.
 
