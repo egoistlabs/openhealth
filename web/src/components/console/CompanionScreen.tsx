@@ -16,7 +16,8 @@ import { FlagList } from "./FlagCard";
 import { Wave, usePresenceState } from "./Orb";
 import { VegaAvatar, type SpeechEvents, type VegaApi } from "./VegaAvatar";
 import { ROUTE } from "./Shell";
-import { arrivedSince, notesByIds, useAllEarthNotes, type EarthNote } from "@/lib/console/earth-notes";
+import { NOTE_MAX, addEarthNote, arrivedSince, crewThread, notesByIds, useAllEarthNotes, type EarthNote } from "@/lib/console/earth-notes";
+import { lightDelayMin } from "@/lib/console/ground";
 import { fmtSize, openAttachment } from "@/lib/console/earth-files";
 import { HoldButton, VoiceState, type VState } from "./Voice";
 
@@ -147,8 +148,27 @@ function CompanionStage() {
     tick();
   };
 
+  /* after reading the messages from Earth, Pedro offers to pass a reply on: the next message is that reply */
+  const [replying, setReplying] = useState(false);
+  const sendReply = (q: string) => {
+    setReplying(false);
+    set({ chatted: true, drawer: true, tab: "conversation" });
+    c.addLines([{ who: "you", text: q }]);
+    let t: string;
+    if (/^s*(no|nope|nothing|not now|no thanks?|no message|that'?s all|all good)/i.test(q)) t = "Okay, nothing sent to Earth.";
+    else {
+      const delay = lightDelayMin(P);
+      const ok = addEarthNote({ crewId: s.me, sol: P, sentMin: c.clockMin, arriveMin: c.clockMin + delay, author: crewById(s.me).full, text: q.slice(0, NOTE_MAX), from: "crew" }, P);
+      t = ok ? `Passed on to the flight surgeon. It reaches Earth in about ${delay} minutes.` : "That message could not be passed on.";
+    }
+    c.addLines([{ who: "companion", text: t }]);
+    c.say(t);
+  };
+
   const userSaid = (q: string, intent?: string) => {
     if (busy) return;
+    if (replying && !intent) { sendReply(q); return; } // a button press (intent) leaves reply mode instead
+    if (replying) setReplying(false);
     setTrail([]);
     vega.current?.stop();
     lastIntent.current = intent;
@@ -162,9 +182,12 @@ function CompanionStage() {
       Presence.setState("working");
       window.setTimeout(() => {
         Presence.setState("idle"); setBusy(false);
-        const { text, notes } = earthSummary(s.me, c.clockMin);
+        const { text: summary, notes } = earthSummary(s.me, c.clockMin);
+        /* then Pedro offers to pass a reply on, which makes the next message the reply */
+        const text = notes.length ? `${summary} Do you have a message for the flight surgeon? I can pass it on.` : summary;
+        if (notes.length) setReplying(true);
         c.addLines([{ who: "companion", text }]);
-        set({ drawer: true, tab: notes.length ? "earth" : "conversation" }); // the full messages live in the From Earth tab
+        set({ drawer: true, tab: "conversation" }); // the question is in the conversation; the full messages are in the Earth tab
         c.say(text);
       }, reducedMotion() ? 80 : 600);
       return;
@@ -278,6 +301,12 @@ function CompanionStage() {
               </div>
             ) : null}
             <VoiceState v={v} inCheckin={false} onType={() => { setTypeMode(true); setV(null); inputRef.current?.focus(); }} />
+            {replying ? (
+              <div role="status" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "6px 10px", borderRadius: 6, borderLeft: "3px solid var(--c-action)", background: "var(--c-surface-2)", fontSize: 13 }}>
+                <span><b>Replying to the flight surgeon.</b> <span className="t2">Your next message is passed on to Earth, about {lightDelayMin(P)} min away.</span></span>
+                <button type="button" className="ta" style={{ marginLeft: "auto" }} onClick={() => sendReply("No message")}>No message</button>
+              </div>
+            ) : null}
             <form className="chat__row" onSubmit={(e) => {
               e.preventDefault();
               const q = text.trim();
@@ -287,7 +316,7 @@ function CompanionStage() {
             }}>
               <label className="vh" htmlFor="say">Message to Pedro</label>
               <input ref={inputRef} className="field field--chat" id="say" autoComplete="off" value={text} onChange={(e) => setText(e.target.value)}
-                placeholder={s.voice && !typeMode ? "Type a message, or hold the mic to talk" : "Type a message"} maxLength={2000} />
+                placeholder={replying ? "Your message to the flight surgeon" : s.voice && !typeMode ? "Type a message, or hold the mic to talk" : "Type a message"} maxLength={2000} />
               {s.voice ? <>
                 <Wave />
                 <HoldButton ctx="companion" live enabled={s.voice && !busy} onPhrase={onPhrase} setV={setV}
@@ -409,7 +438,7 @@ function Drawer({ working, trRef, jSel, setJSel, jSummary, setJSummary }: {
   const tabs: Array<[ConsoleTab, string]> = [["conversation", "Conversation"], ["alerts", "Alerts"], ["insights", "Insights"], ["journal", "Journal"], ["earth", "Earth"]];
   /* From Earth: every note that has reached the hab by now (newest sol first), and how many arrived since the last check-in */
   useAllEarthNotes();
-  const earthAll = arrivedSince(s.me, 0, -1, s.sol, c.clockMin);
+  const earthAll = crewThread(s.me, s.sol, c.clockMin); // Earth's notes once arrived, plus the astronaut's own replies
   const lastCi = lastCheckin(s.me);
   const earthNew = atPresent && lastCi ? arrivedSince(s.me, lastCi.sol, lastCi.min, P, c.clockMin).length : 0;
   const empty = (t: string, a?: React.ReactNode) => <div className="empty"><span>{t}</span>{a}</div>;
@@ -601,11 +630,16 @@ function EarthMessages({ ids }: { ids: string[] }) {
 }
 /* the notes themselves: sender, arrival, full text and files to open */
 function EarthList({ notes }: { notes: EarthNote[] }) {
+  const { s, clockMin } = useConsole();
   return (
     <ul style={EM.list}>
-      {notes.map((n) => (
-        <li key={n.id} style={EM.note}>
-          <span style={EM.meta}>{n.author} · arrived Sol <Num>{n.sol}</Num> <Num>{hm(n.arriveMin)}</Num></span>
+      {notes.map((n) => {
+        const mine = n.from === "crew", reached = n.sol < P || s.sol > n.sol || clockMin >= n.arriveMin;
+        return (
+        <li key={n.id} style={mine ? { ...EM.note, ...EM.mine } : EM.note}>
+          <span style={EM.meta}>{mine
+            ? <>You, to the flight surgeon · sent Sol <Num>{n.sol}</Num> <Num>{hm(n.sentMin)}</Num> · {reached ? "reached Earth" : "reaches Earth"} <Num>{hm(n.arriveMin)}</Num></>
+            : <>{n.author} · arrived Sol <Num>{n.sol}</Num> <Num>{hm(n.arriveMin)}</Num></>}</span>
           {n.text ? <span style={EM.text}>{n.text}</span> : null}
           {n.attachments?.map((a) => (
             <button key={a.id} type="button" style={EM.file} onClick={() => openAttachment(a.id)} title={`Open ${a.name}`}>
@@ -614,7 +648,8 @@ function EarthList({ notes }: { notes: EarthNote[] }) {
             </button>
           ))}
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 }
@@ -622,6 +657,8 @@ function EarthList({ notes }: { notes: EarthNote[] }) {
 const EM = {
   list: { display: "grid", gap: 6, margin: 0, padding: 0, listStyle: "none" } as const,
   note: { display: "grid", gap: 4, padding: "6px 10px", borderRadius: 6, borderLeft: "3px solid var(--c-action)", background: "var(--c-surface-2)" } as const,
+  /* the astronaut's own reply: indented, green edge, like a sent message */
+  mine: { marginLeft: 24, borderLeft: "3px solid var(--c-normal)", background: "color-mix(in srgb, var(--c-normal) 8%, var(--c-surface-2))" } as const,
   meta: { fontSize: 11, color: "var(--c-text-2)" } as const,
   text: { whiteSpace: "pre-wrap", overflowWrap: "anywhere" } as const,
   file: { display: "flex", alignItems: "center", gap: 8, padding: "3px 8px", borderRadius: 6, borderWidth: 1, borderStyle: "solid", borderColor: "var(--c-hair-strong)", background: "var(--c-bg)", fontSize: 12, textAlign: "left", cursor: "pointer" } as const,

@@ -19,6 +19,8 @@ export type EarthNote = {
   text: string;
   /* files sent with the note (the files themselves are in IndexedDB, see earth-files.ts) */
   attachments?: Attachment[];
+  /* who wrote it: the flight surgeon on Earth (default), or the astronaut replying through Pedro */
+  from?: "earth" | "crew";
 };
 
 export const NOTE_MAX = 500;
@@ -113,9 +115,16 @@ function subscribe(cb: () => void) {
 export function arrivedSince(crewId: string, sinceSol: number, sinceMin: number, nowSol: number, nowMin: number): EarthNote[] {
   const at = (sol: number, min: number) => sol * 1440 + min;
   return readAll()
-    .filter((n) => n.crewId === crewId)
+    .filter((n) => n.crewId === crewId && (n.from ?? "earth") === "earth")
     .filter((n) => at(n.sol, n.arriveMin) <= at(nowSol, nowMin) && at(n.sol, n.arriveMin) > at(sinceSol, sinceMin))
     .sort((a, b) => at(a.sol, a.arriveMin) - at(b.sol, b.arriveMin));
+}
+/* The whole thread as the crew sees it at (nowSol, nowMin): Earth's notes once they have arrived, and the
+   astronaut's own replies from the moment they were sent. Oldest first. */
+export function crewThread(crewId: string, nowSol: number, nowMin: number): EarthNote[] {
+  const at = (sol: number, min: number) => sol * 1440 + min;
+  const seen = (n: EarthNote) => (n.from === "crew" ? at(n.sol, n.sentMin) : at(n.sol, n.arriveMin));
+  return readAll().filter((n) => n.crewId === crewId && seen(n) <= at(nowSol, nowMin)).sort((a, b) => seen(a) - seen(b));
 }
 /* the notes behind a log row, in the order given (missing ones are skipped) */
 export function notesByIds(ids: string[]): EarthNote[] {

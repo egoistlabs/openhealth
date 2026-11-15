@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CREW, MEASURES, MKEY, P, RANK, day, flagCopy, solDate, fmt, fmtDelta, hm, isOut, listJoin, mstatus, type MeasureKey, type State } from "@/lib/console/data";
+import { COMPANION_NAME, CREW, MEASURES, MKEY, P, RANK, day, flagCopy, solDate, fmt, fmtDelta, hm, isOut, listJoin, mstatus, type MeasureKey, type State } from "@/lib/console/data";
 import { vitals, type Vital } from "@/lib/console/wearable";
 import { Num, StatusMark, StatusWord } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
@@ -324,12 +324,19 @@ const QUICK: Array<[string, string]> = [
 function NoteItem({ n }: { n: EarthNote }) {
   const { s, clockMin } = useConsole();
   const arrived = n.sol < P || s.sol > n.sol || clockMin >= n.arriveMin;
+  const crew = n.from === "crew"; // a reply from the astronaut, passed on by Pedro
+  /* a reply still on its way has not reached Earth yet, so Ground cannot read it */
+  if (crew && !arrived) return (
+    <li className="ea__note" style={{ marginLeft: 24, borderLeftColor: "var(--c-normal)", opacity: 0.75 }}>
+      <div className="ea__meta"><b>Reply from {n.author.split(" ")[0]}</b><span className="ea__st">In transit to Earth · arrives {hm(n.arriveMin)}</span></div>
+    </li>
+  );
   return (
-    <li className="ea__note">
+    <li className="ea__note" style={crew ? { marginLeft: 24, borderLeftColor: "var(--c-normal)", background: "color-mix(in srgb, var(--c-normal) 8%, var(--c-surface-2))" } : undefined}>
       <div className="ea__meta">
-        <b>{n.author}</b>
+        <b>{crew ? `Reply from ${n.author.split(" ")[0]}` : n.author}</b>
         <span className="num">{hm(n.sentMin)}</span>
-        <span className={`ea__st${arrived ? " is-in" : ""}`}>{arrived ? `Arrived ${hm(n.arriveMin)}` : `In transit · arrives ${hm(n.arriveMin)}`}</span>
+        <span className={`ea__st${arrived ? " is-in" : ""}`}>{crew ? `Reached Earth ${hm(n.arriveMin)} · via ${COMPANION_NAME}` : arrived ? `Arrived ${hm(n.arriveMin)}` : `In transit · arrives ${hm(n.arriveMin)}`}</span>
       </div>
       {n.text ? <p className="ea__text">{n.text}</p> : null}
       {n.attachments?.length ? (
