@@ -6,7 +6,7 @@ import {
   type ConvoRow, type LogEvent, type MeasureKey, type Shares, type Status, type Tone,
 } from "@/lib/console/data";
 import { Presence } from "@/lib/console/presence";
-import { loadCheckins, loadConvo, saveConvo } from "@/lib/console/store";
+import { loadBodyLogs, loadCheckins, loadConvo, saveConvo } from "@/lib/console/store";
 
 export type Theme = "blueprint" | "console" | "clinic";
 export const THEMES: Array<[Theme, string, string]> = [
@@ -39,7 +39,7 @@ export type ConsoleState = {
   open: Partial<Record<MeasureKey, boolean>>;
   why: Record<string, boolean>;
   drawer: boolean;
-  tab: "conversation" | "alerts" | "insights" | "journal" | "earth";
+  tab: "conversation" | "alerts" | "insights" | "journal" | "earth" | "wearable" | "body";
   settings: boolean;
   chatted: boolean;
   /* bumped when today's check-in is written, so derived numbers recompute */
@@ -121,12 +121,16 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
   if (onClient && !storeRead) {
     setStoreRead(true);
     const saved = loadCheckins();
-    if (saved.length) {
+    const bodyLogs = loadBodyLogs(); // body-map pins saved from Pedro, one PN-01 line per person per sol
+    if (saved.length || bodyLogs.length) {
       const extra: Record<string, LogEvent[]> = {};
       for (const c of saved) {
         setDay(c.id, c.sol, c.day); // idempotent, so a repeated render is harmless
-        (extra[c.id] ||= []).push(...c.events);
+        /* a body-map entry saved from Pedro replaces any older check-in pins for that sol */
+        const ev = bodyLogs.some((b) => b.id === c.id && b.sol === c.sol) ? c.events.filter((e) => e.code !== "PN-01") : c.events;
+        (extra[c.id] ||= []).push(...ev);
       }
+      for (const b of bodyLogs) (extra[b.id] ||= []).push(b.event);
       setS((p) => ({ ...p, extra: { ...p.extra, ...extra }, rev: p.rev + 1 }));
     }
     const convo = loadConvo();

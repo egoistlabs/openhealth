@@ -40,7 +40,7 @@ const TOURS: Array<{ match: (p: string) => boolean; title: string; steps: Script
       { sel: ".cicard", text: (c) => c.today
         ? (c.checked ? "You have already checked in today. Thank you: your answers are already in today's numbers below." : "Your check-in for today is still open. It takes about 2 minutes, and it keeps your personal baseline up to date. Press start whenever you are ready.")
         : `You are looking back at Sol ${c.sol}. Check-ins can only be done for today; pick Today on the timeline to get back.` },
-      { sel: ".cicard", text: "How it works: I ask when you slept and woke, then you tap anywhere that hurts on a body map and say how bad it is. Then your mood, how heavy the day was, how well the crew worked together and whether you shared a meal. Last, an optional reaction game. Skip any question you like." },
+      { sel: ".cicard", text: "How it works: I ask when you slept and woke, then your mood, how heavy the day was, how well the crew worked together and whether you shared a meal. Last, an optional reaction game. Skip any question you like." },
       { sel: ".cicard", text: "Why it matters: every answer is compared with your own last 14 sols, never with the rest of the crew. Two days outside your normal is a Watch, five is an Act. Small drifts show up early, so you can act before they add up." },
       { sel: ".mgrid", text: (c) => c.flags.length
         ? `These are your seven measures. ${c.flags.length === 1 ? "One is" : `${c.flags.length} are`} outside your normal right now. ${c.flags.slice(0, 2).map((f) => `${f.what}.`).join(" ")}`

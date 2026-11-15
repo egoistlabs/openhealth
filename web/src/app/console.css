@@ -552,7 +552,7 @@ svg .miss { stroke: var(--c-text-3); stroke-width: var(--bw); }
 :root { --orb-lg: 420px; --drawer-open: 55%; } /* box; the visible orb is ~240–300px inside it */
 
 /* Companion: the companion is the only content — stage + chat, with its log as a right-hand column */
-:root { --clog-w: clamp(460px, 34vw, 600px); } /* wide enough for all five log tabs and readable messages */
+:root { --clog-w: clamp(680px, 46vw, 820px); } /* wide enough for all seven log tabs (to Wearable and Body map) and the body pictures */
 .cstage { display: grid; grid-template-columns: minmax(0, 1fr); height: 100%; min-height: calc(var(--orb-lg) + var(--s-12) * 3); }
 .cstage.has-drawer { grid-template-columns: minmax(0, 1fr) var(--clog-w); }
 .cmain { display: flex; flex-direction: column; min-width: 0; min-height: 0; }
@@ -601,7 +601,7 @@ button.nav__a { width: 100%; }
 @media (max-width: 1279px) {
   /* the page scrolls here: size the column to what is left under the ribbon, and pin the input */
   .cstage { height: calc(100vh - var(--hdr-h) - var(--ribbon-h, 0px)); }
-  :root { --clog-w: 420px; }
+  :root { --clog-w: 560px; }
   .cstage .chat { position: sticky; bottom: 0; background: var(--c-bg); }
 }
 @media (max-width: 959px) {

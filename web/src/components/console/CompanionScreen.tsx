@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useCompanionChat } from "@/hooks/companion/mutations/use-companion-chat";
 import {
   COMPANION_NAME, JOURNAL, MEASURES, P, avg, day, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, overall, series,
@@ -13,6 +13,9 @@ import { holdEmotion, replyEmotion, restEmotion } from "@/lib/console/emotion";
 import { Num, StatusMark, Toggle } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
 import { READ_EARTH } from "./EarthToast";
+import { BodyCheck, BodyEntry, BodyLogRow } from "./BodyCheck";
+import type { PainMark } from "./BodyMap";
+import { READ_WEARABLE, fmtVital, fmtVitalDelta, vitals, wearableSummary, type Vital, type VitalKey } from "@/lib/console/wearable";
 import { FlagList } from "./FlagCard";
 import { Wave, usePresenceState } from "./Orb";
 import { VegaAvatar, type SpeechEvents, type VegaApi } from "./VegaAvatar";
@@ -45,6 +48,8 @@ function CompanionStage() {
   const [text, setText] = useState("");
   const [jSel, setJSel] = useState(0);
   const [jSummary, setJSummary] = useState(false);
+  /* the body map, moved here from the daily check-in */
+  const [bodyOpen, setBodyOpen] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const trRef = useRef<HTMLDivElement>(null);
   const typeTimer = useRef(0);
@@ -193,6 +198,20 @@ function CompanionStage() {
       }, reducedMotion() ? 80 : 600);
       return;
     }
+    /* Wearable: Pedro sums up last night's readings and says why each one moved. Written by code from
+       the readings (no model), so every number matches the strip on Home. */
+    if (intent === "wearable" || /wearable|vitals/i.test(q)) {
+      setBusy(true);
+      Presence.setState("working");
+      window.setTimeout(() => {
+        Presence.setState("idle"); setBusy(false);
+        const text = wearableSummary(s.me, s.sol);
+        c.addLines([{ who: "companion", text }]);
+        set({ drawer: true, tab: "conversation" });
+        c.say(text);
+      }, reducedMotion() ? 80 : 600);
+      return;
+    }
     if (intent === "summary" || /summar|recap|my week/i.test(q)) {
       setBusy(true);
       Presence.setState("working");
@@ -216,7 +235,7 @@ function CompanionStage() {
     asked.current = true;
     const q = s.ask;
     set({ ask: null });
-    userSaid(q, q === READ_EARTH ? "earth" : undefined); // the toast always means "read Earth's messages", never a reply
+    userSaid(q, q === READ_EARTH ? "earth" : q === READ_WEARABLE ? "wearable" : undefined); // the toast always means "read Earth's messages", never a reply
   });
 
   /* voice on the companion: a rating heard in speech goes into today's check-in draft (C3) */
@@ -274,8 +293,24 @@ function CompanionStage() {
               Messages from Earth
               {earthNew ? <span className="num" style={{ minWidth: 18, padding: "0 5px", borderRadius: 999, background: "var(--c-action)", color: "var(--c-on-action)", fontSize: 11, lineHeight: "18px", textAlign: "center" }}>{earthNew}</span> : null}
             </button>
+            {/* Pedro sums up last night's wearable readings and explains why each one moved */}
+            <button type="button" className="ta ta--quiet" disabled={busy || !atPresent} onClick={() => userSaid(READ_WEARABLE, "wearable")}>
+              Wearable summary
+            </button>
+            {/* the body map (moved from the check-in): mark anything sore, then Pedro logs it */}
+            <button type="button" className="ta ta--quiet" disabled={busy || !atPresent} aria-haspopup="dialog" onClick={() => setBodyOpen(true)}>
+              Body map
+            </button>
             <button type="button" className="ta ta--quiet" aria-expanded={s.drawer} aria-controls="drawer" onClick={() => set((p) => ({ drawer: !p.drawer }))}>{s.drawer ? "Hide log" : "Show log"}</button>
           </div>
+          {bodyOpen ? <BodyCheck onDone={(said, pain) => {
+            setBodyOpen(false);
+            if (!said) return;
+            set({ chatted: true, drawer: true, tab: "conversation" });
+            /* Pedro's line, then the body map itself in the log (picture, summary, follow-up buttons) */
+            c.addLines(pain.length ? [{ who: "companion", text: said }, { who: "body", pain }] : [{ who: "companion", text: said }]);
+            c.say(said);
+          }} /> : null}
           {<>
             <div className="vega-wrap">
               <VegaAvatar onSpeech={onSpeech} onReady={(api) => {
@@ -337,7 +372,7 @@ function CompanionStage() {
       </div>
 
       <section className={`drawer${s.drawer ? " is-open" : ""}`} id="drawer" aria-label="Companion log" hidden={!s.drawer}>
-        {s.drawer ? <Drawer working={working} trRef={trRef} jSel={jSel} setJSel={setJSel} jSummary={jSummary} setJSummary={setJSummary} /> : null}
+        {s.drawer ? <Drawer onBody={() => setBodyOpen(true)} working={working} trRef={trRef} jSel={jSel} setJSel={setJSel} jSummary={jSummary} setJSummary={setJSummary} /> : null}
       </section>
     </div>
   );
@@ -431,20 +466,23 @@ function AnswerSources({ sources }: { sources?: ConvoRow["sources"] }) {
 
 
 /* ---------- companion log drawer: conversation, alerts, insights, journal ---------- */
-function Drawer({ working, trRef, jSel, setJSel, jSummary, setJSummary }: {
+function Drawer({ onBody, working, trRef, jSel, setJSel, jSummary, setJSummary }: {
+  onBody: () => void;
   working: string[] | null;
   trRef: React.RefObject<HTMLDivElement | null>; jSel: number; setJSel: (n: number) => void; jSummary: boolean; setJSummary: (b: boolean) => void;
 }) {
   const c = useConsole();
   const { s, set, atPresent } = c;
   const n = c.openFlags().length;
-  const tabs: Array<[ConsoleTab, string]> = [["conversation", "Conversation"], ["alerts", "Alerts"], ["insights", "Insights"], ["journal", "Journal"], ["earth", "Earth"]];
+  const tabs: Array<[ConsoleTab, string]> = [["conversation", "Conversation"], ["alerts", "Alerts"], ["insights", "Insights"], ["journal", "Journal"], ["earth", "Earth"], ["wearable", "Wearable"], ["body", "Body map"]];
   /* From Earth: every note that has reached the hab by now (newest sol first), and how many arrived since the last check-in */
   useAllEarthNotes();
   const earthAll = crewThread(s.me, s.sol, c.clockMin); // Earth's notes once arrived, plus the astronaut's own replies
   const lastCi = lastCheckin(s.me);
   const earthNew = atPresent && lastCi ? arrivedSince(s.me, lastCi.sol, lastCi.min, P, c.clockMin).length : 0;
   const empty = (t: string, a?: React.ReactNode) => <div className="empty"><span>{t}</span>{a}</div>;
+  /* Wearable: readings off the person's normal last night (badge on the tab) */
+  const wOff = vitals(s.me, s.sol).filter((v) => v.state !== "normal").length;
 
   let pane: React.ReactNode;
   if (s.tab === "alerts") {
@@ -468,6 +506,25 @@ function Drawer({ working, trRef, jSel, setJSel, jSummary, setJSummary }: {
         </div>
       ))}
     </> : empty("Nothing from Earth yet.", <span className="small t2">Notes from the flight surgeon appear here once they reach the hab.</span>);
+  } else if (s.tab === "wearable") {
+    pane = <>
+      <p className="small t2">Last night first, each reading against your own normal. Simulated data.</p>
+      {atPresent ? <p className="actions"><button type="button" className="ta" onClick={() => set({ ask: READ_WEARABLE })}>Ask {COMPANION_NAME} to explain last night</button></p> : null}
+      <WearableLog id={s.me} sol={s.sol} />
+    </>;
+  } else if (s.tab === "body") {
+    /* every sol with spots saved on the body map, newest first */
+    const logs = (s.extra[s.me] || []).filter((e) => e.code === "PN-01" && e.sol <= s.sol && e.pain?.length).sort((a, b) => b.sol - a.sol || b.min - a.min);
+    const open = atPresent ? <button type="button" className="ta" onClick={onBody}>Open body map</button> : undefined;
+    pane = logs.length ? <>
+      <p className="small t2">Where it hurt, what you said, and the likely reasons. Follow a spot up to track how it is healing.</p>
+      {open ? <p className="actions">{open}</p> : null}
+      {logs.map((e, i) => (
+        <div key={`${e.sol}-${i}`} style={{ display: "grid", gap: 6, paddingBottom: 10, borderBottom: "1px solid var(--c-hair)" }}>
+          <BodyEntry sol={e.sol} marks={(e.pain ?? []) as PainMark[]} />
+        </div>
+      ))}
+    </> : empty("Nothing marked on the body map yet.", open);
   } else if (s.tab === "journal") {
     const es = (JOURNAL[s.me] || []).filter((j) => j.sol <= s.sol).slice().reverse();
     if (!es.length) pane = empty("No entries yet.", <button type="button" className="ta" onClick={() => set({ tab: "conversation" })}>Talk to Pedro</button>);
@@ -512,7 +569,7 @@ function Drawer({ working, trRef, jSel, setJSel, jSummary, setJSummary }: {
       <div className="tabs" role="tablist" aria-label="Companion log" style={{ flexWrap: "nowrap", overflowX: "auto", scrollbarWidth: "none", paddingLeft: 16, paddingRight: 16 }}>
         {tabs.map(([k, l]) => (
           <button key={k} type="button" className="tab" role="tab" aria-selected={s.tab === k} style={{ whiteSpace: "nowrap", flex: "none" }} title={k === "earth" ? "Messages from Earth" : undefined} onClick={() => set({ tab: k, drawer: true, settings: false })}>
-            {l}{k === "alerts" && n ? <span className="n num">{n}</span> : null}{k === "earth" && earthNew ? <span className="n num">{earthNew}</span> : null}
+            {l}{k === "alerts" && n ? <span className="n num">{n}</span> : null}{k === "earth" && earthNew ? <span className="n num">{earthNew}</span> : null}{k === "wearable" && wOff ? <span className="n num">{wOff}</span> : null}
           </button>
         ))}
       </div>
@@ -522,7 +579,42 @@ function Drawer({ working, trRef, jSel, setJSel, jSummary, setJSummary }: {
     </div>
   </>;
 }
-type ConsoleTab = "conversation" | "alerts" | "insights" | "journal" | "earth";
+type ConsoleTab = "conversation" | "alerts" | "insights" | "journal" | "earth" | "wearable" | "body";
+
+/* ---------- Wearable log: the last 14 nights, one row per night, all five readings ---------- */
+const W_SHORT: Record<VitalKey, string> = { rhr: "HR", hrv: "HRV", spo2: "SpO₂", temp: "Temp", resp: "Breath" };
+const W_COL: Record<Vital["state"], string> = { normal: "var(--c-text)", watch: "var(--c-watch)", act: "var(--c-act)" };
+const W_MARK: Record<Vital["state"], string> = { normal: "", watch: " ▲", act: " ■" };
+const W_NIGHTS = 14;
+function WearableLog({ id, sol }: { id: string; sol: number }) {
+  const nights = useMemo(() => {
+    const out: Array<{ sol: number; vs: Vital[] }> = [];
+    for (let t = sol; t > Math.max(0, sol - W_NIGHTS); t--) out.push({ sol: t, vs: vitals(id, t) });
+    return out;
+  }, [id, sol]);
+  const cols = "56px repeat(5, minmax(0, 1fr))";
+  return (
+    <div role="table" aria-label="Wearable readings, last 14 nights" style={{ display: "grid", gap: 2, fontSize: 13 }}>
+      <div role="row" style={{ display: "grid", gridTemplateColumns: cols, gap: 6, padding: "4px 0", color: "var(--c-text-3)", fontSize: 11, borderBottom: "1px solid var(--c-hair)" }}>
+        <span role="columnheader">Sol</span>
+        {nights[0]?.vs.map((v) => <span key={v.key} role="columnheader" style={{ textAlign: "right" }}>{W_SHORT[v.key]} <span className="small">{v.unit}</span></span>)}
+      </div>
+      {nights.map(({ sol: t, vs }) => (
+        <div key={t} role="row" style={{ display: "grid", gridTemplateColumns: cols, gap: 6, padding: "4px 0", borderBottom: "1px solid var(--c-hair)" }}
+          aria-label={`Sol ${t}: ${vs.map((v) => `${v.label} ${fmtVital(v, v.value)}${v.state === "normal" ? "" : `, ${v.state === "act" ? "urgent" : "watch"}`}`).join("; ")}`}>
+          <span role="rowheader" className="num t2">{t}{t === P ? " · today" : ""}</span>
+          {vs.map((v) => (
+            <span key={v.key} role="cell" className="num" style={{ textAlign: "right", color: W_COL[v.state], fontWeight: v.state === "normal" ? 400 : 600 }}
+              title={`${v.label}: ${fmtVital(v, v.value)}, ${fmtVitalDelta(v)} vs your normal of ${fmtVital(v, v.normal)}`}>
+              {v.value.toFixed(v.digits)}{W_MARK[v.state]}
+            </span>
+          ))}
+        </div>
+      ))}
+      <p className="small t2" style={{ marginTop: 6 }}>▲ Watch: outside your usual range. ■ Urgent: far outside it, tell the crew medical officer.</p>
+    </div>
+  );
+}
 
 /* Pedro at work: the steps done so far (ticked) and the current one (animated), with elapsed time. */
 function WorkRow({ steps }: { steps: string[] }) {
@@ -559,6 +651,7 @@ function TrRow({ r }: { r: ConvoRow }) {
     </div>
   );
   if (r.who === "earth") return <div className="trow trow--companion"><span className="trow__t">{hm(r.min)}</span><span className="trow__s">From Earth</span><span className="trow__x"><EarthMessages ids={r.notes ?? []} /></span></div>;
+  if (r.who === "body") return <BodyLogRow r={r} />;
   if (r.who === "summary") return <div className="trow trow--companion"><span className="trow__t">{hm(r.min)}</span><span className="trow__s">{COMPANION_NAME}</span><span className="trow__x"><WeekSummary /></span></div>;
   const who = { companion: COMPANION_NAME, you: "You", sys: "" }[r.who as "companion" | "you" | "sys"];
   return (

@@ -21,7 +21,7 @@ import { MEASURE_INFO } from "@/lib/console/measure-info";
 import { ROUTE, ReplayNote } from "./Shell";
 import { PainBodyStill, PainCards, sevColour, type PainMark } from "./BodyMap";
 import { setFollowUp, useFollowUps } from "@/lib/console/body/followups";
-import { fmtVital, fmtVitalDelta, vitals, type Vital } from "@/lib/console/wearable";
+import { READ_WEARABLE, fmtVital, fmtVitalDelta, vitals, type Vital } from "@/lib/console/wearable";
 import { lightDelayMin } from "@/lib/console/ground";
 
 /* Home: me vs my baseline (A4, A5), in the console layout: a main column and a margin column.
@@ -96,7 +96,7 @@ export function HomeScreen() {
               {atPresent ? <Link className="ta" href={`${ROUTE.checkin}?step=review`} style={{ marginTop: "auto", alignSelf: "flex-end" }}>Review or correct</Link> : null}
             </> : <>
               <p className="cicard__lead">A 2-minute daily talk with Pedro that keeps your personal baseline up to date.</p>
-              <p className="t2">Sleep, then a quick body map of anything sore, then mood, day load, teamwork and shared meals. Then an optional reaction game.</p>
+              <p className="t2">Sleep, then mood, day load, teamwork and shared meals. Then an optional reaction game.</p>
               {atPresent
                 ? <Link className="btn-primary btn-primary--wide" href={ROUTE.checkin}>Start daily check-in <Icon name="arrow" /></Link>
                 : <p className="small t2">No check-in was logged on this sol.</p>}
@@ -232,6 +232,7 @@ const CK = {
    monitor, each against the person's own normal, with Watch when outside their usual spread. */
 function Vitals({ id, sol }: { id: string; sol: number }) {
   const vs = useMemo(() => vitals(id, sol), [id, sol]);
+  const { set, atPresent } = useConsole();
   const off = vs.filter((v) => v.state !== "normal").length, urgent = vs.filter((v) => v.state === "act").length;
   return (
     <section style={V.box} aria-labelledby="vit-t">
@@ -245,6 +246,8 @@ function Vitals({ id, sol }: { id: string; sol: number }) {
         <span style={V.delay} data-tip={`Mars to Earth one-way light time today is ${lightDelayMin(sol)} min (NASA: about 3 to 22 min one way on a Mars mission, up to about 44 min there and back). A reply from Earth takes as long again: ${2 * lightDelayMin(sol)} min there and back.`} tabIndex={0}>
           On board now · Earth sees it in <b>{lightDelayMin(sol)} min</b> · {2 * lightDelayMin(sol)} min round trip
         </span>
+        {/* Pedro sums up these readings and says why each one moved (CompanionScreen's wearable flow) */}
+        {atPresent ? <Link className="ta" href={ROUTE.companion} style={{ fontSize: 11 }} onClick={() => set({ ask: READ_WEARABLE, settings: false })}>Ask Pedro to analyse</Link> : null}
         <span style={V.src}>Simulated, like the CSA Bio-Monitor on the ISS</span>
       </div>
       <div style={V.grid}>
@@ -349,7 +352,7 @@ function BodyCard() {
             ))}
             {marks.length > 2 ? <li className="t2">+{marks.length - 2} more</li> : null}
           </ul>
-        ) : <p className="small t2">{day(s.me, s.sol)?.checkin ? "No pain or skin problems logged." : "Logged in the daily check-in."}</p>}
+        ) : <p className="small t2">{day(s.me, s.sol)?.checkin ? "No pain or skin problems logged." : "Log it with Body map on Pedro."}</p>}
       </div>
     </div>
     {open ? <BodyModal marks={marks} sol={s.sol} me={s.me} onClose={() => setOpen(false)} /> : null}
@@ -377,7 +380,7 @@ function BodyModal({ marks, sol, me, onClose }: { marks: PainMark[]; sol: number
         <header className="mmodal__h">
           <div className="mmodal__ttl">
             <h2 className="mmodal__t" id="bmodal-t">Body</h2>
-            <p className="small t2">Sol <Num>{sol}</Num> · {marks.length} {marks.length === 1 ? "spot" : "spots"} marked in the check-in</p>
+            <p className="small t2">Sol <Num>{sol}</Num> · {marks.length} {marks.length === 1 ? "spot" : "spots"} marked on the body map</p>
           </div>
           <span style={{ flex: 1 }} />
           <button type="button" className="mmodal__x" onClick={onClose} aria-label="Close">×</button>
@@ -388,15 +391,15 @@ function BodyModal({ marks, sol, me, onClose }: { marks: PainMark[]; sol: number
             <PainCards marks={marks} active={active} onPick={(m) => setActive(m.id)} maxHeight="none"
               footer={(m) => (
                 <button type="button" className={following(m.id) ? "opt is-on bmodal__fu" : "opt bmodal__fu"} aria-pressed={following(m.id)} onClick={() => toggle(m)}>
-                  {following(m.id) ? "✓ Following up at the next check-in" : "Follow up at the next check-in"}
+                  {following(m.id) ? "✓ Following up in the body map" : "Follow up in the body map"}
                 </button>
               )} />
             {marks.length > 1 ? (
               <button type="button" className="ta" onClick={() => marks.forEach((m) => { if (following(m.id) === allOn) toggle(m); })}>
-                {allOn ? "Stop following up all" : "Follow up all at the next check-in"}
+                {allOn ? "Stop following up all" : "Follow up all in the body map"}
               </button>
             ) : null}
-            <p className="small t2">Pedro will ask about followed-up spots at your next daily check-in, so you can say whether each one is still there and how it has changed.</p>
+            <p className="small t2">Next time you open Body map with Pedro, he asks about followed-up spots, so you can say whether each one is still there and how it has changed.</p>
           </div>
         </div>
       </div>

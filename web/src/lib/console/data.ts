@@ -91,7 +91,9 @@ export type VoicePhrase = {
 export type ConvoRow = {
   sol: number;
   min: number;
-  who: "companion" | "you" | "parsed" | "sys" | "summary" | "earth";
+  who: "companion" | "you" | "parsed" | "sys" | "summary" | "earth" | "body";
+  /** "body" rows: the spots saved on the body map, shown as a picture with a summary and follow-up buttons */
+  pain?: LogEvent["pain"];
   /** "earth" rows: the Advice from Earth notes (ids) shown in full in the log */
   notes?: string[];
   text?: string;

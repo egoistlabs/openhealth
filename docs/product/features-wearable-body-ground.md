@@ -94,6 +94,45 @@ flowchart LR
 
 To connect a real device, replace `vitals()` with readings from the hab gateway. Everything downstream stays the same.
 
+### How a real smartwatch would connect (Bluetooth): planned, not built
+
+**Status:** not built. No device is connected and every vital in the app is simulated. This section says exactly how a real device would plug in, and what would and would not work.
+
+**The link is Bluetooth Low Energy (BLE),** straight from the device to the hab computer where Pedro runs. There is no phone app and no cloud in between: on Mars there is no internet.
+
+```mermaid
+flowchart LR
+  W[Wearable<br/>chest strap, watch or smart shirt] -->|Bluetooth Low Energy<br/>standard health services| G[Hab computer<br/>browser with Web Bluetooth,<br/>or a small on-board gateway]
+  G --> S[(Stored on board<br/>one reading per night)]
+  S --> V[Same pipeline as today:<br/>compare with own normal → status]
+  V --> A[Astronaut sees it at once]
+  V -->|only what the privacy rules allow,<br/>at the next relay pass| E[Ground]
+```
+
+**What standard Bluetooth can carry, vital by vital**
+
+| Vital | Standard Bluetooth support | What it means for us |
+|---|---|---|
+| Heart rate | Yes: the Bluetooth **Heart Rate Service**, Heart Rate Measurement characteristic | Works with any device that offers the standard service, such as most chest straps |
+| HRV | Indirectly: the same measurement can carry **RR intervals** (the time between beats, in 1/1024 s). The field is **optional** ([Bluetooth SIG](https://files.bluetooth.com/download/hrs-ics-p3-pdf)) | We would work out HRV from the RR intervals, only if the device sends them |
+| Blood oxygen (SpO₂) | A standard Pulse Oximeter service exists, but few watches offer it | Likely needs a medical pulse oximeter or the maker's own software |
+| Skin temperature | A standard Health Thermometer service exists, but consumer watches rarely offer skin temperature through it | Likely needs the maker's own software |
+| Breathing rate | No standard service | Needs a device that measures it, such as a smart shirt like the CSA Bio-Monitor, and its own software |
+
+**Being honest about smartwatches**
+
+- **Many popular smartwatches don't share their data directly.** They send it to their own phone app and often the maker's cloud, which a Mars hab can't use. Devices that broadcast the standard Heart Rate Service, such as chest straps, can connect directly.
+- **Wrist readings are less precise.** Cleveland Clinic notes wrist trackers "usually aren't sensitive enough to detect HRV accurately". That's why Pedro only flags runs of nights against the person's own normal, never one reading.
+- **Overnight recording needs the device to store data.** A browser tab can't be relied on to stay connected all night. The realistic design is the one the CSA Bio-Monitor uses: the device records, then syncs to a base on board ([CSA](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp)).
+
+**How the app would connect (browser side)**
+
+- The **Web Bluetooth API** lets a web page talk to a Bluetooth device. It works in Chrome, Edge and Opera, only on a secure page (HTTPS, or the local hab computer), and the astronaut must press a button to pick the device. Chrome marks it as not yet available in every browser ([Chrome for Developers](https://developer.chrome.com/docs/capabilities/bluetooth)).
+- The planned flow is: Settings → **Connect wearable** → the browser lists nearby devices offering the Heart Rate Service → the astronaut picks theirs → heart rate and RR intervals are read → one value per night is stored on board → it replaces that person's simulated value in `wearable.ts`. Statuses, Pedro, the crew view and Ground stay exactly as they are.
+- **What the astronaut would see:** each vital labelled **Device** or **Simulated**, so it is always clear which numbers are real.
+
+**Privacy stays the same.** Readings are stored on the hab computer. Earth gets them only under the rules in section 4: vitals by name at the next relay pass, nothing in real time.
+
 ### How a status is decided (code, not AI)
 
 ```mermaid
@@ -367,7 +406,7 @@ Each page below was opened and checked. Each line gives a short quote and what i
 
 ## 8. Honest limits
 
-- **Vitals are simulated.** No device is connected.
+- **Vitals are simulated.** No device is connected. How a real one would connect over Bluetooth, and what wouldn't work, is in section 2 ("How a real smartwatch would connect").
 - **Pedro can explain a vital but can't see yours yet.** The chat isn't sent the vitals numbers. Wiring that in is the next code task.
 - **Ground runs in the same browser as the crew screens.** There is no real downlink. The delay, passes and "delayed view" are modelled.
 - **Real body-map pins** reach Ground only from check-ins submitted on that device. Other crew show simulated pins, labelled as such.
@@ -387,6 +426,7 @@ Each page below was opened and checked. Each line gives a short quote and what i
 - CDC, [About sleep](https://www.cdc.gov/sleep/about/index.html)
 - DBCLS (Japan), [BodyParts3D](https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html), CC BY 4.0
 - Cleveland Clinic, [Heart rate variability](https://my.clevelandclinic.org/health/symptoms/21773-heart-rate-variability-hrv)
+- Bluetooth SIG, [Heart Rate Service conformance (ICS)](https://files.bluetooth.com/download/hrs-ics-p3-pdf); Chrome for Developers, [Web Bluetooth](https://developer.chrome.com/docs/capabilities/bluetooth)
 
 ## 10. What we cut, and why
 
@@ -728,3 +768,5 @@ Every link in this document, printed in full so it still works on paper.
 - kokoro-js: <https://www.npmjs.com/package/kokoro-js>
 - Google MedGemma: <https://developers.google.com/health-ai-developer-foundations/medgemma>
 - MedGemma on Ollama: <https://ollama.com/library/medgemma>
+- Bluetooth SIG, Heart Rate Service ICS: <https://files.bluetooth.com/download/hrs-ics-p3-pdf>
+- Chrome for Developers, Web Bluetooth: <https://developer.chrome.com/docs/capabilities/bluetooth>

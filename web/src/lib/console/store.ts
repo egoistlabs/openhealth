@@ -73,3 +73,30 @@ export function saveConvo(convo: Record<string, ConvoRow[]>) {
 export function clearCheckins() {
   try { localStorage.removeItem(KEY); localStorage.removeItem(CONVO_KEY); } catch { /* nothing to clear */ }
 }
+
+/* ---------- body map ---------- */
+/* Pain and skin spots marked on the body map, now opened from Pedro rather than the check-in. One entry
+   per person per sol (the PN-01 log line with its pins); saving again replaces it, null clears it. */
+const BODY_KEY = "openhealth.body.v1";
+export type SavedBody = { id: string; sol: number; event: LogEvent };
+
+export function loadBodyLogs(): SavedBody[] {
+  try {
+    const raw = localStorage.getItem(BODY_KEY);
+    const all: unknown = raw ? JSON.parse(raw) : [];
+    return Array.isArray(all) ? all.filter((x): x is SavedBody => !!x && typeof x.id === "string" && typeof x.sol === "number" && !!x.event) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function saveBodyLog(id: string, sol: number, event: LogEvent | null): boolean {
+  try {
+    const all = loadBodyLogs().filter((x) => !(x.id === id && x.sol === sol));
+    if (event) all.push({ id, sol, event });
+    localStorage.setItem(BODY_KEY, JSON.stringify(all));
+    return true;
+  } catch {
+    return false;
+  }
+}

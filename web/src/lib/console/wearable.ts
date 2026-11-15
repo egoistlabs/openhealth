@@ -120,3 +120,75 @@ export const fmtVitalDelta = (v: Vital) => {
   const d = v.value - v.normal, r = Number(d.toFixed(v.digits));
   return `${r > 0 ? "+" : r < 0 ? "−" : "±"}${Math.abs(r).toFixed(v.digits)}`;
 };
+
+/* likely reasons a reading moves, per direction, in plain words for astronauts who are not medics */
+const WHY: Record<VitalKey, { up: string; down: string }> = {
+  rhr: {
+    up: "Usual reasons: short sleep, stress, a heavy workload, a late meal or workout, or your body fighting something off.",
+    down: "That usually means good recovery and is nothing to worry about on its own.",
+  },
+  hrv: {
+    up: "Higher HRV usually means your body recovered well overnight.",
+    down: "Lower HRV usually follows short sleep, stress, a heavy day or the start of an illness. A run of low nights means more than one.",
+  },
+  spo2: {
+    up: "Higher blood oxygen is fine.",
+    down: "A loose sensor or moving in your sleep can lower the reading; so can a breathing problem. Recheck with the finger oximeter in the medical kit.",
+  },
+  temp: {
+    up: "Skin warms with a warm cabin, a heavy day, or early illness before any fever is felt. Check your body temperature with the medical kit thermometer.",
+    down: "Skin cools with the room, so the usual reasons are a cooler cabin overnight, the strap sitting loose, or your arm outside the sleeping bag. Check the hab temperature and the strap; it is rarely a sign of illness on its own.",
+  },
+  resp: {
+    up: "Faster breathing in sleep can come with stress, a warm cabin, congestion or early illness.",
+    down: "Slower breathing in sleep usually means deep, settled rest.",
+  },
+};
+
+/* the question Pedro answers with the wearable summary (CompanionScreen routes it to the wearable flow) */
+export const READ_WEARABLE = "Sum up and analyse my wearable readings from last night.";
+
+/* Pedro's summary and analysis of last night's wearable readings. Written by code from the readings (no
+   model), so every number and pattern named is one the strip on Home shows. */
+export function wearableSummary(id: string, sol: number): string {
+  const vs = vitals(id, sol);
+  const by = Object.fromEntries(vs.map((v) => [v.key, v])) as Record<VitalKey, Vital>;
+  const off = vs.filter((v) => v.state !== "normal");
+  const urgent = off.filter((v) => v.state === "act");
+  const word = (v: Vital) => v.label.charAt(0).toLowerCase() + v.label.slice(1);
+  const dir = (v: Vital): "up" | "down" => (v.value > v.normal ? "up" : "down");
+  const join = (xs: string[]) => (xs.length < 2 ? xs.join("") : `${xs.slice(0, -1).join(", ")} and ${xs[xs.length - 1]}`);
+  const out: string[] = [];
+
+  if (!off.length) {
+    out.push(`Last night all five wearable readings sat within your own normal: heart rate ${fmtVital(by.rhr, by.rhr.value)}, HRV ${fmtVital(by.hrv, by.hrv.value)}, blood oxygen ${fmtVital(by.spo2, by.spo2.value)}.`);
+    out.push("Nothing to act on.");
+    return out.join(" ");
+  }
+
+  out.push(`${off.length} of 5 wearable readings were off your normal last night${urgent.length ? `, ${urgent.length} of them urgent` : ""}.`);
+  /* each one: what moved, then the likely reasons in plain words */
+  off.forEach((v) => out.push(`${word(v).charAt(0).toUpperCase() + word(v).slice(1)} went ${dir(v)}, ${fmtVitalDelta(v)} to ${fmtVital(v, v.value)} (your normal ${fmtVital(v, v.normal)}). ${WHY[v.key][dir(v)]}`));
+
+  /* patterns across readings, which say more than any one number */
+  const up = (k: VitalKey) => by[k].state !== "normal" && by[k].value > by[k].normal;
+  const down = (k: VitalKey) => by[k].state !== "normal" && by[k].value < by[k].normal;
+  if (up("temp") && (up("rhr") || up("resp"))) {
+    out.push("Together, skin temperature rising with heart rate or breathing can be an early sign of illness, before any fever is felt.");
+  } else if (up("rhr") && down("hrv")) {
+    out.push("Together, higher heart rate with lower HRV is the usual picture of strain or poor recovery.");
+  }
+  if (by.spo2.state !== "normal") out.push("For blood oxygen, 95 to 100% is normal, and at 92% or lower the medical officer should know.");
+
+  /* what the day itself shows, from the check-in */
+  const t = day(id, sol), bs = baseline(id, "sleep", sol);
+  const causes: string[] = [];
+  if (t?.sleep != null && bs && bs.med - t.sleep >= 0.5) causes.push(`you slept ${t.sleep.toFixed(1)}h against your usual ${bs.med.toFixed(1)}h`);
+  if (t?.load != null && t.load >= 4) causes.push(`you rated your day load ${t.load} of 5`);
+  if (causes.length) out.push(`It fits your check-in: ${join(causes)}.`);
+
+  out.push(urgent.length
+    ? "Please tell the crew medical officer today."
+    : "Worth an easier evening and a full night's sleep; I'll compare again tomorrow night.");
+  return out.join(" ");
+}
