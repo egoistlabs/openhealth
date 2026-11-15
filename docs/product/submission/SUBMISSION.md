@@ -116,7 +116,7 @@ Pedro also counts how much you talk to it and any missed check-ins.
 - Blood oxygen also has fixed floors: below 95% Watch, 92% or lower Urgent ([MedlinePlus](https://medlineplus.gov/lab-tests/pulse-oximetry/)).
 - The readings are simulated for now, tied to each person's simulated day: short sleep and heavy workload push heart rate up and HRV down. A real device would connect over Bluetooth Low Energy, starting with the standard heart-rate service.
 
-![Pedro's wearable summary for Daniela Reyes: five overnight readings against her normal, with heart rate and skin temperature marked Urgent and breathing rate on Watch](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-wearable.png)
+![Pedro's wearable summary for Daniela Reyes: last night's five readings against her normal, heart rate and skin temperature marked Urgent and breathing rate on Watch, with her last 14 nights below](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-wearable.png)
 
 **6. 3D body map: tap where it hurts.** No sensor measures pain or a rash, and the challenge suggests "a human figure where each part of the body is clickable", so the check-in has a 3D body (BodyParts3D anatomy).
 
