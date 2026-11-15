@@ -1478,3 +1478,29 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
   .stage--board .stage__pedro { flex: none; }
   .stage--board .vega { height: 180px; }
 }
+
+/* ---------- wearable readout in the top-left of Pedro's page (game-overlay style) ---------- */
+.stage > .whud { position: absolute; top: var(--s-4); left: var(--s-6); z-index: 2; }
+.whud {
+  display: grid; gap: 1px; padding: 8px 10px; text-align: left; cursor: pointer;
+  font-family: var(--f-mono); font-size: 13px; line-height: 1.35;
+  background: color-mix(in srgb, var(--c-bg) 55%, transparent); border: var(--bw) solid var(--c-hair); border-radius: 8px;
+  backdrop-filter: blur(4px);
+  transition: border-color var(--dur-panel) var(--ease), background var(--dur-panel) var(--ease);
+}
+.whud:hover:not(:disabled) { border-color: var(--c-action); background: color-mix(in srgb, var(--c-bg) 75%, transparent); }
+.whud:disabled { cursor: default; opacity: 0.9; }
+.whud__t { font-family: inherit; font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--c-text-3); margin-bottom: 2px; }
+.whud__r { display: grid; grid-template-columns: 52px 46px 36px 12px; align-items: baseline; } /* label, value (status colour), unit, shape when off */
+.whud__l { color: var(--c-action); font-weight: 600; }
+.whud__v { text-align: right; font-weight: 600; }
+.whud__u { padding-left: 6px; font-size: 11px; color: var(--c-text-3); }
+.whud__m { font-size: 10px; text-align: right; }
+.whud__s { font-family: var(--f-body, inherit); font-size: 12px; font-weight: 600; margin-bottom: 4px; padding-bottom: 4px; border-bottom: var(--bw) solid var(--c-hair); }
+.whud__n { color: var(--c-text-3); font-weight: 400; }
+.whud__cta { margin-top: 6px; padding-top: 5px; border-top: var(--bw) solid var(--c-hair); font-family: var(--f-body, inherit); font-size: 12px; color: var(--c-action); }
+.whud:hover:not(:disabled) .whud__cta { text-decoration: underline; }
+.whud:disabled .whud__cta { visibility: hidden; }
+/* hidden while a board is open (the board shows the same readings, larger) */
+.stage--board > .whud { display: none; }
+@media (max-width: 900px) { .stage > .whud { position: static; align-self: flex-start; } }

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useCompanionChat } from "@/hooks/companion/mutations/use-companion-chat";
 import {
   COMPANION_NAME, JOURNAL, MEASURES, P, avg, day, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, overall, series,
@@ -14,8 +14,9 @@ import { Num, StatusMark, Toggle } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
 import { READ_EARTH } from "./EarthToast";
 import { BOARD_INTRO, BodyBoard, BodyEntry, BodyLogRow } from "./BodyCheck";
+import { WearableBoard, WearableHud, WearableLog } from "./WearableBoard";
 import type { PainMark } from "./BodyMap";
-import { READ_WEARABLE, fmtVital, fmtVitalDelta, vitals, wearableSummary, type Vital, type VitalKey } from "@/lib/console/wearable";
+import { READ_WEARABLE, vitals, wearableSummary } from "@/lib/console/wearable";
 import { FlagList } from "./FlagCard";
 import { Wave, usePresenceState } from "./Orb";
 import { VegaAvatar, type SpeechEvents, type VegaApi } from "./VegaAvatar";
@@ -57,6 +58,9 @@ function CompanionStage() {
   const [guideRow, setGuideRow] = useState<ConvoRow | null>(null);
   /* true while the board closes: it shrinks away and Pedro glides back to the centre */
   const [boardLeaving, setBoardLeaving] = useState(false);
+  /* the wearable board: same move as the body map (Pedro to the corner, the board pops in beside him) */
+  const [wearOpen, setWearOpen] = useState(false);
+  const boardOn = bodyOpen || wearOpen;
   /* while the board is open, what the astronaut says goes to it (BodyBoard sets this) */
   const boardHear = useRef<((text: string) => void) | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -92,9 +96,9 @@ function CompanionStage() {
   const [trail, setTrail] = useState<string[]>([]);
   const seen = useRef(rows.length);
   useEffect(() => {
-    if (rows.length > seen.current && atPresent && !bodyOpen) set({ drawer: true, tab: "conversation" }); // the board needs the room
+    if (rows.length > seen.current && atPresent && !boardOn) set({ drawer: true, tab: "conversation" }); // a board needs the room
     seen.current = rows.length;
-  }, [rows.length, atPresent, set, bodyOpen]);
+  }, [rows.length, atPresent, set, boardOn]);
   useEffect(() => () => { window.clearTimeout(typeTimer.current); Presence.setState("idle"); }, []);
 
   const chat = useCompanionChat({
@@ -220,15 +224,19 @@ function CompanionStage() {
     /* Wearable: Pedro sums up last night's readings and says why each one moved. Written by code from
        the readings (no model), so every number matches the strip on Home. */
     if (intent === "wearable" || /wearable|vitals/i.test(q)) {
+      /* Pedro moves to the corner, the wearable board pops in, then he gives his analysis in the bubble */
+      setWearOpen(true);
+      setGuideRow({ who: "companion", text: "Let me look at last night's readings.", sol: P, min: c.clockMin }); // shown in the bubble while the board pops in
+      set({ drawer: false });
       setBusy(true);
       Presence.setState("working");
       window.setTimeout(() => {
         Presence.setState("idle"); setBusy(false);
+        setGuideRow(null); // the bubble now shows his analysis (the newest reply)
         const text = wearableSummary(s.me, s.sol);
         c.addLines([{ who: "companion", text }]);
-        set({ drawer: true, tab: "conversation" });
         c.say(text);
-      }, reducedMotion() ? 80 : 600);
+      }, reducedMotion() ? 80 : 700);
       return;
     }
     /* Pain or an injury: Pedro moves aside and opens the body map like a whiteboard, then guides.
@@ -340,7 +348,7 @@ function CompanionStage() {
       ? { ...reveal.row, text: reveal.row.text!.slice(0, reveal.upto) }
       : speaking != null
         ? { who: "companion" as const, text: speaking, sol: P, min: 0 }
-        : (bodyOpen && guideRow) || lastReply;
+        : (boardOn && guideRow) || lastReply;
 
   /* notes from Earth that have reached the hab since the last check-in (re-reads when a note is added) */
   useAllEarthNotes();
@@ -351,7 +359,9 @@ function CompanionStage() {
     <div className={`cstage${s.drawer ? " has-drawer" : ""}`}>
       <h1 className="vh">Companion, {crewById(s.me).full}</h1>
       <div className="cmain">
-        <section className={`stage${bodyOpen ? " stage--board" : ""}${boardLeaving ? " stage--leaving" : ""}`} aria-label={COMPANION_NAME}>
+        <section className={`stage${boardOn ? " stage--board" : ""}${boardLeaving ? " stage--leaving" : ""}`} aria-label={COMPANION_NAME}>
+          {/* last night's wearable readings in the top-left corner; a click opens Pedro's summary */}
+          <WearableHud id={s.me} sol={s.sol} disabled={busy || !atPresent || boardOn} onOpen={() => userSaid(READ_WEARABLE, "wearable")} />
           <div className="stage__tools">
             <Toggle on={s.voice} label="Voice" onClick={() => { set((p) => ({ voice: !p.voice })); setTypeMode(false); }} />
             {/* Pedro sums up what the flight surgeon sent since the last check-in; the badge counts notes that have arrived */}
@@ -361,12 +371,8 @@ function CompanionStage() {
               Messages from Earth
               {earthNew ? <span className="num" style={{ minWidth: 18, padding: "0 5px", borderRadius: 999, background: "var(--c-action)", color: "var(--c-on-action)", fontSize: 11, lineHeight: "18px", textAlign: "center" }}>{earthNew}</span> : null}
             </button>
-            {/* Pedro sums up last night's wearable readings and explains why each one moved */}
-            <button type="button" className="ta ta--quiet" disabled={busy || !atPresent} onClick={() => userSaid(READ_WEARABLE, "wearable")}>
-              Wearable summary
-            </button>
             {/* the body map (moved from the check-in): mark anything sore, then Pedro logs it */}
-            <button type="button" className="ta ta--quiet" disabled={busy || !atPresent || bodyOpen} onClick={() => userSaid("Something hurts. Open the body map.", "body")}>
+            <button type="button" className="ta ta--quiet" disabled={busy || !atPresent || boardOn} onClick={() => userSaid("Something hurts. Open the body map.", "body")}>
               Body map
             </button>
             <button type="button" className="ta ta--quiet" aria-expanded={s.drawer} aria-controls="drawer" onClick={() => set((p) => ({ drawer: !p.drawer }))}>{s.drawer ? "Hide log" : "Show log"}</button>
@@ -388,7 +394,7 @@ function CompanionStage() {
               ) : null}
             </div>
             {/* on the board, Pedro's words become a speech bubble above him (a new bubble pops per line) */}
-            <div className="stage__say" key={bodyOpen ? (reveal?.row.text ?? shown?.text ?? "").slice(0, 48) : "say"}>
+            <div className="stage__say" key={boardOn ? (reveal?.row.text ?? shown?.text ?? "").slice(0, 48) : "say"}>
               <Reply row={shown} live={reveal != null || speaking != null} progress={chat.progress} />
             </div>
           </div>
@@ -412,6 +418,22 @@ function CompanionStage() {
                     c.addLines(pain.length ? [{ who: "companion", text: said }, { who: "body", pain }] : [{ who: "companion", text: said }]);
                     c.say(said);
                   }, fast ? 0 : 450);
+                }, fast ? 0 : 520);
+              }} />
+            </div>
+          ) : null}
+          {wearOpen ? (
+            <div className="stage__board">
+              <WearableBoard id={s.me} sol={s.sol} onClose={() => {
+                if (boardLeaving) return;
+                vega.current?.stop();
+                /* the board shrinks away, Pedro glides back to the centre, then the log opens on his summary */
+                setBoardLeaving(true);
+                const fast = reducedMotion();
+                window.setTimeout(() => {
+                  setBoardLeaving(false);
+                  setWearOpen(false);
+                  window.setTimeout(() => set({ drawer: true, tab: "conversation" }), fast ? 0 : 450);
                 }, fast ? 0 : 520);
               }} />
             </div>
@@ -669,41 +691,6 @@ function Drawer({ onBody, working, trRef, jSel, setJSel, jSummary, setJSummary }
   </>;
 }
 type ConsoleTab = "conversation" | "alerts" | "insights" | "journal" | "earth" | "wearable" | "body";
-
-/* ---------- Wearable log: the last 14 nights, one row per night, all five readings ---------- */
-const W_SHORT: Record<VitalKey, string> = { rhr: "HR", hrv: "HRV", spo2: "SpO₂", temp: "Temp", resp: "Breath" };
-const W_COL: Record<Vital["state"], string> = { normal: "var(--c-text)", watch: "var(--c-watch)", act: "var(--c-act)" };
-const W_MARK: Record<Vital["state"], string> = { normal: "", watch: " ▲", act: " ■" };
-const W_NIGHTS = 14;
-function WearableLog({ id, sol }: { id: string; sol: number }) {
-  const nights = useMemo(() => {
-    const out: Array<{ sol: number; vs: Vital[] }> = [];
-    for (let t = sol; t > Math.max(0, sol - W_NIGHTS); t--) out.push({ sol: t, vs: vitals(id, t) });
-    return out;
-  }, [id, sol]);
-  const cols = "56px repeat(5, minmax(0, 1fr))";
-  return (
-    <div role="table" aria-label="Wearable readings, last 14 nights" style={{ display: "grid", gap: 2, fontSize: 13 }}>
-      <div role="row" style={{ display: "grid", gridTemplateColumns: cols, gap: 6, padding: "4px 0", color: "var(--c-text-3)", fontSize: 11, borderBottom: "1px solid var(--c-hair)" }}>
-        <span role="columnheader">Sol</span>
-        {nights[0]?.vs.map((v) => <span key={v.key} role="columnheader" style={{ textAlign: "right" }}>{W_SHORT[v.key]} <span className="small">{v.unit}</span></span>)}
-      </div>
-      {nights.map(({ sol: t, vs }) => (
-        <div key={t} role="row" style={{ display: "grid", gridTemplateColumns: cols, gap: 6, padding: "4px 0", borderBottom: "1px solid var(--c-hair)" }}
-          aria-label={`Sol ${t}: ${vs.map((v) => `${v.label} ${fmtVital(v, v.value)}${v.state === "normal" ? "" : `, ${v.state === "act" ? "urgent" : "watch"}`}`).join("; ")}`}>
-          <span role="rowheader" className="num t2">{t}{t === P ? " · today" : ""}</span>
-          {vs.map((v) => (
-            <span key={v.key} role="cell" className="num" style={{ textAlign: "right", color: W_COL[v.state], fontWeight: v.state === "normal" ? 400 : 600 }}
-              title={`${v.label}: ${fmtVital(v, v.value)}, ${fmtVitalDelta(v)} vs your normal of ${fmtVital(v, v.normal)}`}>
-              {v.value.toFixed(v.digits)}{W_MARK[v.state]}
-            </span>
-          ))}
-        </div>
-      ))}
-      <p className="small t2" style={{ marginTop: 6 }}>▲ Watch: outside your usual range. ■ Urgent: far outside it, tell the crew medical officer.</p>
-    </div>
-  );
-}
 
 /* Pedro at work: the steps done so far (ticked) and the current one (animated), with elapsed time. */
 function WorkRow({ steps }: { steps: string[] }) {
