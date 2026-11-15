@@ -128,15 +128,25 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
   // the companion log is written back whenever it changes (after the saved one has been read, so it is never overwritten by an empty log)
   useEffect(() => { if (storeRead) saveConvo(s.convo); }, [s.convo, storeRead]);
 
-  // look: lives on <html data-theme> (set before paint by the root layout script)
+  // look: lives on <html data-theme>, which the root layout sets on the server from the "cc-theme" cookie
   const theme = useSyncExternalStore(subscribeTheme, readTheme, () => "console" as Theme);
 
   const setTheme = useCallback((t: Theme) => {
     document.documentElement.dataset.theme = t;
     document.documentElement.style.colorScheme = t === "clinic" ? "light" : "dark";
     try { localStorage.setItem("cc-theme", t); } catch { /* storage unavailable */ }
+    // the cookie lets the server render the right look before first paint (no inline script, no flash)
+    document.cookie = `cc-theme=${t}; path=/; max-age=31536000; samesite=lax`;
     Presence.refresh();
   }, []);
+
+  // one-time move for looks saved before the cookie existed (localStorage only): apply it and write the cookie
+  useEffect(() => {
+    if (document.cookie.split("; ").some((c) => c.startsWith("cc-theme="))) return;
+    let saved: string | null = null;
+    try { saved = localStorage.getItem("cc-theme"); } catch { /* storage unavailable */ }
+    if (saved === "clinic" || saved === "blueprint" || saved === "console") setTheme(saved);
+  }, [setTheme]);
 
   const value = useMemo<Ctx>(() => {
     const atPresent = s.sol === P;

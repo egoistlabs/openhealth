@@ -30,7 +30,7 @@ NASA expects crews far from Earth to "solve problems and identify solutions as a
 | **Wearable vitals** | Five overnight readings with a plain status, nothing to type | Every crew card shows all five. Urgent vitals reach Escalations by name | NASA: "Weightlessness alters blood circulation and how the heart and blood vessels function" ([NASA](https://www.nasa.gov/hrp/risks/)). An early infection pattern matters in a closed hab |
 | **3D body map** | Shows exactly where it hurts, how bad and when, by tap or voice. Repeats are visible and can be followed up | Sees the exact spot, rating and note, not "some pain" | NASA: weightlessness "can lead to dizziness, bone and muscle loss" ([NASA](https://www.nasa.gov/hrp/hazard-gravity-fields/)). Exercise to counter it can strain muscles |
 | **Pedro (offline AI)** | Answers "what does this mean, what can I do" with sources, even with no link to Earth | Fewer routine questions sent to Earth. Companion counts show how it is used | NASA: "a communication delay of up to 20 minutes one way" ([NASA](https://www.nasa.gov/hrp/hazard-distance-from-earth/)) |
-| **Red-flag check** | An emergency phrase gets the "contact the crew medical officer now" message instantly, with no AI in the way | The notice reaches Ground by name and time | An emergency can't wait for a model, or for a 40-minute round trip |
+| **Red-flag check** | An emergency gets the "contact the crew medical officer now" message, from the keyword list or the AI safety label, and the model never writes that reply | The notice reaches Ground by name and time | An emergency can't wait for a model, or for a 40-minute round trip |
 | **Crew view (in hab)** | The crew sees whether the team is drifting, without anyone's private numbers | Not used by Ground | A small crew shares one space for months. One person's slide reaches everyone |
 | **Ground dashboard** | Not used by the astronaut | Whole crew on one screen, built for delayed data: last downlink, light time, next pass | Tempus Pro work notes that "communication delays will become more significant" ([NASA](https://www.nasa.gov/reference/tempus-pro/)) |
 | **Escalations page** | Not used by the astronaut | One list of who needs attention, with a 14-sol log of how it got there | Earth can plan the next contact instead of reading raw data |
@@ -227,20 +227,23 @@ flowchart TD
 
 ### 6.2 How Pedro answers a question
 
+Two safety layers run side by side. The keyword check is instant and works with the AI switched off. The AI safety label reads what the message means, such as "there's a heavy squeezing feeling in the middle of my chest", which no phrase list would catch. **The model can only add a flag, never clear one.** If it fails or times out, the keywords decide alone.
+
 ```mermaid
 flowchart TD
-  Q[Question, typed or spoken] --> R{Emergency phrase?}
-  R -->|yes| E[Fixed message: contact the crew<br/>medical officer now. Model never called]
-  R -->|no| B{Breaks a boundary?<br/>role-play, crewmate's words}
-  B -->|yes| D[Fixed decline. Model never called]
-  B -->|no| X{Signs of distress?}
-  X -->|yes| N[Reply must name a person to talk to]
-  X -->|no| G
+  Q[Question, typed or spoken] --> K[Keyword check, code<br/>emergency, boundary, distress phrases]
+  Q --> L[AI safety label, model<br/>fixed JSON form: emergency, distress, boundary]
+  K --> C{Combine, code<br/>either layer can raise a flag<br/>the model can never clear one}
+  L --> C
+  C -->|emergency| E[Fixed message: contact the crew<br/>medical officer now. Model writes nothing]
+  C -->|boundary| D[Fixed decline]
+  C -->|distress| N[Reply must name a person to talk to]
+  C -->|clear| G
   N --> G[Code gathers the best brain files<br/>and the person's numbers as sentences]
   G --> M[MedGemma writes up to 3 sentences]
-  M --> K{Code check: only the given sources<br/>and numbers, right direction}
-  K -->|pass| O[Shown and spoken, with sources]
-  K -->|fail| F[Safe fallback: support message, a reply<br/>from the numbers, or I don't have that on board]
+  M --> X{Code check: only the given sources<br/>and numbers, right direction}
+  X -->|pass| O[Shown and spoken, with sources]
+  X -->|fail| F[Safe fallback: support message, a reply<br/>from the numbers, or I don't have that on board]
 ```
 
 ### 6.3 From one bad day to Ground
@@ -434,7 +437,7 @@ flowchart TD
 
 - **Runs on the laptop:** MedGemma 4B (Google, open weights) through Ollama, with no internet needed. An optional Claude API comparison mode is off by default.
 - **Knowledge:** 29 active files in `brain/` (reference, procedures, measures), each with a source and who approved it.
-- **Pipeline:** see 6.2. Code handles emergencies, boundaries and every number. The model only writes the words.
+- **Pipeline:** see 6.2. Keyword checks and an AI safety label run side by side. The model can add a safety flag but never clear one. Code makes every safety decision and handles every number.
 - **Voice:** speech in and out through the browser. Every spoken line also appears as text.
 - **Tested by 93 questions:** 41 answerable, 19 boundary, 11 conversation, 10 decline, 5 red-flag, 3 support.
 

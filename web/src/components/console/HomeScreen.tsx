@@ -5,7 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { utils, type SlotItemMapArray, type Swapy } from "swapy";
 import { DragHandle, SwapyItem, SwapyLayout, SwapySlot } from "@/components/ui/swapy-draggable-card";
 import {
-  KEYS, MEASURES, MKEY, P, checkinCount, crewById, day, fmt, hm, fmtBase, fmtDelta, hasBaseline, isOut, listJoin, overall, reason, solDate,
+  KEYS, MEASURES, MKEY, P, baseline, checkinCount, crewById, day, fmt, hm, fmtBase, fmtDelta, hasBaseline, isOut, listJoin, mstatus, overall, reason, solDate, val,
   type Measure, type MeasureKey, type Status,
 } from "@/lib/console/data";
 import { railSvg } from "@/lib/console/plots";
@@ -79,20 +79,21 @@ export function HomeScreen() {
           </div>
         </div>
         <aside className="sec__margin">
-          <div className={`cicard${due ? " is-due" : ""}`} aria-labelledby="cicard-t">
+          <div className={`cicard${due ? " is-due" : ""}`} aria-labelledby="cicard-t"
+            style={{ display: "flex", flexDirection: "column" }}>
             <div className="cicard__h">
               <h2 className="sec-t" id="cicard-t">Daily check-in</h2>
               {done ? <span className="nav__ok">Done</span> : due ? <span className="nav__due">Due</span> : <span className="small t2">Not done</span>}
             </div>
             {done && today ? <>
               <p className="small t2">Sol <Num>{s.sol}</Num> · logged at <Num>{hm(today.checkin!.min)}</Num></p>
-              <dl className="cicard__vals">
-                <dt>Sleep</dt><dd><Num>{today.sleep == null ? "—" : `${today.sleep.toFixed(1)}h`}</Num></dd>
-                <dt>Mood</dt><dd><Num>{today.mood ?? "—"}</Num>/5</dd>
-                <dt>Day load</dt><dd><Num>{today.load ?? "—"}</Num>/5</dd>
-                <dt>Teamwork</dt><dd><Num>{today.team ?? "—"}</Num>/5</dd>
-              </dl>
-              {atPresent ? <Link className="ta" href={`${ROUTE.checkin}?step=review`}>Review or correct</Link> : null}
+              {/* each answer as a mini chart: the last 7 sols against the person's own normal (shaded),
+                  today's dot in its status colour, then the value and its change from normal */}
+              <div role="list" aria-label="Today's check-in answers" style={CK.list}>
+                {CK_ROWS.map(([key, label]) => <CheckinRow key={key} id={s.me} sol={s.sol} k={key} label={label} />)}
+              </div>
+              {/* bottom right of the card, in the space under the answers */}
+              {atPresent ? <Link className="ta" href={`${ROUTE.checkin}?step=review`} style={{ marginTop: "auto", alignSelf: "flex-end" }}>Review or correct</Link> : null}
             </> : <>
               <p className="cicard__lead">A 2-minute daily talk with Pedro that keeps your personal baseline up to date.</p>
               <p className="t2">Sleep, then a quick body map of anything sore, then mood, day load, teamwork and shared meals. Then an optional reaction game.</p>
@@ -179,6 +180,53 @@ function MeasureGrid({ sts }: { sts: Status[] }) {
     </>
   );
 }
+
+/* ---------- Daily check-in card: one mini chart per answer ---------- */
+const CK_ROWS: Array<[MeasureKey, string]> = [["sleep", "Sleep"], ["mood", "Mood"], ["load", "Day load"], ["team", "Teamwork"]];
+const CK_COL: Record<string, string> = { normal: "var(--c-normal)", watch: "var(--c-watch)", act: "var(--c-act)" };
+const CK_DAYS = 7;
+function CheckinRow({ id, sol, k, label }: { id: string; sol: number; k: MeasureKey; label: string }) {
+  const st = mstatus(id, k, sol);
+  const pts = Array.from({ length: CK_DAYS }, (_, i) => sol - CK_DAYS + 1 + i).map((t) => ({ t, v: val(day(id, t), k) }));
+  const b = baseline(id, k, sol);
+  const v = val(day(id, sol), k);
+  /* ratings sit on a fixed 1–5 scale; sleep scales to its values and the normal band */
+  const known = pts.map((p) => p.v).filter((x): x is number => x != null);
+  const rating = k !== "sleep";
+  let lo = rating ? 1 : Math.min(...known, b?.lo ?? Infinity) - 0.3, hi = rating ? 5 : Math.max(...known, b?.hi ?? -Infinity) + 0.3;
+  if (!Number.isFinite(lo) || !Number.isFinite(hi)) { lo = 4; hi = 10; } // no sleep data yet: a sensible empty scale
+  const W = 96, H = 22, pad = 3;
+  const x = (i: number) => pad + (i * (W - 2 * pad)) / (CK_DAYS - 1);
+  const y = (n: number) => H - pad - ((n - lo) / (hi - lo || 1)) * (H - 2 * pad);
+  const line = pts.map((p, i) => (p.v == null ? null : `${x(i).toFixed(1)},${y(p.v).toFixed(1)}`)).filter(Boolean).join(" ");
+  const col = CK_COL[st.state] ?? "var(--c-text-2)";
+  const shown = v == null ? "—" : k === "sleep" ? `${v.toFixed(1)}h` : `${v}/5`;
+  const delta = v != null && b ? fmtDelta(k, v - b.med) : null;
+  return (
+    <div role="listitem" style={CK.row} title={b ? `Your normal: ${fmtBase(k, b)}` : "Building your normal"}
+      aria-label={`${label} ${shown}${delta ? `, ${delta} vs your normal` : ""}, ${st.state === "act" ? "act" : st.state === "watch" ? "watch" : "within your normal"}`}>
+      <span style={CK.label}>{label}</span>
+      <svg width={W} height={H} viewBox={`0 0 ${W} ${H}`} aria-hidden="true" style={{ display: "block", overflow: "visible" }}>
+        {b ? <rect x={0} width={W} y={y(Math.min(hi, b.hi))} height={Math.max(1, y(Math.max(lo, b.lo)) - y(Math.min(hi, b.hi)))} rx={2} fill="var(--c-normal)" opacity={0.14} /> : null}
+        {line ? <polyline points={line} fill="none" stroke="var(--c-text-3)" strokeWidth={1.25} strokeLinejoin="round" /> : null}
+        {pts.map((p, i) => (p.v == null || i === CK_DAYS - 1 ? null : <circle key={p.t} cx={x(i)} cy={y(p.v)} r={1.6} fill="var(--c-text-3)" />))}
+        {v != null ? <circle cx={x(CK_DAYS - 1)} cy={y(v)} r={3.4} fill={col} stroke="var(--c-surface-2)" strokeWidth={1.5} /> : null}
+      </svg>
+      <span style={CK.val}>
+        <span className="num" style={{ color: "var(--c-text)", fontWeight: 600 }}>{shown}</span>
+        {delta ? <span className="num" style={{ ...CK.delta, color: isOut(st) ? col : "var(--c-text-3)" }}>{delta}</span> : null}
+      </span>
+    </div>
+  );
+}
+/* inline so the rows render even when the stylesheet is stale in dev */
+const CK = {
+  list: { display: "grid", gap: 6 } as const,
+  row: { display: "grid", gridTemplateColumns: "72px 96px minmax(0, 1fr)", alignItems: "center", gap: 10 } as const,
+  label: { color: "var(--c-text-2)" } as const,
+  val: { display: "flex", alignItems: "baseline", justifyContent: "flex-end", gap: 6, whiteSpace: "nowrap" } as const,
+  delta: { fontSize: 11 } as const,
+};
 
 /* Wearable vitals beside the identity block: last night's readings from a (simulated) smartwatch or chest
    monitor, each against the person's own normal, with Watch when outside their usual spread. */

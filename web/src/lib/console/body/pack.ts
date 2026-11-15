@@ -9,9 +9,11 @@ import headNeck from "./head-neck-extension.json";
 
 const EXT_NS = "openhealth";
 
-const composed = composeDataPacks(bodyParts3DMusculoskeletal, [headNeck as unknown as DataExtension]).dataset;
-/* English labels only: the upstream pack also carries other locales, which the app never shows */
-export const BODY_PACK: DataPack = { ...composed, locales: composed.locales.filter((l) => l.locale === "en") };
+/* English labels only. The upstream pack also carries other locales, which the app never shows. Strip them
+   from the base pack BEFORE composing: composeDataPacks checks that every structure has a label in every
+   locale, and our extension (head-neck-extension.json) is English-only. */
+const englishBase: DataPack = { ...bodyParts3DMusculoskeletal, locales: bodyParts3DMusculoskeletal.locales.filter((l) => l.locale === "en") };
+export const BODY_PACK: DataPack = composeDataPacks(englishBase, [headNeck as unknown as DataExtension]).dataset;
 
 /** structures whose shape is our approximation rather than BodyParts3D geometry */
 export const isApproximate = (structureId: string) =>

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { IBM_Plex_Mono, IBM_Plex_Sans, Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
 
@@ -14,16 +15,16 @@ export const metadata: Metadata = {
   description: "Crew wellbeing companion. Prototype running on simulated data; not a medical device.",
 };
 
-/* Applies the saved look before first paint, so a light look never flashes dark. */
-const themeScript = `try{var t=localStorage.getItem("cc-theme");if(t==="clinic"||t==="blueprint"){document.documentElement.dataset.theme=t;document.documentElement.style.colorScheme=t==="clinic"?"light":"dark"}}catch(e){}`;
-
-export default function RootLayout({ children }: LayoutProps<"/">) {
+/* The saved look comes from the "cc-theme" cookie (written by ConsoleProvider's setTheme), so the server puts it
+   on <html> in the first HTML: a light look never flashes dark, and no inline script is needed (React 19 warns
+   about <script> rendered inside components). */
+export default async function RootLayout({ children }: LayoutProps<"/">) {
+  const saved = (await cookies()).get("cc-theme")?.value;
+  const theme = saved === "clinic" || saved === "blueprint" ? saved : undefined;
   return (
-    <html lang="en" suppressHydrationWarning
+    <html lang="en" suppressHydrationWarning data-theme={theme}
+      style={theme ? { colorScheme: theme === "clinic" ? "light" : "dark" } : undefined}
       className={`${plexSans.variable} ${plexMono.variable} ${inter.variable} ${jetbrainsMono.variable}`}>
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: themeScript }} />
-      </head>
       <body>{children}</body>
     </html>
   );
