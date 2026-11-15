@@ -97,10 +97,20 @@ export function ConsoleProvider({ children }: { children: ReactNode }) {
 
   const set = useCallback((p: Patch) => setS((prev) => ({ ...prev, ...(typeof p === "function" ? p(prev) : p) })), []);
 
-  // mission clock: starts at the prototype's 14:26 and runs in real minutes (client only, so SSR matches)
+  // mission clock: starts at the prototype's 14:26 and runs in real minutes (client only, so SSR matches).
+  // The start is shared through localStorage, so an Astronaut tab and a Ground tab show the same time and a
+  // message arrives in both at once. A start older than 3 hours is replaced, so the demo restarts at 14:26.
   useEffect(() => {
-    t0.current = Date.now();
-    const id = window.setInterval(() => setElapsed(Math.floor((Date.now() - t0.current) / 60000)), 5000);
+    const KEY = "openhealth.clock.t0", now = Date.now();
+    let start = now;
+    try {
+      const saved = Number(localStorage.getItem(KEY));
+      if (saved && now - saved >= 0 && now - saved < 3 * 3600_000) start = saved; else localStorage.setItem(KEY, String(now));
+    } catch { /* storage blocked: this tab keeps its own clock */ }
+    t0.current = start;
+    const tick = () => setElapsed(Math.floor((Date.now() - t0.current) / 60000));
+    tick();
+    const id = window.setInterval(tick, 5000);
     return () => window.clearInterval(id);
   }, []);
 

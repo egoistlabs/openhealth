@@ -24,6 +24,9 @@ export type EarthNote = {
 };
 
 export const NOTE_MAX = 500;
+/* Notes sent live in the demo (Ground to an astronaut, and the astronaut's reply back) arrive after 1 minute instead
+   of the real one-way light delay (about 3 to 22 min), so the demo does not stall. Sample notes keep the real delay. */
+export const DEMO_DELAY_MIN = 1;
 const KEY = "openhealth.earthnotes.v1";
 let memory: EarthNote[] = [];
 const listeners = new Set<() => void>();

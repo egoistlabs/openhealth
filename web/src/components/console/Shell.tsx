@@ -3,11 +3,13 @@
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
-import { CREW, MISSION, P, crewEvents, crewById, day, hasBaseline, hm, solDate, type LogEvent } from "@/lib/console/data";
+import { COMPANION_NAME, CREW, MISSION, P, crewEvents, crewById, day, hasBaseline, hm, solDate, type LogEvent } from "@/lib/console/data";
 import { FlagList } from "./FlagCard";
 import { SettingsDialog } from "./SettingsDialog";
 import { PedroGuide } from "./PedroGuide";
-import { escalations } from "@/lib/console/ground";
+import { earthDistanceMkm, escalations, lightDelayMin } from "@/lib/console/ground";
+import { Rocket } from "lucide-react";
+import { DEMO_DELAY_MIN } from "@/lib/console/earth-notes";
 import { tok } from "@/lib/console/plots";
 import { Icon, Num, Segmented, StatusMark, Toggle } from "@/components/ui";
 import { DotPattern } from "@/components/ui/dot-pattern";
@@ -89,13 +91,29 @@ function Header() {
 
   return (
     <header className="hdr" id="hdr">
-      <div className="hdr__l">
+      <div className="hdr__l" style={{ flex: "1 1 auto" }}>
         <Link className="hdr__mission" href={landing}>Pedro</Link>
         <span className="hdr__sol">
           Sol <Num>{s.sol}</Num>
           <span className="hdr__time">
             {atPresent ? <> · <Num>{hm(clockMin)}</Num><span className="tz">&nbsp;{MISSION.tz}</span></> : <> · <Num>{solDate(s.sol)}</Num></>}
           </span>
+        </span>
+        {/* how far Earth is, and so how late its messages are (real light time); the demo itself delivers in 1 min */}
+        <span className="hdr__earth" tabIndex={0}
+          data-tip={`Distance from Earth: about ${Math.round(earthDistanceMkm(s.sol))} million km (${Math.round(earthDistanceMkm(s.sol) * 0.621371)} million miles) on Sol ${s.sol}. One-way light time (OWLT): ${lightDelayMin(s.sol)} min, the time a radio message takes to cross that distance at the speed of light. Round-trip light time (RTLT): ${2 * lightDelayMin(s.sol)} min, a message there plus the answer back. Over a mission OWLT runs from about 3 to 22 min (RTLT up to about 44 min), per NASA. In this demo, messages between Earth and the crew arrive within ${DEMO_DELAY_MIN} min. The ship on the route marks progress through the ${MISSION.totalSols}-sol mission (simulation only).`}
+          aria-label={`Earth ${Math.round(earthDistanceMkm(s.sol))} million kilometres away, ${lightDelayMin(s.sol)} minute minutes one-way light time, ${2 * lightDelayMin(s.sol)} minutes round-trip light time. Demo delivers in ${DEMO_DELAY_MIN} minute.`}>
+          <span className="hdr__planet"><span className="hdr__orb hdr__orb--earth" aria-hidden="true" />Earth</span>
+          {/* route from Earth to Mars; the ship marks how far through the mission this sol is (simulation only) */}
+          <span className="hdr__link" aria-hidden="true">
+            <span className="hdr__beam" />
+            <span className="hdr__ship" style={{ left: `${Math.min(100, (s.sol / MISSION.totalSols) * 100)}%` }} title="Simulated">
+              <Rocket className="hdr__rocket" />
+              <span className="hdr__mlabel">Sol <Num>{s.sol}</Num>/<Num>{MISSION.totalSols}</Num> · sim</span>
+            </span>
+          </span>
+          <span className="hdr__planet">Mars<span className="hdr__orb hdr__orb--mars" aria-hidden="true" /></span>
+          <span className="hdr__dist"><span className="t3">Distance from Earth</span> <Num>{Math.round(earthDistanceMkm(s.sol))}</Num> million km <span aria-hidden="true">·</span> <span className="t3">One-way light time</span> <Num>{lightDelayMin(s.sol)}</Num> min<span className="hdr__info" tabIndex={0} role="note" aria-label="What is one-way light time?" data-tip={`One-way light time: how long a message takes to travel between Mars and Earth at the speed of light. Today a message you send reaches Earth after ${lightDelayMin(s.sol)} min, and a note from Earth reaches you after ${lightDelayMin(s.sol)} min.`}>i</span> <span aria-hidden="true">·</span> <span className="t3">Round-trip</span> <Num>{2 * lightDelayMin(s.sol)}</Num> min<span className="hdr__info" tabIndex={0} role="note" aria-label="What is round-trip?" data-tip={`Round-trip: the shortest time between asking Earth something and hearing back. Your message takes ${lightDelayMin(s.sol)} min to reach Earth and the answer ${lightDelayMin(s.sol)} min to come back, so at least ${2 * lightDelayMin(s.sol)} min, plus however long Earth takes to write the answer. That is why anything urgent is handled on board, with ${COMPANION_NAME} and the crew medical officer, instead of waiting for Earth.`}>i</span><span className="hdr__demo">demo: <Num>{DEMO_DELAY_MIN}</Num> min</span></span>
         </span>
       </div>
       <div className="hdr__r">

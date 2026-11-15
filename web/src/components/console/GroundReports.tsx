@@ -10,7 +10,7 @@ import { CrewPortrait } from "./CrewPortrait";
 import { VitalStrip } from "./GroundCrewCards";
 import { PainSummary, type PainMark } from "./BodyMap";
 import { CrewStatusModal } from "./GroundPerson";
-import { addEarthNote, NOTE_MAX, useAllEarthNotes, useEarthNotes, type EarthNote } from "@/lib/console/earth-notes";
+import { addEarthNote, DEMO_DELAY_MIN, NOTE_MAX, useAllEarthNotes, useEarthNotes, type EarthNote } from "@/lib/console/earth-notes";
 import { FILE_ACCEPT, FILES_PER_NOTE, fileProblem, fmtSize, openAttachment, putFile } from "@/lib/console/earth-files";
 import { lightDelayMin } from "@/lib/console/ground";
 
@@ -268,7 +268,7 @@ function EarthAdvice({ crewId, first, sol }: { crewId: string; first: string; so
         </ul>
       ) : (
         <p className="ea__empty" style={EA.empty}>
-          {live ? <>No advice sent to {first} today. <span className="t2">In this demo notes reach Mars within {DEMO_DELAY_MIN} minute (the real light delay is up to 20 minutes); PDFs and images can be attached.</span></> : <>No advice on this sol. <span className="t2">Pick Today to write.</span></>}
+          {live ? <>No advice sent to {first} today. <span className="t2">In this demo notes reach Mars within {DEMO_DELAY_MIN} minute (the real light delay is about 3 to 22 minutes one way); PDFs and images can be attached.</span></> : <>No advice on this sol. <span className="t2">Pick Today to write.</span></>}
         </p>
       )}
       {threads ? <ThreadsModal startWith={crewId} onClose={() => setThreads(false)} /> : null}
@@ -327,9 +327,6 @@ const QUICK: Array<[string, string]> = [
   ["8 h sleep", "Protect an 8-hour sleep window tonight."],
 ];
 
-/* Notes sent from this panel reach Mars after 1 minute instead of the real light delay (up to 20 min),
-   so the demo shows the astronaut's notification without a long wait. Sample notes keep the real delay. */
-const DEMO_DELAY_MIN = 1;
 
 /* one note: author, send time, transit status, text and attachments (used in the panel and the threads modal) */
 function NoteItem({ n }: { n: EarthNote }) {

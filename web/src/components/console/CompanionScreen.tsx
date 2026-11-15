@@ -17,7 +17,7 @@ import { FlagList } from "./FlagCard";
 import { Wave, usePresenceState } from "./Orb";
 import { VegaAvatar, type SpeechEvents, type VegaApi } from "./VegaAvatar";
 import { ROUTE } from "./Shell";
-import { NOTE_MAX, addEarthNote, arrivedSince, crewThread, notesByIds, useAllEarthNotes, type EarthNote } from "@/lib/console/earth-notes";
+import { DEMO_DELAY_MIN, NOTE_MAX, addEarthNote, arrivedSince, crewThread, notesByIds, useAllEarthNotes, type EarthNote } from "@/lib/console/earth-notes";
 import { lightDelayMin } from "@/lib/console/ground";
 import { fmtSize, openAttachment } from "@/lib/console/earth-files";
 import { HoldButton, VoiceState, type VState } from "./Voice";
@@ -158,9 +158,9 @@ function CompanionStage() {
     let t: string;
     if (/^s*(no|nope|nothing|not now|no thanks?|no message|that'?s all|all good)/i.test(q)) t = "Okay, nothing sent to Earth.";
     else {
-      const delay = lightDelayMin(P);
+      const delay = DEMO_DELAY_MIN; // demo: replies reach Earth within a minute (real light delay ~lightDelayMin(P))
       const ok = addEarthNote({ crewId: s.me, sol: P, sentMin: c.clockMin, arriveMin: c.clockMin + delay, author: crewById(s.me).full, text: q.slice(0, NOTE_MAX), from: "crew" }, P);
-      t = ok ? `Passed on to the flight surgeon. It reaches Earth in about ${delay} minutes.` : "That message could not be passed on.";
+      t = ok ? `Passed on to the flight surgeon. It reaches Earth within ${delay} minute in this demo; the real light delay today is about ${lightDelayMin(P)} minutes.` : "That message could not be passed on.";
     }
     c.addLines([{ who: "companion", text: t }]);
     c.say(t);
@@ -306,7 +306,7 @@ function CompanionStage() {
             <VoiceState v={v} inCheckin={false} onType={() => { setTypeMode(true); setV(null); inputRef.current?.focus(); }} />
             {replying ? (
               <div role="status" style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap", padding: "6px 10px", borderRadius: 6, borderLeft: "3px solid var(--c-action)", background: "var(--c-surface-2)", fontSize: 13 }}>
-                <span><b>Replying to the flight surgeon.</b> <span className="t2">Your next message is passed on to Earth, about {lightDelayMin(P)} min away.</span></span>
+                <span><b>Replying to the flight surgeon.</b> <span className="t2">Your next message reaches Earth within {DEMO_DELAY_MIN} min in this demo (real delay ~{lightDelayMin(P)} min).</span></span>
                 <button type="button" className="ta" style={{ marginLeft: "auto" }} onClick={() => sendReply("No message")}>No message</button>
               </div>
             ) : null}

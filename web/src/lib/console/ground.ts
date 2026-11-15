@@ -11,11 +11,24 @@ import {
 const PASSES = [6 * 60 + 30, 12 * 60 + 30, 18 * 60 + 30, 23 * 60 + 30]; // LMST, simulated relay passes
 const SYNODIC_SOLS = 767;
 
-/** One-way light time Mars → Earth in minutes (3 to 20), simulated from the mission sol.
- *  Capped at 20 to match NASA: "a communication delay of up to 20 minutes one way" (nasa.gov/hrp/hazard-distance-from-earth). */
-export function lightDelayMin(sol: number) {
+/* Earth–Mars distance runs from about 54.6 million km (closest possible approach) to about 401 million km
+   (opposite sides of the Sun). Light covers 17.99 million km a minute (299,792.458 km/s × 60), so the one-way
+   delay runs from about 3 to about 22 minutes, and a question and its answer take up to about 44 minutes.
+   NASA: one-way delay of 21–23 minutes at most for a crewed mission (Mars Communications Disruption and Delay,
+   nasa.gov), "up to a 44-minute round-trip latency" (NASA/TM-20250003885), just over 3 minutes at closest
+   approach (2024 Moon to Mars Architecture white paper). The sol's position in the 780-day synodic cycle
+   (767 sols) is simulated. */
+export const MIN_MKM = 54.6, MAX_MKM = 401;
+const LIGHT_MKM_PER_MIN = 299_792.458 * 60 / 1e6;
+
+/** Earth–Mars distance in million km on this sol (unrounded). */
+export function earthDistanceMkm(sol: number) {
   const phase = (2 * Math.PI * (sol + 100)) / SYNODIC_SOLS;
-  return Math.round(3 + 17 * (1 - Math.cos(phase)) / 2);
+  return MIN_MKM + (MAX_MKM - MIN_MKM) * (1 - Math.cos(phase)) / 2;
+}
+/** One-way light time Mars ↔ Earth in whole minutes (3 to 22) on this sol. */
+export function lightDelayMin(sol: number) {
+  return Math.round(earthDistanceMkm(sol) / LIGHT_MKM_PER_MIN);
 }
 
 export type Downlink = { sol: number; min: number; next: number | null; delay: number };

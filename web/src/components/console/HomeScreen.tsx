@@ -241,8 +241,8 @@ function Vitals({ id, sol }: { id: string; sol: number }) {
           {urgent ? `${urgent} urgent${off > urgent ? `, ${off - urgent} on watch` : ""}` : off ? `${off} off your normal` : "All stable"}
         </span>
         {/* the readings are on board straight away; Earth gets them after the one-way light time
-            (NASA: up to 20 min one way on a Mars mission; up to 40 min there and back) */}
-        <span style={V.delay} data-tip={`Mars to Earth one-way light time today is ${lightDelayMin(sol)} min (NASA: up to 20 min one way on a Mars mission). A reply from Earth takes as long again: ${2 * lightDelayMin(sol)} min there and back.`} tabIndex={0}>
+            (NASA: about 3 to 22 min one way on a Mars mission; up to about 44 min there and back) */}
+        <span style={V.delay} data-tip={`Mars to Earth one-way light time today is ${lightDelayMin(sol)} min (NASA: about 3 to 22 min one way on a Mars mission, up to about 44 min there and back). A reply from Earth takes as long again: ${2 * lightDelayMin(sol)} min there and back.`} tabIndex={0}>
           On board now · Earth sees it in <b>{lightDelayMin(sol)} min</b> · {2 * lightDelayMin(sol)} min round trip
         </span>
         <span style={V.src}>Simulated, like the CSA Bio-Monitor on the ISS</span>

@@ -1397,3 +1397,29 @@ body { transition: background-color var(--dur-panel) var(--ease), color var(--du
 .fu__t { flex: 1; min-width: 200px; }
 .fu__act { display: flex; gap: var(--s-1); }
 
+
+/* header: Earth ── signal ── Mars, filling the free space; distance and real light delay on the line */
+.hdr__earth { flex: 1 1 auto; min-width: 0; font-size: 13px; color: var(--c-text-2); white-space: nowrap; }
+.hdr__planet { display: inline-flex; align-items: center; gap: 6px; color: var(--c-text); font-weight: var(--fw-medium); flex: none; }
+.hdr__orb { width: 12px; height: 12px; border-radius: 999px; flex: none; }
+.hdr__orb--earth { background: radial-gradient(circle at 35% 35%, #7FC8FF, #1F6FD1 60%, #0B3A7A); box-shadow: 0 0 8px rgb(80 160 255 / .55); }
+.hdr__orb--mars { background: radial-gradient(circle at 35% 35%, #FFB08A, #D2552B 60%, #7A2A12); box-shadow: 0 0 8px rgb(230 100 50 / .5); }
+.hdr__link { position: relative; flex: 1 1 auto; min-width: 120px; height: 24px; display: flex; align-items: center; justify-content: center; margin: 0 4px; }
+/* ruler like the mission spine: baseline, minor ticks every 6px, major every 30px, and a row of 2px marks */
+.hdr__beam { position: absolute; left: 0; right: 0; top: 50%; height: 13px; margin-top: -6px;
+  background:
+    linear-gradient(var(--c-hair-strong), var(--c-hair-strong)) 0 6px / 100% 1px no-repeat,
+    repeating-linear-gradient(90deg, var(--c-dim) 0 1px, transparent 1px 30px) 0 0 / 100% 6px no-repeat,
+    repeating-linear-gradient(90deg, var(--c-hair-strong) 0 1px, transparent 1px 6px) 0 3px / 100% 3px no-repeat,
+    repeating-linear-gradient(90deg, var(--c-text-3) 0 2px, transparent 2px 6px) 0 9px / 100% 2px no-repeat; opacity: .9; }
+.hdr__ship { position: absolute; top: 50%; transform: translate(-50%, -50%); display: grid; justify-items: center; color: var(--c-text); }
+.hdr__rocket { width: 15px; height: 15px; transform: rotate(45deg); background: var(--c-bg); border-radius: 999px; padding: 1px; filter: drop-shadow(0 0 4px var(--c-action)); }
+.hdr__mlabel { position: absolute; top: 100%; white-space: nowrap; margin-top: 1px; font-size: 10px; line-height: 1; color: var(--c-text-2); font-weight: var(--fw-medium); }
+.hdr__dist { display: inline-flex; align-items: baseline; gap: 5px; flex: none; }
+.hdr__dist .hdr__demo { margin-left: 4px; align-self: center; }
+@media (max-width: 1400px) { .hdr__dist .t3 { display: none; } }
+.hdr__demo { padding: 1px 8px; border-radius: 999px; border: 1px solid var(--c-hair-strong); font-size: 11px; color: var(--c-text-3); }
+@media (max-width: 900px) { .hdr__demo { display: none; } }
+.hdr__info { align-self: center; display: inline-grid; place-items: center; width: 14px; height: 14px; margin-left: 2px; border-radius: 999px;
+  border: 1px solid var(--c-hair-strong); color: var(--c-text-2); font: italic 600 9px/1 var(--f-mono); cursor: help; }
+.hdr__info:hover, .hdr__info:focus-visible { color: var(--c-text); border-color: var(--c-action); }
