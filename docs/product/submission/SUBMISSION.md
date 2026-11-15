@@ -67,18 +67,17 @@ https://github.com/egoistlabs/openhealth
 
 ### Pedro connects the crew and Earth, and makes health advice something everyone can act on
 
-Pedro is an AI health companion on one laptop, with no internet. It takes what each astronaut logs, compares it with their own normal and turns it into plain words and one next step, for the astronaut, the crew and the flight surgeon on Earth.
+Pedro is an AI health companion on one laptop, with no internet. It takes what each astronaut logs, compares it with their own 14-day normal and turns it into plain words and one thing to do, for the astronaut, the crew and the flight surgeon on Earth.
 
-- **For the astronaut:** a two-minute daily check-in, an optional wearable and a 3D body map, each compared with their own normal and explained in plain words, with one thing to do.
+- **For the astronaut:** a two-minute daily check-in on the early signs of decline. A wearable, if they have one, adds five overnight vitals that can change before they feel anything. A 3D body map records pain, which no sensor measures.
 - **For the crew:** how the team is doing, with no one's private numbers.
 - **For Earth:** what each astronaut chooses to share, plus anything at Act or an emergency notice by name, and a way to send advice back. Pedro reads it aloud and carries the reply.
-
 - **It catches what people don't report.** In our simulation, just asking crew how they felt caught 2% of the declines they hadn't noticed in themselves. Pedro's flag rule caught 98%.
-- **Little extra to fly.** One laptop, offline by default. Vitals come from the crew wearable already on board (simulated in our prototype). No consumables.
+- **Little extra to fly.** One laptop, offline by default. Vitals come from a crew wearable, if the mission flies one (simulated for now). No consumables.
 - **Earth sees what it needs, late, never live.** A flight surgeon console shows vitals, escalations and check-in reports per person, with a modelled downlink delay. Advice from Earth and the astronaut's replies are held for the light delay (1 minute in the demo, 3 to 22 minutes in the simulated mission). Journals and the astronaut's own words to Pedro never leave the hab.
 - **It doesn't guess.** Code does the maths and checks every reply. The AI model writes the words and helps spot emergencies, but code makes every safety decision.
 - **It keeps working if the AI fails.** Statuses, flags and emergency messages are all code, so they still work with the model switched off.
-- **We know where it falls short.** It raises too many false alarms, both in the daily flags and in the emergency check. In the emergency check, one main reason is that the same small model that writes the replies also labels each message, so it isn't trusted to clear a keyword match. It also sometimes treats serious distress as an emergency. Both are measured below, and both are our next steps.
+- **It's still early, and we know where it falls short.** It raises too many false alarms: in the daily flags, a healthy astronaut gets one about every two weeks, and the emergency check escalates some look-alikes too. In the emergency check, one main reason is that the same small model that writes the replies also labels each message, so it isn't trusted to clear a keyword match. It also sometimes treats serious distress as an emergency. Both are measured below, and both are our next steps.
 
 
 ### What it does: a two-minute daily check-in, compared with your own normal
@@ -112,12 +111,12 @@ Pedro also counts how much you talk to it and any missed check-ins.
 
 ![Crew view: crew-level numbers only](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-crew.png)
 
-**5. Optional wearable vitals: what the person can't feel coming.** Five overnight readings: resting heart rate, heart rate variability, blood oxygen, skin temperature and breathing rate. They are the kind the CSA's Bio-Monitor records on the ISS ([CSA](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp)).
+**5. Wearable vitals, if the crew has one: changes the person can't feel yet.** Five overnight readings: resting heart rate, heart rate variability, blood oxygen, skin temperature and breathing rate. They are the kind the CSA's Bio-Monitor records on the ISS ([CSA](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp)).
 
 - **Nobody types them in.** The device records them and the data stays on board first. On the ISS, the Bio-Monitor's battery pack plugs into a base "which downloads the data to Earth through the Station's communications system".
 - **Each reading is judged against your own last 14 nights,** like the check-in measures. One to two usual spreads in the worse direction → **Watch**, more than two → **Urgent**.
 - **Blood oxygen also has fixed floors:** below 95% Watch, 92% or lower Urgent ([MedlinePlus](https://medlineplus.gov/lab-tests/pulse-oximetry/)).
-- **Our prototype simulates the readings** (no device connected), tied to each person's simulated day: short sleep and heavy workload push heart rate up and HRV down.
+- **The readings are simulated for now** (no device connected), tied to each person's simulated day: short sleep and heavy workload push heart rate up and HRV down.
 - **A real device would connect by Bluetooth Low Energy,** straight to the hab computer, with no phone app or cloud. Heart rate has a standard Bluetooth service, and HRV can be worked out from the beat-to-beat times it can carry ([Bluetooth SIG](https://files.bluetooth.com/download/hrs-ics-p3-pdf)). Blood oxygen, skin temperature and breathing rate usually need the maker's own software, and many consumer smartwatches only share data with their own app, so a chest strap or a smart shirt like the Bio-Monitor is the realistic choice. This is planned, not built.
 
 **6. 3D body map: tap where it hurts.** The challenge suggests "a human figure where each part of the body is clickable". No sensor measures pain or a rash, so the check-in has a 3D body (BodyParts3D anatomy).
@@ -140,7 +139,7 @@ Pedro also counts how much you talk to it and any missed check-ins.
 - **By name:** shared measures, any Act status, vitals, body-map marks, a summary of conversations with Pedro, the fact that an emergency notice was given, and the replies an astronaut chooses to send.
 - **Never:** journals, or the astronaut's own words to Pedro.
 
-**8. Messages from Earth, across the delay.** NASA's Deep Space Network now carries data with Delay/Disruption Tolerant Networking, which uses "a store-and-forward approach to overcome latency and disruption challenges" ([NASA DTN](https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/)). Pedro's messages are a simulation of that kind of link, not a DTN implementation: in our prototype the flight surgeon and the crew run in the same browser, and each message is held until the one-way light time has passed. A real mission would carry them over NASA's DTN.
+**8. Messages from Earth, across the delay.** NASA's Deep Space Network now carries data with Delay/Disruption Tolerant Networking, which uses "a store-and-forward approach to overcome latency and disruption challenges" ([NASA DTN](https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/)). Pedro's messages are a simulation of that kind of link, not a DTN implementation: for now the flight surgeon and the crew run in the same browser, and each message is held until the one-way light time has passed. A real mission would carry them over NASA's DTN.
 
 - **The flight surgeon writes advice** for one astronaut, for today, from scratch or from a quick-advice chip, with up to 3 files attached.
 - **It travels with the light delay.** It shows "In transit · arrives 14:44" until the one-way light time has passed, then "Arrived".
@@ -170,7 +169,7 @@ Pedro also counts how much you talk to it and any missed check-ins.
 
 **Offline by default.** MedGemma 4B, Google's open medical AI model (3.3 GB), runs on the laptop. A comparison mode that uses the Anthropic Claude API is off by default, and when switched on it sends the question and the chosen sources to Anthropic. Pedro's spoken replies can run fully offline with Kokoro (see 11). One gap remains: voice input in Chrome can use the browser maker's online speech service, so typing is the fully offline way to talk to Pedro today.
 
-### Does it work: in simulation, 98% of hidden declines caught, with too many false alarms
+### Does it work: in simulation, 98% of hidden declines caught, with a false alarm about every two weeks
 
 All crew data is simulated and labelled "Simulated data" on every screen. No clinician has reviewed the content or the tests. Each test runs from the public repo with one command.
 
@@ -188,7 +187,7 @@ Four ways to watch a crew, on medium declines the person doesn't notice at all. 
 
 - **Asking only works when people notice.** It catches 2% of declines when the person notices nothing, 14% when they notice half, and 47% when they notice all of it.
 - **Measuring finds what asking misses.** Sleep times, reaction time and engagement keep moving while the person says they're fine.
-- **The rule raises too many false alarms.** It flags 88% of healthy twins: 6.8 false Watch flags per healthy person in 90 days, against our pass mark of 1. A stricter setting cuts that to 2.2 and still catches 77% of declines within 21 days.
+- **The rule raises too many false alarms.** It flags 88% of healthy twins at least once: 6.8 false Watch flags per healthy person in 90 days, about one every two weeks, against our pass mark of 1. A stricter setting cuts that to 2.2 and still catches 77% of declines within 21 days.
 - **The test scores the flag rule from our design spec.** The app's rule differs (Watch after 2 days outside the band), and the test doesn't run the app's own code yet.
 
 ![Detection test output](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/test-detection-suite.png)
@@ -217,7 +216,7 @@ NASA is building toward medical care for Moon and Mars crews that doesn't depend
 Next steps:
 
 1. Cut false alarms with a second, dedicated "classifier brain". Today MedGemma 4B, the model that writes replies, also labels each message. It labels 2 of 3 distress messages as emergencies, and because a general model isn't reliable enough to overrule the keyword list, look-alikes like "I don't have chest pain" are still escalated. A small model built only for these yes/no and pick-one decisions, still running on the laptop, could read negation reliably and tell distress from a self-harm emergency, with a clinician setting where that line goes. Reading its answers directly instead of having it write them as text would also make the check faster.
-2. Tune the flag rule to about one false alarm a month, and test the app's own code.
+2. Tune the flag rule toward our pass mark of one false alarm per astronaut in 90 days, and test the app's own code.
 3. Replace browser speech recognition with on-device speech recognition. Spoken replies already run on the device with Kokoro.
 4. Connect a real wearable over Bluetooth, starting with the standard heart-rate service.
 5. Have a flight surgeon review the knowledge library.
@@ -238,7 +237,7 @@ Each risk we weighed led to one design choice. The sections above describe how e
 - **No open NASA dataset has per-day crew data for these measures.** The crew is simulated and calibrated to published studies (see Field 7).
 - **Pain and skin problems can't be sensed.** A 3D body map lets the person show where, how bad and when, and makes a pain that keeps coming back visible.
 - **Earth is 3 to 22 minutes away and only sees passes.** The Ground console is built as a delayed view, and the crew acts on board first.
-- **Advice from Earth can't be a live chat.** Messages are held in transit until the light time has passed (simulated in our prototype), and Pedro reads them aloud and carries the reply back.
+- **Advice from Earth can't be a live chat.** Messages are held in transit until the light time has passed (simulated for now), and Pedro reads them aloud and carries the reply back.
 - **A crew should understand the delay, not just live with it.** The top bar states the distance and light time in NASA's terms, with plain-language notes.
 - **A tired astronaut learns a screen faster from their own numbers.** The guided tour is written from their data, by code.
 - **A robotic voice gets switched off.** Pedro uses a natural voice, and an open model keeps it working offline.
@@ -260,7 +259,7 @@ Each risk we weighed led to one design choice. The sections above describe how e
 - **sonner:** the "New message from Earth" notification.
 - **Node.js:** test suites and the crew simulator.
 - **HTML + headless Chrome:** the flow diagram above, and the PDF of our features document.
-- **Hardware:** one laptop, no sensors connected in the prototype (vitals are simulated). The demo runs on a MacBook M4 with 16 GB. The tests ran on a Windows laptop with an AMD Ryzen 5 7535U, with the model on its CPU (Ollama under WSL).
+- **Hardware:** one laptop, no sensors connected yet (vitals are simulated). The demo runs on a MacBook M4 with 16 GB. The tests ran on a Windows laptop with an AMD Ryzen 5 7535U, with the model on its CPU (Ollama under WSL).
 
 ### Run it yourself: setup and every setting
 
@@ -360,7 +359,7 @@ NASA communications research behind the light-time figures and the messages from
 - **[Mars Communications Disruption and Delay](https://www.nasa.gov/wp-content/uploads/2024/01/mars-communications-disruption-and-delay.pdf)**: a one-way delay of 21–23 minutes at most for a crewed Mars mission. With the closest approach (about 54.6 million km, just over 3 minutes), this sets our range of 3 to 22 minutes.
 - **[NASA/TM-20250003885](https://ntrs.nasa.gov/api/citations/20250003885/downloads/NASA%20TM20250003885.pdf)**, on communication delay research: "up to a 44-minute round-trip latency".
 - **[2024 Moon to Mars Architecture white paper](https://www.nasa.gov/wp-content/uploads/2024/02/10-2024-architecture-workshop-white-paper-mars-challenges.pdf)**: "just over three minutes, one-way" at closest approach.
-- **[Delay/Disruption Tolerant Networking](https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/)** (SCaN): how real messages between the crew and Earth would travel (our prototype simulates the delay only), now "an operational service in both NASA's Near Space Network and the Deep Space Network", with a DTN-enabled Mars relay orbiter planned for 2030. Our features document uses NASA's DTN graphic (credit NASA/Heather Monaghan).
+- **[Delay/Disruption Tolerant Networking](https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/)** (SCaN): how real messages between the crew and Earth would travel (Pedro simulates the delay only, for now), now "an operational service in both NASA's Near Space Network and the Deep Space Network", with a DTN-enabled Mars relay orbiter planned for 2030. Our features document uses NASA's DTN graphic (credit NASA/Heather Monaghan).
 
 NASA studies on the same problem, which shaped what Pedro collects:
 
@@ -417,4 +416,4 @@ NASA-funded studies used to calibrate the simulated crew data and the reaction t
 
 **Images:** all screenshots are of our own app and our own test output. The DTN graphic in our features document is NASA's (NASA/Heather Monaghan). `[TODO: source and licence of Pedro's portrait, web/public/companion/base.png]`
 
-No copyrighted material is used without permission. Pedro is a prototype, **not a medical device**, and its content has not been reviewed by a clinician.
+No copyrighted material is used without permission. Pedro is at an early stage, **not a medical device**, and its content has not been reviewed by a clinician.
