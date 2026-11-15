@@ -7,6 +7,7 @@ import { DEMO_DELAY_MIN, arrivedSince } from "@/lib/console/earth-notes";
 import { earthDistanceMkm, lightDelayMin } from "@/lib/console/ground";
 import { useConsole } from "./ConsoleProvider";
 import { PedroThumb, VegaAvatar, type VegaApi } from "./VegaAvatar";
+import { bestVoice } from "@/lib/console/voices";
 
 /* The Pedro bubble (bottom-right). Clicking it opens a small launcher instead of jumping to the
    Pedro page: "Guide me through this page" runs a scripted tour (written by code from the astronaut's own numbers, no AI), and
@@ -271,6 +272,7 @@ function useSpokenLine(text: string, voice: boolean, enabled = true) {
     if (voice && synth) {
       synth.cancel();
       const u = new SpeechSynthesisUtterance(text);
+      const v = bestVoice(synth.getVoices()); if (v) u.voice = v;
       u.rate = 1.02; u.pitch = 1.05;
       let gotBoundary = false;
       u.onstart = () => { if (!alive) return; setTalking(true); timer = window.setTimeout(() => { if (alive && !gotBoundary) typeOut(0); }, 700); };

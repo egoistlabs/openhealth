@@ -1,3 +1,5 @@
+import { bestVoice } from "../voices";
+import { kokoroClip, kokoroReady } from "../kokoro";
 /* Vega: the companion's 3D talking avatar.
    Ported from the team's "Vega Science Companion" prototype (three.js, built entirely in code, no model files).
    - character: head, glasses, lab coat and arms built from three.js geometry; ARKit-named blendshapes drive the face
@@ -477,6 +479,7 @@ class TextSpeech {
     // so a silent avatar (the corner thumbnail) being removed never cuts off another one
     const mine = this.active || this.queue.length > 0;
     this.token++; this.queue = []; this.segs = []; clearTimeout(this.timer);
+    this.kStop?.(); this.kStop = null; this.kPre = null;
     if (this.ttsOK && mine) speechSynthesis.cancel();
     if (this.active) { this.active = false; this.hooks.end?.(); }
   }
@@ -500,6 +503,25 @@ class TextSpeech {
       this._layout(0, performance.now());
       this.timer = setTimeout(() => tok === this.token && this._next(), this.tEnd - performance.now() + 280);
     };
+    /* Kokoro (offline neural voice, lib/console/kokoro.ts): synthesize the sentence, fit the mouth timing to
+       the clip's real length, and prepare the next sentence while this one plays. On failure the line falls
+       back to the browser voice below. */
+    if (!this.opts.silent && !this.noKokoro && kokoroReady()) {
+      const clipP = this.kPre && this.kPre.text === s ? this.kPre.p : kokoroClip(s, rate);
+      this.kPre = null;
+      if (this.queue[0]) { const p = kokoroClip(this.queue[0], rate); p.catch(() => {}); this.kPre = { text: this.queue[0], p }; }
+      clipP.then((clip) => {
+        if (tok !== this.token) return;
+        this.unitMs = 95; this._layout(0, 0);
+        this.unitMs = this.unitMs0 = 95 * (clip.duration * 1000) / Math.max(1, this.tEnd);
+        this._layout(0, performance.now());
+        this.kStop = clip.play(() => { if (tok === this.token) this.timer = setTimeout(() => tok === this.token && this._next(), 140); });
+      }).catch(() => {
+        if (tok !== this.token) return;
+        this.noKokoro = true; this.queue.unshift(s); this._next(); this.noKokoro = false;
+      });
+      return;
+    }
     if (!this.ttsOK || this.opts.silent) return freeRun();
     const u = this.utter = new SpeechSynthesisUtterance(s);
     if (this.opts.voice) u.voice = this.opts.voice;
@@ -582,14 +604,8 @@ class AudioLipSync {
   }
 }
 
-/* English voices, local ones first (they report word boundaries, which gives the tightest lip-sync). */
-function pickVoice(voices, name) {
-  const vs = voices.filter((v) => /^en/i.test(v.lang));
-  if (name) { const v = vs.find((x) => x.name === name); if (v) return v; }
-  const male = /male|david|guy|mark|george|daniel|ryan/i;
-  vs.sort((a, b) => (b.localService - a.localService) || (male.test(b.name) - male.test(a.name)));
-  return vs[0];
-}
+/* English voice: natural/neural voices first (see lib/console/voices.ts) */
+function pickVoice(voices, name) { return bestVoice(voices, name); }
 
 /* ───────────────────────── mount ───────────────────────── */
 /** Mount the avatar into `stage` (a sized element). hooks: { state, caption (each sentence as it starts), word (each word as it is said: { text, start } within the sentence), emotion, note, frame }. Returns the control API. */
