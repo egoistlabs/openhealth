@@ -2,10 +2,11 @@
 
 **For:** the team, and anyone checking how these features work before the demo.
 **Date:** 15 Nov 2026. **Rule we followed:** if we can't explain exactly how a feature works and cite why it matters, it's out. Section 10 lists what we cut. Section 6 has the workflows and section 7 the NASA studies.
+**Part C (sections 21–27) covers talking with Earth across the delay:** two-way messages between Earth and each astronaut, a "New message from Earth" notification that Pedro reads aloud, the Earth–Mars link in the top bar with NASA's light-time figures, Pedro's guided tour written from the astronaut's own data, a natural offline voice, and all three status levels in the demo crew.
 
 ---
 
-## 1. What's new
+## 1. Features at a glance
 
 | Feature | Who uses it | One-line job |
 |---|---|---|
@@ -15,7 +16,13 @@
 | **Escalations page** | Flight surgeon | What's open now, and a 14-sol log of how it got there |
 | **Pedro reports** | Flight surgeon | Each astronaut's check-in submission per sol, with Pedro's summary and the body map |
 | **Crew status (modal)** | Flight surgeon | One person in depth, comparison with Earth ranges, **Download PDF** |
-| **Brain update** | Pedro | 7 new knowledge files so Pedro can explain vitals, the body map and what reaches Earth |
+| **Pedro's brain** | Pedro | 7 knowledge files so Pedro can explain vitals, the body map and what reaches Earth |
+| **Messages from Earth** (§22) | Flight surgeon, astronaut | Two-way notes per astronaut per sol, held "in transit" for the light time, with replies passed back through Pedro |
+| **Earth notification** (§23) | Astronaut | A toast when a note from Earth reaches Mars. **Open message from Earth** has Pedro read it aloud at once |
+| **Earth–Mars link** (§21) | Astronaut, Ground | Top bar: distance from Earth, one-way and round-trip light time (NASA terms), with plain-language notes |
+| **Guided tour from your own data** (§24) | Astronaut | Pedro walks through the page using the astronaut's own statuses, flags and suggestions |
+| **Natural voice** (§25) | Astronaut | Natural browser voices first, plus Kokoro, an open neural voice that runs offline on the hab computer |
+| **Three status levels in the demo** (§26) | Flight surgeon | Pedro reports show Stable, Watch and Act side by side |
 
 All crew data is **simulated** and labelled "Simulated data" on every screen.
 
@@ -30,13 +37,17 @@ NASA expects crews far from Earth to "solve problems and identify solutions as a
 | **Wearable vitals** | Five overnight readings with a plain status, nothing to type | Every crew card shows all five. Urgent vitals reach Escalations by name | NASA: "Weightlessness alters blood circulation and how the heart and blood vessels function" ([NASA](https://www.nasa.gov/hrp/risks/)). An early infection pattern matters in a closed hab |
 | **3D body map** | Shows exactly where it hurts, how bad and when, by tap or voice. Repeats are visible and can be followed up | Sees the exact spot, rating and note, not "some pain" | NASA: weightlessness "can lead to dizziness, bone and muscle loss" ([NASA](https://www.nasa.gov/hrp/hazard-gravity-fields/)). Exercise to counter it can strain muscles |
 | **Pedro (offline AI)** | Answers "what does this mean, what can I do" with sources, even with no link to Earth | Fewer routine questions sent to Earth. Companion counts show how it is used | NASA: "a communication delay of up to 20 minutes one way" ([NASA](https://www.nasa.gov/hrp/hazard-distance-from-earth/)) |
-| **Red-flag check** | An emergency gets the "contact the crew medical officer now" message, from the keyword list or the AI safety label, and the model never writes that reply | The notice reaches Ground by name and time | An emergency can't wait for a model, or for a 40-minute round trip |
+| **Red-flag check** | An emergency gets the "contact the crew medical officer now" message, from the keyword list or the AI safety label, and the model never writes that reply | The notice reaches Ground by name and time | An emergency can't wait for a model, or for a round trip of up to 44 minutes |
 | **Crew view (in hab)** | The crew sees whether the team is drifting, without anyone's private numbers | Not used by Ground | A small crew shares one space for months. One person's slide reaches everyone |
 | **Ground dashboard** | Not used by the astronaut | Whole crew on one screen, built for delayed data: last downlink, light time, next pass | Tempus Pro work notes that "communication delays will become more significant" ([NASA](https://www.nasa.gov/reference/tempus-pro/)) |
 | **Escalations page** | Not used by the astronaut | One list of who needs attention, with a 14-sol log of how it got there | Earth can plan the next contact instead of reading raw data |
 | **Pedro reports + PDF** | Not used by the astronaut | Each day's submission per person, a summary written by code from the numbers, and a printable record for medical files | A clear written record supports care across a long mission |
 | **Earth comparison** | Not used by the astronaut | Puts the astronaut next to cited healthy-adult ranges, labelled "reference only" | Helps a non-specialist on Earth read numbers in context |
 | **Privacy rules** | Journals and their own words never leave. Each person chooses what to share | Gets what is needed to act: vitals, Act statuses, emergency notices, by name | Trust keeps people reporting honestly. Without it they stop using the tool |
+| **Messages from Earth** | Advice from the flight surgeon arrives as a notification and Pedro reads it aloud. A reply is one sentence spoken to Pedro | Writes short advice (with files) and sees each reply, with its send and arrival times | NASA's Deep Space Network carries data with a "store-and-forward approach to overcome latency and disruption challenges" ([NASA DTN](https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/)). Notes behave the same way: held, then delivered |
+| **Earth–Mars link** | Sees why Earth can't answer at once: "at least 34 min" to hear back today | Sees the same delay when writing advice | One-way delay of 21–23 minutes at most for a crewed Mars mission ([NASA](https://www.nasa.gov/wp-content/uploads/2024/01/mars-communications-disruption-and-delay.pdf)) |
+| **Guided tour** | Learns the screen from their own numbers, with a next step at the end | Not used by Ground | A crew far from Earth has to work the tools without a trainer on call |
+| **Natural voice** | Pedro sounds like a person, not a robot, and still works offline | Not used by Ground | A companion people don't want to listen to stops being used |
 
 
 ---
@@ -69,7 +80,7 @@ flowchart LR
   B --> C[(Hab computer<br/>Pedro runs here, offline)]
   C -->|seen at once| D[Astronaut<br/>Home screen + Pedro]
   C -->|queued| E[Relay pass<br/>scheduled downlink]
-  E -->|up to 20 min one way| F[Ground<br/>flight surgeon]
+  E -->|3 to 22 min one way| F[Ground<br/>flight surgeon]
 ```
 
 **In our prototype.** No device is connected. `web/src/lib/console/wearable.ts` generates one reading per person per sol:
@@ -131,7 +142,7 @@ Only what a source we checked says. Our prototype simulates the readings (see ab
 | Skin temperature | Measured by the worn device. The CSA's Bio-Monitor lists skin temperature | [CSA, Bio-Monitor](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp) |
 | Breathing rate | Measured by the worn device. The Bio-Monitor lists breathing rate and volume | [CSA, Bio-Monitor](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp) |
 
-**Getting the data in:** nobody types it. The device records overnight and syncs to the hab computer, where Pedro runs offline, so the astronaut sees the readings at once. Earth gets them in the next relay pass, up to 20 minutes later on Mars.
+**Getting the data in:** nobody types it. The device records overnight and syncs to the hab computer, where Pedro runs offline, so the astronaut sees the readings at once. Earth gets them in the next relay pass, 3 to 22 minutes later depending on where the planets are (section 21).
 
 **Demo line:** "These are simulated overnight readings, modelled on the CSA's Bio-Monitor on the ISS. Each is judged only against the astronaut's own last 14 nights, so Daniela's 66 bpm is normal for most people but urgent for her."
 
@@ -361,10 +372,15 @@ Each page below was opened and checked. Each line gives a short quote and what i
 - **Ground runs in the same browser as the crew screens.** There is no real downlink. The delay, passes and "delayed view" are modelled.
 - **Real body-map pins** reach Ground only from check-ins submitted on that device. Other crew show simulated pins, labelled as such.
 - **HRV from a wrist device is imprecise.** The Cleveland Clinic page says wrist trackers "usually aren't sensitive enough to detect HRV accurately", so we only flag runs of nights against the person's own normal.
+- **Messages from Earth arrive within 1 minute in the demo,** not after the real light time, so a judge doesn't wait 17 minutes. Every screen that mentions it says so and shows the real delay beside it. The sample notes keep the real delay.
+- **The light time is a model, not an ephemeris.** It follows the 780-day Earth–Mars cycle between the closest and farthest distances; it is not calculated from real planet positions.
+- **We do not implement DTN.** Notes are held and delivered like DTN's store-and-forward, but inside one browser.
 
 ## 9. Sources
 
 - NASA HRP, [5 Hazards](https://www.nasa.gov/hrp/hazards/), [Risks](https://www.nasa.gov/hrp/risks/), [Distance from Earth](https://www.nasa.gov/hrp/hazard-distance-from-earth/)
+- NASA SCaN, [Delay/Disruption Tolerant Networking](https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/); [Mars Communications Disruption and Delay](https://www.nasa.gov/wp-content/uploads/2024/01/mars-communications-disruption-and-delay.pdf); [NASA/TM-20250003885, Communication Delay research](https://ntrs.nasa.gov/api/citations/20250003885/downloads/NASA%20TM20250003885.pdf); [2024 Moon to Mars Architecture white paper](https://www.nasa.gov/wp-content/uploads/2024/02/10-2024-architecture-workshop-white-paper-mars-challenges.pdf)
+- Kokoro-82M text-to-speech, [kokoro-js](https://www.npmjs.com/package/kokoro-js), Apache-2.0
 - CSA, [Bio-Monitor](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp)
 - MedlinePlus, [Vital signs](https://medlineplus.gov/ency/article/002341.htm), [Pulse oximetry](https://medlineplus.gov/lab-tests/pulse-oximetry/)
 - CDC, [About sleep](https://www.cdc.gov/sleep/about/index.html)
@@ -385,7 +401,6 @@ Each of these was in the app or a draft. We couldn't find a source that says it,
 | Sleep "7–9 h" | The CDC says "7 or more" for adults 18–60 |
 | CO₂ "makes you breathe faster and causes headaches" | NASA's hazard pages don't say this |
 | Low back pain from spine lengthening | NASA's spine article doesn't say this |
-| Mars delay "3 to 22 min" | NASA says "up to 20 minutes one way". The model is now capped at 20 |
 | Muscle, joint and skin first-aid brain files | The first-aid thresholds were unsourced. The body-map file covers how to report instead |
 
 ---
@@ -403,8 +418,9 @@ Exact rules, taken from the code. Use this to answer "how does it work?" questio
 | Data | Made by code from a seed: the same sol always gives the same values. No real crew data |
 | Calibration | Average sleep 6.09 h a night, from NASA-funded Barger et al. 2014 ([PubMed](https://pubmed.ncbi.nlm.nih.gov/25127232/)). Day-to-day movement is our own assumption, listed in `docs/tech-spec/eval-design.md` |
 | Hab schedule | First duty 08:30, lights dim 22:30 |
-| Relay passes (Ground) | 06:30, 12:30, 18:30 and 23:30 LMST. One-way light time modelled at 3 to 20 min |
-| Demo stories | Lindqvist: workload at Act. Reyes: engagement at Act and an early-infection vitals pattern. Sato: HRV falling, reaction time slowing |
+| Relay passes (Ground) | 06:30, 12:30, 18:30 and 23:30 LMST. One-way light time modelled at 3 to 22 min (section 21); 17 min on Sol 142 |
+| Mission clock | Starts at 14:26 LMST and runs in real minutes. Every open tab shares the same start, so an Astronaut tab and a Ground tab agree |
+| Demo stories | Okafor: Stable. Sato: Watch (sleep, sleep timing and reaction time, with HRV and resting heart rate drifting). Lindqvist: workload at Act. Reyes: engagement at Act and an early-infection vitals pattern |
 | Roles ("View as") | Astronaut or Ground |
 | Mission timeline | The strip on the far left. Drag it to any past sol and every screen recomputes as of that sol |
 
@@ -464,13 +480,17 @@ flowchart TD
 - **Wearable strip:** the five vitals, with how long until Earth sees them.
 - **Body card:** front and back pictures with a dot per mark. Details opens the marks, where any can be flagged for follow-up.
 - **Alerts and Mission log:** side panels that open beside the page.
+- **Top bar (every screen):** the Earth–Mars link with distance and light time (section 21).
+- **Notification:** "New message from Earth" when a note arrives (section 23).
 
 ## 16. Pedro, the companion
 
 - **Runs on the laptop:** MedGemma 4B (Google, open weights) through Ollama, with no internet needed. An optional Claude API comparison mode is off by default.
 - **Knowledge:** 29 active files in `brain/` (reference, procedures, measures), each with a source and who approved it.
 - **Pipeline:** see 6.2. Keyword checks and an AI safety label run side by side. The model can add a safety flag but never clear one. Code makes every safety decision and handles every number.
-- **Voice:** speech in and out through the browser. Every spoken line also appears as text.
+- **Voice:** speech in and out. Pedro speaks with the most natural voice available, or with Kokoro running on the device (section 25). Every spoken line also appears as text.
+- **Messages from Earth:** Pedro reads new notes aloud and passes a reply back (section 22).
+- **Guided tour:** "Guide me through this page" from the Pedro bubble (section 24).
 - **Tested by 93 questions:** 41 answerable, 19 boundary, 11 conversation, 10 decline, 5 red-flag, 3 support.
 
 ## 17. Settings and sharing (astronaut)
@@ -479,6 +499,7 @@ flowchart TD
 |---|---|---|
 | Tone | Gentle / Direct | How flags and suggestions are worded |
 | Voice | On / Off | Pedro speaks aloud. Text is always shown |
+| Voice engine | Browser voice / Natural (Kokoro) | Kokoro downloads once, then speaks offline. **Test voice** plays a sample line |
 | Sharing | Private / Share aggregates, plus a toggle per measure | Which measures reach the crew view (as aggregates) and Ground (with values) |
 
 ## 18. Crew view (inside the hab)
@@ -495,6 +516,7 @@ flowchart TD
 - **Draft downlink summary:** the AI writes a short read of crew-level numbers only, and any number it invents is caught and replaced.
 - **Companion activity:** counts from Pedro's local turn log, such as questions asked and answered, "not on board" replies and escalations. Never the questions themselves.
 - **Brain on board:** the brain version on the hab and the latest eval runs, which Earth checks before sending a new knowledge package.
+- **Advice from Earth:** in Pedro reports, a panel per astronaut to write today's advice (quick-advice chips, up to 3 files of 10 MB), see each note's transit status, and read replies. **View all threads** opens every thread with a sol calendar (section 22).
 
 ## 20. How we test it
 
@@ -505,6 +527,174 @@ The details are in the submission ("Does it work").
 | Detection | Simulated crew, 90 days, a healthy twin for every declining person | Pedro's rule caught 98% of hidden declines, with too many false alarms (88% of healthy twins flagged) |
 | Emergency | Red-flag phrases | All 5 listed phrases escalated. On sealed real-world wording, only 4 of 32. The phrase list is too narrow |
 | Answers | 93 questions on MedGemma 4B | See the latest report in `brain/evals/results/` |
+
+---
+
+# Part C: Talking with Earth
+
+A crew on Mars can't call Earth and wait on the line. Everything in this part starts from that fact: how far Earth is, how long a message takes, and what Pedro does so the astronaut is never left waiting.
+
+![NASA graphic: Delay/Disruption Tolerant Networking linking ground stations on Earth, Earth and Moon relays, a waypoint near Mars and astronauts on Mars](img/nasa-dtn-interplanetary-internet.png)
+
+*Delay/Disruption Tolerant Networking (DTN) enables the use of multiple paths and providers to efficiently deliver data. Credit: NASA/Heather Monaghan ([NASA DTN](https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/)).*
+
+**Why this matters.** NASA's page on DTN says "Space communications are subject to frequent delays and the unavailability of end-to-end links". DTN "uses a store-and-forward approach to overcome latency and disruption challenges": each node can store data "until the next node becomes available", "similar to how emails are saved in outboxes until a network connection is established". With "the completion of the agency's multi-center DTN Project in January 2026", "DTN is now an operational service in both NASA's Near Space Network and the Deep Space Network", and NASA plans "a Mars network anchored by a DTN-enabled Mars relay orbiter planned to be operational by 2030" ([NASA DTN](https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/)).
+
+Pedro's messages behave the same way: a note is held "in transit" for the light time, then delivered. Nothing is lost while it travels, and each side can see where a message is. We model this in the app; we don't run DTN itself (section 8).
+
+## 21. The Earth–Mars link and light time
+
+### The numbers (NASA terms)
+
+| Term | Meaning | Range over a mission | Sol 142 in the demo |
+|---|---|---|---|
+| **Distance from Earth** | How far Earth is from Mars that sol | About 54.6 million km (closest) to 401 million km (farthest) | 297 million km (about 185 million miles) |
+| **One-way light time (OWLT)** | How long a radio message takes to cross that distance, either way | About 3 to 22 min | 17 min |
+| **Round-trip light time (RTLT)** | A message there plus the answer back: the shortest time to hear back | About 6 to 44 min | 34 min |
+
+Sources: NASA's Mars communications paper gives a one-way delay of 21–23 minutes at most for a crewed mission ([NASA](https://www.nasa.gov/wp-content/uploads/2024/01/mars-communications-disruption-and-delay.pdf)). A NASA technical memorandum describes "up to a 44-minute round-trip latency" ([NASA/TM-20250003885](https://ntrs.nasa.gov/api/citations/20250003885/downloads/NASA%20TM20250003885.pdf)). A NASA architecture white paper gives "just over three minutes, one-way" at closest approach ([NASA](https://www.nasa.gov/wp-content/uploads/2024/02/10-2024-architecture-workshop-white-paper-mars-challenges.pdf)). Check: light covers 17.99 million km a minute (299,792.458 km/s × 60), so 54.6 million km is 3.0 min and 401 million km is 22.3 min.
+
+### How the app works it out (code, not AI)
+
+`web/src/lib/console/ground.ts`:
+
+1. The sol's place in the Earth–Mars cycle (about 780 days, 767 sols) gives a phase.
+2. Distance = 54.6 + (401 − 54.6) × (1 − cos phase) / 2 million km.
+3. One-way light time = distance ÷ 17.99, rounded to whole minutes. Round trip = 2 × one-way.
+
+The same numbers are used everywhere: the top bar, the Home wearable strip, Ground's delayed view, and the arrival time of every sample note.
+
+### What the astronaut sees in the top bar
+
+    Distance from Earth 297 million km · One-way light time 17 min ⓘ · Round-trip 34 min ⓘ   demo: 1 min
+
+- **One line, next to the mission clock,** on every screen. Hovering it gives the full explanation, in km and miles.
+- **ⓘ notes in plain words.** Round-trip: "the shortest time between asking Earth something and hearing back. Your message takes 17 min to reach Earth and the answer 17 min to come back, so at least 34 min, plus however long Earth takes to write the answer. That is why anything urgent is handled on board, with Pedro and the crew medical officer, instead of waiting for Earth."
+- **demo: 1 min** says that in this demo messages arrive within a minute (section 22).
+- Pick another sol on the timeline and the distance and delays change with it.
+
+## 22. Messages from Earth, and replies
+
+### How a message travels
+
+```mermaid
+sequenceDiagram
+  participant FS as Flight surgeon (Earth)
+  participant L as Link (light time)
+  participant H as Hab computer
+  participant P as Pedro
+  participant A as Astronaut
+  FS->>L: Writes advice for today (text + up to 3 files)
+  Note over L: "In transit · arrives 14:44"<br/>real: one-way light time<br/>demo: 1 min
+  L->>H: Note arrives on Mars
+  H->>A: Notification: New message from Earth
+  A->>P: Open message from Earth
+  P->>A: Reads the new notes aloud, then offers to pass a reply on
+  A->>P: Says the reply
+  P->>L: Reply sent, "In transit to Earth"
+  L->>FS: "Reached Earth 14:46 · via Pedro"
+```
+
+### Step by step
+
+1. **Ground writes.** In Pedro reports, the flight surgeon picks an astronaut and writes today's advice, or starts from a quick-advice chip (Rest + fluids, Check temp, See the CMO, Lighter workload, 8 h sleep). Up to 3 files (PDF, image or text, 10 MB each) can be attached. Notes can only be written for today.
+2. **In transit.** The note shows "In transit · arrives HH:MM". The astronaut can't see it yet.
+3. **Arrived.** Once the time has passed, it shows "Arrived HH:MM" on Ground, and the astronaut gets the notification (section 23).
+4. **Pedro reads it.** Pedro sums up what arrived since the last check-in, written by code from the notes (no AI), and the conversation log shows each note in full with its files.
+5. **Reply.** Pedro asks "Do you have a message for the flight surgeon? I can pass it on." The astronaut's next message is the reply, and Pedro says when it reaches Earth. Saying "no" sends nothing.
+6. **Ground reads the reply.** It shows under the note as "Reply from Daniela · Reached Earth HH:MM · via Pedro". Until then it shows "In transit to Earth".
+
+**View all threads** opens every thread, filtered by astronaut and by a sol calendar.
+
+### The demo delay: 1 minute
+
+In the demo, notes and replies arrive **within 1 minute** (`DEMO_DELAY_MIN` in `web/src/lib/console/earth-notes.ts`), so a judge can watch a full exchange. Every place that mentions it shows the real delay too: Ground's note box says "Arrives within 1 min in this demo · real Earth–Mars delay today is ~17 min", and Pedro says "It reaches Earth within 1 minute in this demo; the real light delay today is about 17 minutes." The built-in sample notes keep the real delay.
+
+### Sample threads in the demo
+
+Each astronaut has a short thread that fits their story. All of it is simulated.
+
+| Astronaut | Earth wrote | They replied |
+|---|---|---|
+| Adaeze Okafor | Sol 139: measures steady, thanks for logging. Sol 142: calf cramp, stretch before the treadmill harness run | "Thanks. Logging takes two minutes after dinner…" · "Will do. Stretching before every harness run from today." |
+| Mattias Lindqvist | Sol 140: workload climbing, move a task. Sol 141: shoulder, no overhead lifts (care sheet attached). Sol 142: workload at Act, protect 8 h sleep | Moves the rover filter swap to Sol 144 · the crew medical officer will look tonight · "Lights out at 22:00 tonight." |
+| Kenji Sato | Sol 140: slow reaction time, hourly breaks. Sol 142: HRV low for three nights, lighter workload | Trying hourly breaks · tomorrow's core logging cut to half a shift |
+| Daniela Reyes | Sol 141: skin temperature up, check with the kit thermometer. Sol 142: temperature and heart rate up, see the CMO (checklist attached) | "Checked: 37.6 °C…" · "Spoke to the crew medical officer. Resting in quarters this afternoon…" |
+
+### Privacy
+
+Notes and replies are between one astronaut and the flight surgeon. The crew view never shows them. Pedro passes on only what the astronaut says as the reply, never the rest of the conversation.
+
+## 23. "New message from Earth" notification
+
+- **When:** the moment a note from Earth reaches Mars, not when Ground presses send.
+- **What it shows:** "New message from Earth", the message (first 3 lines), and a line with the sender, send time and arrival time, plus any attached files.
+- **Buttons:** **Dismiss**, and **Open message from Earth**, which opens Pedro, who reads the new messages aloud at once and then offers to pass a reply on.
+- **Rules:** one notification per message, per astronaut, kept until the astronaut acts on it. Messages already on board the first time an astronaut is viewed don't pop up, so the demo doesn't open with a pile of them. Only the astronaut the note is for sees it, never in the Ground view and never when looking back at a past sol.
+- **Accessibility:** screen readers announce it.
+
+Code: `web/src/components/console/EarthToast.tsx` (built with the open-source `sonner` toast library).
+
+## 24. Pedro's guided tour, from your own data
+
+The Pedro bubble → **Guide me through this page** walks through the screen with a spotlight, a speech bubble and Pedro speaking. The lines are **written by code from the astronaut's own numbers** for the sol being viewed. No AI writes them, so Pedro can't make anything up.
+
+Home tour, as Kenji Sato on Sol 142:
+
+| # | Where | What Pedro says (example) |
+|---|---|---|
+| 1 | You | "Hi Kenji… Your status today is Watch. Something has drifted from your normal for 2 or more days. Worth a look, not a worry." |
+| 2 | Check-in | Done already, still open, or "check-ins can only be done for today" when looking back |
+| 3–4 | Check-in | How it works, and why: compared with your own last 14 sols; 2 days out is Watch, 5 is Act |
+| 5 | Measures | "3 are outside your normal right now. Sleep 1h10m under your normal over 3 nights. Reaction time 43 ms slower than usual on 2 tests." |
+| 6 | Measures | Click for history, drag to reorder |
+| 7 | Flags | How many are open, and the first thing to try: "Block an 8-hour sleep window tonight." |
+| 8 | Earth–Mars link | "about 297 million km… 17 minutes one way… at least 34 minutes" to hear back; the 1-minute demo; the ⓘ notes |
+| 9 | Messages from Earth | The notification, Open message from Earth, replying, and how many arrived today |
+| 10–11 | Timeline, Alerts and Mission log | How to look back at any sol |
+| 12 | Settings | "You share N of 7 measures. Values you do not share never leave the hab; only an Act status reaches Earth, by name." |
+| 13 | Pedro | A personal next step: today's check-in, the top suggestion, or "You are all set." |
+
+Steps for parts of the page that aren't on screen are skipped. The Crew tour and the short tour on other screens also explain the Earth–Mars link.
+
+Code: `web/src/components/console/PedroGuide.tsx`.
+
+## 25. Pedro's voice
+
+Pedro picks the most natural voice available, so he sounds like a person rather than a robot.
+
+| | Browser voice (default) | Natural (Kokoro), opt-in |
+|---|---|---|
+| What it is | The best voice the browser offers. Natural or neural voices first (Edge's "Online (Natural)" voices, Chrome's Google voices), then the installed ones | Kokoro-82M, an open neural text-to-speech model (Apache-2.0), run by `kokoro-js` |
+| Where it runs | Natural voices use the browser maker's online service; installed voices run on the device | On the hab computer, in the browser (WebGPU, or WebAssembly as a fallback). No server |
+| Internet | Natural voices need it | One download of the model the first time (Settings shows progress), then none |
+| Fits a Mars hab | As a fallback | Yes: the voice keeps working with no link to Earth |
+
+- **Turn it on:** Settings → Voice engine → **Natural (Kokoro)**. **Test voice** plays a sample line with the voice in use.
+- **Safe fallback:** until Kokoro is ready, or if it fails, Pedro uses the browser voice. Nothing stops working.
+- **Lip-sync and captions:** Pedro's mouth and the live captions are timed to the real length of each spoken sentence. The next sentence is prepared while the current one plays.
+
+Code: `web/src/lib/console/voices.ts`, `web/src/lib/console/kokoro.ts`, `web/src/lib/console/vega/engine.js`.
+
+## 26. All three status levels in the demo crew
+
+Pedro reports show every level side by side on Sol 142: **Adaeze Stable** (green), **Kenji Watch** (amber), **Mattias and Daniela Act** (red). Kenji's simulated heart rate and HRV drift gently enough to stay at Watch (about 1.5 spreads from his normal; Act starts at 2), matching his sleep, sleep timing and reaction-time measures. The badges: Act in red with ■, Watch in amber with ▲, Stable in green with ●.
+
+## 27. Where it lives in the code
+
+| File | What it does |
+|---|---|
+| `web/src/lib/console/ground.ts` | Distance and light-time model (54.6–401 million km, 3–22 min), with NASA sources |
+| `web/src/lib/console/earth-notes.ts` | Notes and replies, sample threads, `DEMO_DELAY_MIN = 1` for both directions |
+| `web/src/components/console/EarthToast.tsx` | The "New message from Earth" notification |
+| `web/src/components/console/Shell.tsx`, `web/src/app/console.css` | Earth–Mars link in the top bar, ⓘ notes |
+| `web/src/components/console/ConsoleProvider.tsx` | The mission clock, shared by every tab |
+| `web/src/components/console/CompanionScreen.tsx` | Pedro reads Earth's messages and passes replies back; opening from the notification starts this at once |
+| `web/src/components/console/GroundReports.tsx` | Advice from Earth panel, all threads, transit and reply status |
+| `web/src/components/console/PedroGuide.tsx` | The guided tour, written from the astronaut's own data |
+| `web/src/lib/console/voices.ts`, `kokoro.ts`, `vega/engine.js`, `SettingsDialog.tsx` | Voice picker, Kokoro, Voice engine setting |
+| `web/src/lib/console/wearable.ts` | Simulated wearable vitals for each astronaut |
+| Packages | `sonner` (notifications), `kokoro-js` (offline voice) |
 
 ## Links (full URLs)
 
@@ -529,3 +719,9 @@ Every link in this document, printed in full so it still works on paper.
 - 5 Hazards: <https://www.nasa.gov/hrp/hazards/>
 - About sleep: <https://www.cdc.gov/sleep/about/index.html>
 - PubMed: <https://pubmed.ncbi.nlm.nih.gov/25127232/>
+- NASA DTN: <https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/>
+- NASA, Mars Communications Disruption and Delay: <https://www.nasa.gov/wp-content/uploads/2024/01/mars-communications-disruption-and-delay.pdf>
+- NASA/TM-20250003885: <https://ntrs.nasa.gov/api/citations/20250003885/downloads/NASA%20TM20250003885.pdf>
+- NASA, 2024 Moon to Mars Architecture white paper: <https://www.nasa.gov/wp-content/uploads/2024/02/10-2024-architecture-workshop-white-paper-mars-challenges.pdf>
+- DTN graphic (NASA/Heather Monaghan): <https://www.nasa.gov/wp-content/uploads/2023/02/DTN-Waypoint-Updated-Graphic-FINAL_01.png>
+- kokoro-js: <https://www.npmjs.com/package/kokoro-js>

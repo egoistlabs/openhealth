@@ -2,7 +2,7 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { COMPANION_NAME, MISSION, P, crewById, flagCopy, hasBaseline, overall, type MeasureKey, type State } from "@/lib/console/data";
+import { COMPANION_NAME, P, crewById, flagCopy, hasBaseline, overall, type MeasureKey, type State } from "@/lib/console/data";
 import { DEMO_DELAY_MIN, arrivedSince } from "@/lib/console/earth-notes";
 import { earthDistanceMkm, lightDelayMin } from "@/lib/console/ground";
 import { useConsole } from "./ConsoleProvider";
@@ -49,7 +49,7 @@ const TOURS: Array<{ match: (p: string) => boolean; title: string; steps: Script
       { sel: "[data-slot='changelog-timeline']", text: (c) => c.flags.length
         ? `Your flags. ${c.open ? (c.open === 1 ? "1 flag is still open." : `${c.open} flags are still open.`) : "You have marked them all done."} A first thing to try: ${c.flags[0].action} When you have tried a suggestion, mark it done.`
         : "Your flags. When a measure drifts from your normal it shows up here with something small to try. Nothing is open right now." },
-      { sel: ".hdr__earth", text: (c) => `This line is the distance to Earth: about ${c.distMkm} million km on this sol. A message takes ${c.delay} minutes one way, so asking Earth something and hearing back takes at least ${2 * c.delay} minutes. In this demo messages arrive within ${DEMO_DELAY_MIN} minute. The ship shows how far through the ${MISSION.totalSols}-sol mission you are.` },
+      { sel: ".hdr__earth", text: (c) => `This is the distance to Earth: about ${c.distMkm} million km on this sol. A message takes ${c.delay} minutes one way, so asking Earth something and hearing back takes at least ${2 * c.delay} minutes. In this demo messages arrive within ${DEMO_DELAY_MIN} minute. The ⓘ buttons explain each term.` },
       { sel: "#nav a[href='/companion']", text: (c) => `When the flight surgeon writes to you, a notification pops up at the top of the screen. Press Open message from Earth and I read it to you here, then I can pass your reply back.${c.earthToday ? ` ${plural(c.earthToday, "message")} from Earth arrived today.` : ""}` },
       { sel: "#spine", text: "The mission timeline. Drag it, or use the arrow keys, to look back at any sol. Everything on the page then shows that day." },
       { sel: ".nav__bottom", text: "Alerts and the Mission log open here, beside the page. Alerts are your open flags; the log is everything that happened, sol by sol." },
