@@ -8,6 +8,7 @@
 - [ ] Each teammate adds any SI tools they used that aren't listed yet in FIELD 6, and says which of their commits used SI without a `Co-Authored-By` line.
 - [ ] Confirm where Pedro's portrait (`web/public/companion/base.png`) came from. If an SI tool made it, it needs a **visible watermark** under the rules (see FIELD 6), and its source and licence go in FIELD 8.
 - [ ] The images below use GitHub links, so they only work once `docs/product/submission/` is pushed to `main`. Otherwise, upload the PNGs from this folder straight onto the Project page (JPG/PNG up to 10 MB).
+- [ ] If the images don't load from GitHub, upload `nasa-five-hazards.png` with the other PNGs.
 - [ ] Retake the four app screenshots: the current ones still show the old OpenHealth name. Add new ones for the body map, the Ground dashboard and Pedro reports, the "New message from Earth" notification, the Advice from Earth threads, and the top bar with the distance and light time.
 - [ ] Rerun `npm run evals` after the brain update (7 new files, 22 new questions) and put the new score in FIELD 5 "Answer test".
 - [ ] Decide how the summary reports the 98%: the detection test scores the design-spec version of the flag rule, not the app's own code (see FIELD 5, "Does it work"). Either point the test at the app's rule and rerun it, or reword the summary.
@@ -47,6 +48,8 @@ https://github.com/egoistlabs/openhealth
 ### The problem: isolation wears crews down in ways they can't see, and Earth is too far away to see it for them
 
 Isolation is one of NASA's five hazards of human spaceflight ([NASA HRP](https://www.nasa.gov/hrp/hazards/)). NASA's research finds that "the more restricted the space, and the less contact with people outside the environment, the more likely humans are to develop behavioral or cognitive conditions or psychiatric disorders" ([NASA](https://www.nasa.gov/humans-in-space/the-human-body-in-space/)).
+
+![NASA's "5 Hazards of Human Spaceflight" page, listing isolation and confinement as one of the five hazards (screenshot of nasa.gov/hrp/hazards, 15 Nov 2026)](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/nasa-five-hazards.png)
 
 Those problems start with small signs:
 
@@ -381,6 +384,6 @@ NASA-funded studies used to calibrate the simulated crew data and the reaction t
 
 **Open-source software:** Next.js, React, TypeScript, Tailwind CSS, Radix UI, lucide-react, Three.js, Vercel AI SDK, Zod, Node.js, sonner, kokoro-js. All are used under their open-source licences, which are listed in `web/package.json`.
 
-**Images:** all screenshots are of our own app and our own test output. The DTN graphic in our features document is NASA's (NASA/Heather Monaghan). `[TODO: source and licence of Pedro's portrait, web/public/companion/base.png]`
+**Images:** the app screenshots are of our own app and our own test output. One screenshot shows NASA's public [5 Hazards of Human Spaceflight](https://www.nasa.gov/hrp/hazards/) page, unedited apart from cropping, with no NASA logo. The DTN graphic in our features document is NASA's (NASA/Heather Monaghan). `[TODO: source and licence of Pedro's portrait, web/public/companion/base.png]`
 
 No copyrighted material is used without permission. Pedro is at an early stage, **not a medical device**, and its content has not been reviewed by a clinician.
