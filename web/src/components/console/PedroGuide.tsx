@@ -2,51 +2,81 @@
 
 import { usePathname, useRouter } from "next/navigation";
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
-import { COMPANION_NAME } from "@/lib/console/data";
+import { COMPANION_NAME, MISSION, P, crewById, flagCopy, hasBaseline, overall, type MeasureKey, type State } from "@/lib/console/data";
+import { DEMO_DELAY_MIN, arrivedSince } from "@/lib/console/earth-notes";
+import { earthDistanceMkm, lightDelayMin } from "@/lib/console/ground";
 import { useConsole } from "./ConsoleProvider";
 import { PedroThumb, VegaAvatar, type VegaApi } from "./VegaAvatar";
 
 /* The Pedro bubble (bottom-right). Clicking it opens a small launcher instead of jumping to the
-   Pedro page: "Guide me through this page" runs a scripted tour (static text, no AI), and
+   Pedro page: "Guide me through this page" runs a scripted tour (written by code from the astronaut's own numbers, no AI), and
    "Ask Pedro a question" goes to the Pedro page (a typed question is sent on arrival). */
 
 type Step = { sel: string; text: string };
+/* What a tour line may use: this astronaut's own numbers for the sol being viewed (worked out by code,
+   never by a model, so nothing is invented). */
+type TourCtx = {
+  first: string; sol: number; today: boolean; checked: boolean; overall: State; hasBase: boolean;
+  flags: Array<{ key: MeasureKey; what: string; action: string; state: State }>; open: number;
+  shared: number; delay: number; distMkm: number; earthToday: number;
+};
+type Line = string | ((c: TourCtx) => string);
+type ScriptStep = { sel: string; text: Line };
 
-// Static tour scripts per screen. Steps whose element is not on screen are skipped.
-const TOURS: Array<{ match: (p: string) => boolean; title: string; steps: Step[] }> = [
+const STATUS_LINE: Partial<Record<State, string>> = {
+  normal: "Stable. Everything you log sits inside your own normal",
+  watch: "Watch. Something has drifted from your normal for 2 or more days. Worth a look, not a worry",
+  act: "Act. Something has been outside your normal for 5 or more days, so it is time to do something about it, and Earth is told by name",
+};
+const plural = (n: number, one: string, many = `${one}s`) => `${n} ${n === 1 ? one : many}`;
+
+// Tour scripts per screen. Steps whose element is not on screen are skipped. Lines can read the astronaut's data.
+const TOURS: Array<{ match: (p: string) => boolean; title: string; steps: ScriptStep[] }> = [
   {
     match: (p) => p === "/", title: "Home",
     steps: [
-      { sel: ".idn-wrap", text: "This is you: your role, age, blood type and how you are doing against your own normal." },
-      { sel: ".cicard", text: "This is your daily check-in. Once a day we have a quick talk, about 2 minutes, and it keeps your personal baseline up to date." },
-      { sel: ".cicard", text: "I ask when you slept and woke, then you tap anywhere that hurts on a body map. Then your mood, how heavy the day was, how well the crew worked together, and whether you shared a meal. Then an optional reaction game." },
-      { sel: ".cicard", text: "Why it matters: every answer is compared with your own last 14 sols, never with other crew. Small drifts show up early as Watch flags, so you can act before they add up." },
-      { sel: ".cicard", text: "You can tap the answers or just talk to me in plain words. Everything stays private unless you choose to share totals with the crew." },
-      { sel: ".mgrid", text: "Today's measures. Click any card to see its full history. Drag the grip to reorder." },
-      { sel: "[data-slot='changelog-timeline']", text: "Your flags. Hover a row to read it, click to pin it, and mark the suggestion done." },
-      { sel: "#spine", text: "The mission timeline. Drag it to look back at any sol." },
-      { sel: ".nav__bottom", text: "Alerts and the Mission log open here, beside the page." },
+      { sel: ".idn-wrap", text: (c) => `Hi ${c.first}. This card is you: your role, age and blood type. ${c.hasBase ? `Your status ${c.today ? "today" : `on Sol ${c.sol}`} is ${STATUS_LINE[c.overall] ?? "still being worked out"}.` : "I am still building your baseline: after 3 check-ins I start comparing you with your own normal."}` },
+      { sel: ".cicard", text: (c) => c.today
+        ? (c.checked ? "You have already checked in today. Thank you: your answers are already in today's numbers below." : "Your check-in for today is still open. It takes about 2 minutes, and it keeps your personal baseline up to date. Press start whenever you are ready.")
+        : `You are looking back at Sol ${c.sol}. Check-ins can only be done for today; pick Today on the timeline to get back.` },
+      { sel: ".cicard", text: "How it works: I ask when you slept and woke, then you tap anywhere that hurts on a body map and say how bad it is. Then your mood, how heavy the day was, how well the crew worked together and whether you shared a meal. Last, an optional reaction game. Skip any question you like." },
+      { sel: ".cicard", text: "Why it matters: every answer is compared with your own last 14 sols, never with the rest of the crew. Two days outside your normal is a Watch, five is an Act. Small drifts show up early, so you can act before they add up." },
+      { sel: ".mgrid", text: (c) => c.flags.length
+        ? `These are your seven measures. ${c.flags.length === 1 ? "One is" : `${c.flags.length} are`} outside your normal right now. ${c.flags.slice(0, 2).map((f) => `${f.what}.`).join(" ")}`
+        : "These are your seven measures: sleep, sleep timing, reaction time, mood, workload, teamwork and engagement. All of them sit inside your own normal right now." },
+      { sel: ".mgrid", text: "Click any card to see its full history against your normal band. Drag a card by its grip to put the ones you care about first; the order is remembered." },
+      { sel: "[data-slot='changelog-timeline']", text: (c) => c.flags.length
+        ? `Your flags. ${c.open ? (c.open === 1 ? "1 flag is still open." : `${c.open} flags are still open.`) : "You have marked them all done."} A first thing to try: ${c.flags[0].action} When you have tried a suggestion, mark it done.`
+        : "Your flags. When a measure drifts from your normal it shows up here with something small to try. Nothing is open right now." },
+      { sel: ".hdr__earth", text: (c) => `This line is the distance to Earth: about ${c.distMkm} million km on this sol. A message takes ${c.delay} minutes one way, so asking Earth something and hearing back takes at least ${2 * c.delay} minutes. In this demo messages arrive within ${DEMO_DELAY_MIN} minute. The ship shows how far through the ${MISSION.totalSols}-sol mission you are.` },
+      { sel: "#nav a[href='/companion']", text: (c) => `When the flight surgeon writes to you, a notification pops up at the top of the screen. Press Open message from Earth and I read it to you here, then I can pass your reply back.${c.earthToday ? ` ${plural(c.earthToday, "message")} from Earth arrived today.` : ""}` },
+      { sel: "#spine", text: "The mission timeline. Drag it, or use the arrow keys, to look back at any sol. Everything on the page then shows that day." },
+      { sel: ".nav__bottom", text: "Alerts and the Mission log open here, beside the page. Alerts are your open flags; the log is everything that happened, sol by sol." },
+      { sel: ".hdr__set", text: (c) => `Settings: how I talk to you, my voice, and what you share. You share ${c.shared} of 7 measures. Values you do not share never leave the hab; only an Act status reaches Earth, by name.` },
+      { sel: ".pg .orb", text: (c) => `That is the tour. ${!c.today ? "Pick Today on the timeline to get back to the present." : !c.checked ? "Next step: your check-in for today." : c.flags.length ? `Next step: ${c.flags[0].action}` : "You are all set. Tap me any time to ask a question."}` },
     ],
   },
   {
     match: (p) => p.startsWith("/crew"), title: "Crew",
     steps: [
       { sel: ".roster", text: "Your crew. Names and specialties only, never anyone's health values." },
-      { sel: ".ctiles", text: "The team at a glance: status, check-ins, shared meals, engagement and open flags." },
-      { sel: ".mgrid--4", text: "Each area shows how many sharing crew sit outside their own normal." },
-      { sel: ".prompts, .ok-line", text: "Support prompts: anonymous nudges to check in on someone." },
+      { sel: ".ctiles", text: "The team at a glance: status, check-ins, shared meals, engagement and open flags. Numbers are totals from crew who chose to share." },
+      { sel: ".mgrid--4", text: "Each area shows how many sharing crew sit outside their own normal, without saying who." },
+      { sel: ".prompts, .ok-line", text: "Support prompts: anonymous nudges to check in on someone, for example sharing a meal." },
       { sel: ".crew__tl", text: "The team log. Hover to read, click to pin." },
+      { sel: ".hdr__earth", text: (c) => `Earth is about ${c.distMkm} million km away on this sol: ${c.delay} minutes one way, ${2 * c.delay} there and back. In this demo messages arrive within ${DEMO_DELAY_MIN} minute.` },
     ],
   },
 ];
-const FALLBACK: Step[] = [
+const FALLBACK: ScriptStep[] = [
   { sel: "#nav", text: "Move between screens here." },
   { sel: "#spine", text: "The mission timeline. Drag it to look back at any sol." },
+  { sel: ".hdr__earth", text: (c) => `Earth is about ${c.distMkm} million km away: ${c.delay} minutes one way, ${2 * c.delay} there and back. In this demo messages arrive within ${DEMO_DELAY_MIN} minute.` },
   { sel: ".hdr__set", text: "Settings: tone, voice and what you share." },
 ];
 
 export function PedroGuide() {
-  const { s, set, atPresent, checkedToday } = useConsole();
+  const { s, set, atPresent, checkedToday, flagsFor, openFlags, shared, clockMin } = useConsole();
   const path = usePathname();
   const router = useRouter();
   const [menu, setMenu] = useState(false);
@@ -69,7 +99,17 @@ export function PedroGuide() {
 
   const startTour = () => {
     const t = TOURS.find((x) => x.match(path));
-    const steps = (t ? t.steps : FALLBACK).filter((st) => document.querySelector(st.sel));
+    const flags = flagsFor();
+    const c: TourCtx = {
+      first: crewById(s.me).full.split(" ")[0], sol: s.sol, today: atPresent, checked: checkedToday(),
+      overall: overall(s.me, s.sol), hasBase: hasBaseline(s.me, s.sol),
+      flags: flags.map((f) => { const cp = flagCopy(s.me, f.key, f.st, s.tone, s.sol); return { key: f.key, what: cp.what, action: cp.action, state: f.st.state }; }),
+      open: openFlags().length, shared: shared(s.me).length,
+      delay: lightDelayMin(s.sol), distMkm: Math.round(earthDistanceMkm(s.sol)),
+      earthToday: atPresent ? arrivedSince(s.me, P - 1, 24 * 60, P, clockMin).length : 0,
+    };
+    const steps: Step[] = (t ? t.steps : FALLBACK).filter((st) => document.querySelector(st.sel))
+      .map((st) => ({ sel: st.sel, text: typeof st.text === "function" ? st.text(c) : st.text }));
     setMenu(false);
     if (!steps.length) return;
     setI(0);
