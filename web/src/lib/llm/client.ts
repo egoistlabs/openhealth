@@ -23,6 +23,9 @@ export type GenerateJsonInput<Result> = {
   /** Maps to Ollama's num_predict and to Anthropic's max output tokens. */
   maxOutputTokens?: number;
   timeoutMs?: number;
+  /** Ollama num_ctx. Null leaves the server's default, the one the streamed
+      reply call uses: a different value makes Ollama reload the model. */
+  contextLength?: number | null;
 };
 
 type ConversationMessage = { role: "user" | "assistant"; content: string };
@@ -54,7 +57,7 @@ async function generateWithOllama<Result>(
           temperature: input.temperature ?? 0.2,
           seed: 42,
           num_predict: input.maxOutputTokens ?? 256,
-          num_ctx: 4096,
+          ...(input.contextLength === null ? {} : { num_ctx: input.contextLength ?? 4096 }),
         },
       }),
       signal: AbortSignal.timeout(input.timeoutMs ?? 180_000),

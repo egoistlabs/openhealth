@@ -8,6 +8,7 @@
   h1 { font-size: 22px; margin: 0 0 4px; color: #111827; }
   .sub { font-size: 14px; color: #4b5563; margin: 0 0 18px; }
   .legend { display: flex; gap: 18px; font-size: 13px; color: #374151; margin-bottom: 8px; }
+  .legend span { white-space: nowrap; }
   .legend span::before { content: ""; display: inline-block; width: 14px; height: 14px; border-radius: 3px; margin-right: 6px; vertical-align: -2px; border: 1.5px solid var(--b); background: var(--f); }
   .foot { font-size: 11px; color: #6b7280; margin-top: 6px; }
 </style>
@@ -15,21 +16,22 @@
 <body>
 <div id="wrap">
   <h1>What happens when you ask Pedro a question</h1>
-  <p class="sub">Code does the maths and the safety checks. The AI model only writes the words, and code checks them before you see them.</p>
+  <p class="sub">Code does the maths and has the last word on safety. The AI model reads what you mean and writes the words, and code checks both.</p>
   <div class="legend">
     <span style="--f:#e0ecff;--b:#2563eb">Code</span>
     <span style="--f:#fff1d6;--b:#d97706">AI model (MedGemma 4B, on the laptop)</span>
-    <span style="--f:#fde2e2;--b:#dc2626">Stops early: the model is never called</span>
+    <span style="--f:#fde2e2;--b:#dc2626">Stops early: no reply is written by the model</span>
     <span style="--f:#dcfce7;--b:#16a34a">What you see and hear</span>
   </div>
   <pre class="mermaid">
 flowchart TD
-  Q(["You ask or say something"]) --> S1["Step 1 · Red-flag check"]
-  S1 -- "emergency words" --> E["Fixed emergency message"]
-  S1 --> S2["Step 2 · Boundary check"]
-  S2 -- "role-play, rule override,<br/>a crewmate's data" --> D["Fixed decline"]
-  S2 --> S3["Step 3 · Distress check"]
-  S3 --> S4["Step 4 · Gather sources"]
+  Q(["You ask or say something"]) --> S1["Step 1 · Keyword check<br/>listed emergency, boundary<br/>and distress words"]
+  Q --> S2["Step 2 · AI safety label<br/>emergency? distress? boundary?<br/>a fixed JSON form"]
+  S1 --> S3["Step 3 · Combine<br/>either one can raise a flag,<br/>the AI can never clear one"]
+  S2 --> S3
+  S3 -- "emergency" --> E["Fixed emergency message"]
+  S3 -- "role-play, rule override,<br/>a crewmate's data" --> D["Fixed decline"]
+  S3 -- "no stop; distress is<br/>passed on to step 6" --> S4["Step 4 · Gather sources"]
   S4 --> S5["Step 5 · Write the reply"]
   S5 --> S6["Step 6 · Check the reply"]
   S6 -- "passes" --> S7(["Step 7 · Show and speak,<br/>with sources"])
@@ -40,8 +42,8 @@ flowchart TD
   classDef model fill:#fff1d6,stroke:#d97706,stroke-width:1.5px,color:#111827;
   classDef stop fill:#fde2e2,stroke:#dc2626,stroke-width:1.5px,color:#111827;
   classDef out fill:#dcfce7,stroke:#16a34a,stroke-width:1.5px,color:#111827;
-  class S1,S2,S3,S4,S6,F code;
-  class S5 model;
+  class S1,S3,S4,S6,F code;
+  class S2,S5 model;
   class E,D stop;
   class Q,S7 out;
 </pre>

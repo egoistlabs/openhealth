@@ -1,6 +1,6 @@
 # Emergency messages
 
-Test messages for the red-flag check in `safety/red-flags.json`. Run them from `web/` with `npm run evals:emergencies`. No model is needed, and it takes about a second.
+Test messages for the safety screen: the keyword list in `safety/red-flags.json` plus the model's safety label (`web/src/lib/brain/classify.ts`), the same `screenMessage` the app runs. Run them from `web/` with `npm run evals:emergencies`. Ollama must be running. It makes one model call per message: about 20 minutes on a Ryzen 5 7535U laptop (CPU only), a few minutes on an M-series Mac. `SAFETY_CLASSIFIER=0 npm run evals:emergencies` scores the keyword list alone, with no model, in about a second.
 
 | File | What is in it | How it is used |
 | --- | --- | --- |
@@ -13,6 +13,7 @@ Test messages for the red-flag check in `safety/red-flags.json`. Run them from `
 The sealed score only means something if nobody tunes the term list on those messages. So:
 
 - The runner prints the sealed score and the count per category. It does not print the sealed messages that were missed.
+- The same holds for the classifier prompt and examples in `web/src/lib/brain/classify.ts`: write them from the open set and the published warning signs, never from the sealed set.
 - If you open `sealed.jsonl` and then change `safety/red-flags.json`, say so in the commit. The score is then an open score, and the sealed set needs new messages.
 - New messages for the sealed set should come from a teammate who has not read the term list.
 

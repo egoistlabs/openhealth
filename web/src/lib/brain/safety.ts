@@ -1,6 +1,7 @@
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { resolveBrainRoot } from "./root.ts";
+import { classifierEnabled, classifyIntent, type IntentClassification } from "./classify.ts";
 
 type RedFlagConfiguration = {
   escalation_message: string;
@@ -69,4 +70,61 @@ export async function checkSupportNeeded(
   const normalizedMessage = normalize(message);
   const terms = configuration.terms.filter((term) => normalizedMessage.includes(term.toLowerCase()));
   return { matched: terms.length > 0, terms, supportMessage: configuration.support_message };
+}
+
+/** What the model's classifier added to the keyword checks, for the turn log. */
+export type ClassifierTrace =
+  | { ran: false; reason: "disabled" | "not-needed" }
+  | { ran: true; ok: true; classification: IntentClassification; model: string; ms: number }
+  | { ran: true; ok: false; error: string; ms: number };
+
+export type Screening = {
+  redFlag: { matched: boolean; categories: string[]; escalationMessage: string };
+  boundary: { matched: boolean; categories: string[] };
+  support: { matched: boolean; terms: string[]; supportMessage: string };
+  classifier: ClassifierTrace;
+};
+
+/**
+ * All three safety checks for one message, in two layers:
+ *
+ * 1. Keywords (red-flags.json, boundaries.json, support.json). Deterministic,
+ *    instant, and they work with the model switched off.
+ * 2. The model, asked for a typed label (see classify.ts). It catches the same
+ *    intent said in words nobody listed.
+ *
+ * A flag from either layer counts. The model can add a flag but never remove
+ * one, and if it fails the keyword result stands. Model categories are marked
+ * "model:" so the turn log shows which layer caught what.
+ */
+export async function screenMessage(message: string): Promise<Screening> {
+  const useModel = classifierEnabled();
+  const [redFlag, boundary, support] = await Promise.all([
+    checkRedFlags(message),
+    checkBoundaries(message),
+    checkSupportNeeded(message),
+  ]);
+  /* A keyword red flag already decides the turn: no need to wait on the model. */
+  if (!useModel || redFlag.matched) {
+    return { redFlag, boundary, support, classifier: { ran: false, reason: useModel ? "not-needed" : "disabled" } };
+  }
+
+  const result = await classifyIntent(message);
+  if (!result.ok) {
+    return { redFlag, boundary, support, classifier: { ran: true, ok: false, error: result.error, ms: result.ms } };
+  }
+  const { emergency, distress, boundary: boundaryLabel } = result.classification;
+  const add = (list: string[], label: string) => (list.includes(label) ? list : [...list, label]);
+  return {
+    redFlag:
+      emergency === "none"
+        ? redFlag
+        : { ...redFlag, matched: true, categories: add(redFlag.categories, `model:${emergency}`) },
+    boundary:
+      boundaryLabel === "none"
+        ? boundary
+        : { matched: true, categories: add(boundary.categories, `model:${boundaryLabel}`) },
+    support: distress ? { ...support, matched: true, terms: add(support.terms, "model:distress") } : support,
+    classifier: { ran: true, ok: true, classification: result.classification, model: result.model, ms: result.ms },
+  };
 }

@@ -70,13 +70,14 @@ Code still runs the red-flag check, search and every audit in step 5. Only step 
 question (typed, or speech turned into text)
    |
    v
-1. Red-flag check        code    matches the question against safety/red-flags.json
+1. Safety screen         code    keywords (safety/*.json) + the model's typed safety label; either can flag, the model can't clear one
+   |                             emergency -> fixed escalation; boundary -> fixed decline; the reply model is never called
    |
    v
 2. Gather                code    the best few brain files from search
    |                             + the crew member's numbers, already worded, if the question is about them
    v
-3. Distress?             code    support terms found -> the reply must name a person to talk to
+3. Distress?             code    support term or model distress label -> the reply must name a person to talk to
    |
    v
 4. Write the reply       model   picks answer, conversation or decline; reads only what step 2 gathered; code stops it if it loops or runs long
@@ -90,9 +91,18 @@ question (typed, or speech turned into text)
 
 All six steps are one function, `runCompanionTurn` in `web/src/lib/brain/turn.ts`. The chat route (`web/src/app/api/ai/chat/route.ts`) and the eval runner (`npm run evals`) both call it, so an eval score describes the path a crew member uses.
 
-### 1. Red-flag check
+### 1. Safety screen: keywords plus a typed model label
 
-Code compares the question with a fixed list of red-flag terms in `brain/safety/red-flags.json` (for example chest pain, trouble breathing, thoughts of self-harm). On a match, the reply is the fixed escalation message naming who to contact. The model is not called.
+`screenMessage` in `web/src/lib/brain/safety.ts` runs two layers on every message.
+
+1. **Keywords.** Code compares the message with `brain/safety/red-flags.json` (emergencies), `boundaries.json` (role-play, rule overrides, a crewmate's data) and `support.json` (serious distress). This layer is instant, deterministic and works with the model off.
+2. **Model label.** `classifyIntent` in `web/src/lib/brain/classify.ts` asks the model for one JSON object, `{emergency, distress, boundary}`, each an enum. Ollama's `format` field constrains decoding to that JSON schema, and code validates the result. This layer catches the same intent in words nobody listed ("there's a heavy squeezing feeling in the middle of my chest", "I've started writing goodbye messages").
+
+A flag from either layer counts. The model can add a flag but never remove one. One check guards against the model's own false alarms. A boundary label declines the message, and medgemma:4b over-used them in testing ("why can't you write me a training schedule?" read as role-play, "my wife said she misses me" as a crewmate's data). So a model-only boundary label counts only when a second call, one narrow yes/no question for that label with two examples each way, agrees. If that call fails, the label stands. Emergencies are never second-guessed: a false alarm there is the safe mistake. If the label call fails or times out (`SAFETY_CLASSIFIER_TIMEOUT_MS`, default 60 s), the keyword result stands and the failure is written to the turn log (`safety_classifier`). A keyword emergency skips the model label: nothing it says could change the outcome. On an emergency, the reply is the fixed escalation message naming who to contact, and the reply model is not called. Model-raised categories are logged as `model:<category>`. `SAFETY_CLASSIFIER=0` switches the label off.
+
+Speed: the label call uses the server's default context size, the same as the reply call. A different `num_ctx` makes Ollama reload the model between the two calls on every turn (seen in testing: 44 reloads in 10 minutes, and label calls timing out). With `OLLAMA_NUM_PARALLEL=1`, the reply's prompt also pushes the label's prompt out of Ollama's cache, so each label call reads its prompt cold: about 35 s on a Ryzen 5 7535U laptop (CPU only), against about 3 s when cached. On the demo machine, set `OLLAMA_NUM_PARALLEL=2` so each prompt keeps its own cache slot (at the cost of a second context's memory).
+
+Why: on the sealed emergency set, the keyword list alone escalated 4 of 32 messages said in a person's own words.
 
 ### 2. Gather
 
@@ -107,9 +117,9 @@ Files marked `status: replaced` are never returned.
 
 ### 3. Boundaries, distress, and no dead end at no source
 
-Code compares the message with the patterns in `brain/safety/boundaries.json`: role-play ("pretend you are my wife"), rule overrides ("ignore your instructions") and questions about another crew member's words or ratings ("What did Alex tell you?"). On a match the reply is the decline message and the model is not called. In testing, medgemma:4b played a crewmate's wife when asked and invented a crewmate's words, so this is not left to the prompt.
+Code compares the message with the patterns in `brain/safety/boundaries.json`: role-play ("pretend you are my wife"), rule overrides ("ignore your instructions") and questions about another crew member's words or ratings ("What did Alex tell you?"). On a match, from the keywords or the model label in step 1, the reply is the decline message and the reply model is not called. In testing, medgemma:4b played a crewmate's wife when asked and invented a crewmate's words, so this is not left to the prompt.
 
-Code compares the message with the support terms in `brain/safety/support.json` (for example "I can't cope", "hopeless"). These are not emergencies and do not stop the turn, but the reply must then name a person to talk to. If it does not, code replaces it with the fixed support message.
+Code compares the message with the support terms in `brain/safety/support.json` (for example "I can't cope", "hopeless"), and the model label from step 1 can set `distress` too. These are not emergencies and do not stop the turn, but the reply must then name a person to talk to. If it does not, code replaces it with the fixed support message.
 
 Finding no file does not stop the turn. Earlier versions replied "I don't have that on board" without calling the model whenever search found nothing, so "Hi Pedro", "i miss my kids" and "Long day" all hit a dead end: search decides what the companion can inform about, not whether it may talk. The model is always called, and with no source it can only reply in conversation or decline.
 

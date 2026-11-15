@@ -1,5 +1,5 @@
 import { loadBrainDocuments, loadStage } from "./loader.ts";
-import { checkBoundaries, checkRedFlags, checkSupportNeeded, NAMES_A_PERSON } from "./safety.ts";
+import { NAMES_A_PERSON, screenMessage, type ClassifierTrace } from "./safety.ts";
 import { searchBrain } from "./search.ts";
 import { buildAnswerMessages } from "./prompt.ts";
 import {
@@ -416,6 +416,8 @@ export type TurnTrace = {
   supportTerms: string[];
   numbersQuestion: boolean;
   statusQuestion: boolean;
+  /** The model's safety label, which can add a flag the keywords missed. */
+  classifier: ClassifierTrace;
 };
 
 /* Everything needed to run one turn, or a reply code gives without the model:
@@ -432,7 +434,10 @@ export async function prepareCompanionTurn(
   input: CompanionAnswerInput,
 ): Promise<PreparedTurn> {
   const { question, numbers = {}, history = [], tone = "gentle" } = input;
-  const redFlag = await checkRedFlags(question);
+  /* Keywords and the model's typed label together: either one can raise a
+     flag, only the keywords work with the model off, and the model can never
+     clear a keyword flag. See screenMessage in safety.ts. */
+  const { redFlag, boundary, support: supportNeeded, classifier } = await screenMessage(question);
   if (redFlag.matched) {
     return {
       immediate: {
@@ -446,20 +451,18 @@ export async function prepareCompanionTurn(
         rows: [],
         action: null,
       },
-      trace: { stage: null, searchQuery: null, found: [], redFlagCategories: redFlag.categories, boundaryCategories: [], supportTerms: [], numbersQuestion: false, statusQuestion: false },
+      trace: { stage: null, searchQuery: null, found: [], redFlagCategories: redFlag.categories, boundaryCategories: [], supportTerms: [], numbersQuestion: false, statusQuestion: false, classifier },
     };
   }
   /* Role-play, rule overrides and questions about a crewmate's words or
      ratings are declined here. A small model asked to "pretend you are my
      wife" may simply do it, so this is not left to the prompt. */
-  const boundary = await checkBoundaries(question);
   if (boundary.matched) {
     return {
       immediate: decline(null),
-      trace: { stage: null, searchQuery: null, found: [], redFlagCategories: [], boundaryCategories: boundary.categories, supportTerms: [], numbersQuestion: false, statusQuestion: false },
+      trace: { stage: null, searchQuery: null, found: [], redFlagCategories: [], boundaryCategories: boundary.categories, supportTerms: supportNeeded.terms, numbersQuestion: false, statusQuestion: false, classifier },
     };
   }
-  const supportNeeded = await checkSupportNeeded(question);
 
   const stage = await loadStage("answer");
   const documents = await loadBrainDocuments(stage.collections);
@@ -488,6 +491,7 @@ export async function prepareCompanionTurn(
     supportTerms: supportNeeded.terms,
     numbersQuestion,
     statusQuestion,
+    classifier,
   };
 
   /* No source is not a dead end. The model still sees the message, and may

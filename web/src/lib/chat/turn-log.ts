@@ -1,3 +1,4 @@
+import type { ClassifierTrace } from "../brain/safety.ts";
 import { appendFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 
@@ -59,6 +60,8 @@ export type TurnEvent = {
   numbers_question: boolean;
   /** The question asked how the person is doing, so code could always answer it. */
   status_question: boolean;
+  /** The model's safety label (null when it did not run). */
+  safety_classifier: ClassifierTrace | null;
 
   /* the model call; null on the paths that never call it */
   model: string | null;
@@ -141,6 +144,7 @@ export function startTurn(fields: Partial<TurnEvent>): TurnLog {
     support_terms: [],
     numbers_question: false,
     status_question: false,
+    safety_classifier: null,
     model: null,
     model_called: false,
     options: null,
