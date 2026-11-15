@@ -226,7 +226,7 @@ Each risk we weighed led to one design choice. The sections above describe how e
 - **BodyParts3D 4.0** (Database Center for Life Science, Japan, CC BY 4.0) shown with the **Somakine viewer** (open source, MIT): the 3D body map.
 - **Vercel AI SDK:** streaming the model's reply.
 - **Zod:** checking every message between browser and server.
-- **Ollama + MedGemma 4B:** the on-laptop AI model.
+- **Ollama + MedGemma 4B:** the on-laptop AI model, `medgemma:4b` from the [Ollama library](https://ollama.com/library/medgemma).
 - **Ollama structured outputs (JSON schema):** typed, schema-locked output for the AI safety label, check-in by voice and the app's other small typed tasks, all on the laptop.
 - **Anthropic Claude API:** optional comparison mode, off by default.
 - **Web Speech API:** voice input and spoken replies.
