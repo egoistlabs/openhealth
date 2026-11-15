@@ -381,7 +381,7 @@ Each page below was opened and checked. Each line gives a short quote and what i
 - NASA HRP, [5 Hazards](https://www.nasa.gov/hrp/hazards/), [Risks](https://www.nasa.gov/hrp/risks/), [Distance from Earth](https://www.nasa.gov/hrp/hazard-distance-from-earth/)
 - NASA SCaN, [Delay/Disruption Tolerant Networking](https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/); [Mars Communications Disruption and Delay](https://www.nasa.gov/wp-content/uploads/2024/01/mars-communications-disruption-and-delay.pdf); [NASA/TM-20250003885, Communication Delay research](https://ntrs.nasa.gov/api/citations/20250003885/downloads/NASA%20TM20250003885.pdf); [2024 Moon to Mars Architecture white paper](https://www.nasa.gov/wp-content/uploads/2024/02/10-2024-architecture-workshop-white-paper-mars-challenges.pdf)
 - Kokoro-82M text-to-speech, [kokoro-js](https://www.npmjs.com/package/kokoro-js), Apache-2.0
-- MedGemma (Google), the on-device AI model, from the [Ollama library](https://ollama.com/library/medgemma) (`ollama pull medgemma:4b`)
+- Google, [MedGemma](https://developers.google.com/health-ai-developer-foundations/medgemma) (Health AI Developer Foundations), the on-device AI model, run from the [Ollama library](https://ollama.com/library/medgemma) (`ollama pull medgemma:4b`)
 - CSA, [Bio-Monitor](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp)
 - MedlinePlus, [Vital signs](https://medlineplus.gov/ency/article/002341.htm), [Pulse oximetry](https://medlineplus.gov/lab-tests/pulse-oximetry/)
 - CDC, [About sleep](https://www.cdc.gov/sleep/about/index.html)
@@ -486,7 +486,7 @@ flowchart TD
 
 ## 16. Pedro, the companion
 
-- **Runs on the laptop:** MedGemma 4B (Google, open weights), the `medgemma:4b` model from the [Ollama library](https://ollama.com/library/medgemma), run through Ollama, with no internet needed. An optional Claude API comparison mode is off by default.
+- **Runs on the laptop:** MedGemma 4B ([Google Health AI Developer Foundations](https://developers.google.com/health-ai-developer-foundations/medgemma), open weights), the `medgemma:4b` model from the [Ollama library](https://ollama.com/library/medgemma), run through Ollama, with no internet needed. An optional Claude API comparison mode is off by default.
 - **Knowledge:** 29 active files in `brain/` (reference, procedures, measures), each with a source and who approved it.
 - **Pipeline:** see 6.2. Keyword checks and an AI safety label run side by side. The model can add a safety flag but never clear one. Code makes every safety decision and handles every number.
 - **Voice:** speech in and out. Pedro speaks with the most natural voice available, or with Kokoro running on the device (section 25). Every spoken line also appears as text.
@@ -726,4 +726,5 @@ Every link in this document, printed in full so it still works on paper.
 - NASA, 2024 Moon to Mars Architecture white paper: <https://www.nasa.gov/wp-content/uploads/2024/02/10-2024-architecture-workshop-white-paper-mars-challenges.pdf>
 - DTN graphic (NASA/Heather Monaghan): <https://www.nasa.gov/wp-content/uploads/2023/02/DTN-Waypoint-Updated-Graphic-FINAL_01.png>
 - kokoro-js: <https://www.npmjs.com/package/kokoro-js>
+- Google MedGemma: <https://developers.google.com/health-ai-developer-foundations/medgemma>
 - MedGemma on Ollama: <https://ollama.com/library/medgemma>

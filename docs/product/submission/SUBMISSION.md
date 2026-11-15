@@ -370,7 +370,7 @@ NASA-funded studies used to calibrate the simulated crew data and the reaction t
 
 **Models and runtimes**
 
-- [MedGemma 4B](https://ollama.com/library/medgemma:4b) (Google, open weights, Health AI Developer Foundations terms)
+- [MedGemma 4B](https://ollama.com/library/medgemma:4b) (Google, open weights, Health AI Developer Foundations terms). Model page: [Google Health AI Developer Foundations, MedGemma](https://developers.google.com/health-ai-developer-foundations/medgemma)
 - [Ollama](https://ollama.com)
 - Anthropic Claude API (optional mode)
 
