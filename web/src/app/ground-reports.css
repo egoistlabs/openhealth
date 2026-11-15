@@ -19,8 +19,16 @@
   background: linear-gradient(135deg, color-mix(in srgb, var(--c-action) 38%, #2B2F7A) 0%, color-mix(in srgb, var(--c-action) 16%, #1A1D4A) 100%); }
 .gr-row:hover { border-color: rgb(255 255 255 / .35); }
 .gr-row.is-on { border-color: var(--c-action); box-shadow: 0 0 0 3px color-mix(in srgb, var(--c-action) 35%, transparent); }
-.gr-row--act { border-left: 6px solid var(--c-act); }
-.gr-row--watch { border-left: 6px solid var(--c-watch); }
+/* not selected: grey card and black-and-white portrait, so the chosen astronaut stands out. The status
+   colours (side stripe, vitals strip) stay, so who needs attention is still visible at a glance. */
+.gr-row:not(.is-on) { background: linear-gradient(135deg, #2b2f38 0%, #1b1e25 100%); }
+.gr-row:not(.is-on) .gr-row__pic { filter: grayscale(1) brightness(.8); }
+.gr-row:not(.is-on) .gr-row__name, .gr-row:not(.is-on) .gr-row__meta { opacity: .75; }
+.gr-row .gr-row__pic, .gr-row .gr-row__name, .gr-row .gr-row__meta { transition: filter .2s ease, opacity .2s ease; }
+.gr-row:not(.is-on):hover .gr-row__pic { filter: grayscale(.3) brightness(.95); }
+.gr-row:not(.is-on):hover .gr-row__name, .gr-row:not(.is-on):hover .gr-row__meta { opacity: 1; }
+@media (prefers-reduced-motion: reduce) { .gr-row .gr-row__pic, .gr-row .gr-row__name, .gr-row .gr-row__meta { transition: none; } }
+/* status now shows as a badge on the card (GroundReports), not a coloured edge */
 .gr-row__txt { position: relative; z-index: 2; display: grid; align-content: center; gap: 8px; height: 100%; max-width: 64%; padding: 0 0 0 var(--s-5, 20px); }
 .gr-row__name { color: #fff; font: 700 22px / 1.15 var(--f-sans); }
 .gr-row__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; color: rgb(255 255 255 / .8); font-size: 14px; }

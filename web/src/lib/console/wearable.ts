@@ -85,12 +85,13 @@ function reading(id: string, sol: number, d: (typeof DEF)[number]): number {
     if (d.key === "resp") v += 0.6 * k;
   }
   /* Kenji Sato (the default Home view): sustained high workload from Sol 140 (he rates his day 5/5 and his
-     reaction time is slowing). HRV falls steeply, to urgent by Sol 142, and resting heart rate creeps up
-     to Watch: the usual wearable picture of stress and poor recovery */
+     reaction time is slowing). HRV and resting heart rate drift to Watch by Sol 142: the usual wearable
+     picture of stress and poor recovery. Kept at Watch, not Urgent, so the demo crew shows all three
+     levels on Sol 142: Adaeze stable, Kenji on Watch, Mattias and Daniela at Act. */
   if (id === "sato" && sol >= 140) {
     const k = sol - 139;
-    if (d.key === "hrv") v -= 7 * k;
-    if (d.key === "rhr") v += 1.2 * k;
+    if (d.key === "hrv") v -= 2.5 * k;
+    if (d.key === "rhr") v += 0.8 * k;
   }
   if (d.key === "spo2") v = Math.min(100, v);
   return v;

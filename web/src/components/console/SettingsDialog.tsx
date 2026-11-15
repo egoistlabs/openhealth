@@ -4,6 +4,18 @@ import { useEffect, useRef } from "react";
 import { KEYS, MEASURES } from "@/lib/console/data";
 import { Segmented, Toggle } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
+import { clearCheckins } from "@/lib/console/store";
+
+/* Back to the scripted demo: removes what this browser saved (check-ins, Pedro's log, follow-ups, notes from
+   Earth and their files). The simulated crew data and the sample notes are built in code, so they come back.
+   The chosen look (theme cookie) is kept. */
+function resetDemo() {
+  if (!window.confirm("Reset the demo? This deletes the check-ins, Pedro's log, follow-ups and notes from Earth saved in this browser. The scripted demo data stays.")) return;
+  clearCheckins();
+  try { localStorage.removeItem("openhealth.followups.v1"); localStorage.removeItem("openhealth.earthnotes.v1"); } catch { /* nothing to clear */ }
+  try { indexedDB.deleteDatabase("openhealth-earth-files"); } catch { /* not available */ }
+  window.location.reload();
+}
 
 /* Settings (tone, voice, sharing) as a modal opened from the top bar, on every screen.
    Open state is `s.settings`. */
@@ -50,6 +62,9 @@ export function SettingsDialog() {
               onChange={(v) => set((p) => ({ shares: { ...p.shares, [p.me]: v === "share" ? KEYS.slice() : [] } }))} />
             <div className="mshare">{MEASURES.map((m) => <Toggle key={m.key} on={sh.includes(m.key)} label={m.name} onClick={() => toggle(m.key)} />)}</div>
             <span className="small t2">Only aggregates reach Crew, and only when at least 2 crew share a measure.</span></div></div>
+          <div className="set-row"><span className="label">Demo data</span><div className="ctl">
+            <button type="button" className="btn" onClick={resetDemo}>Reset demo data</button>
+            <span className="small t2">Clears check-ins, Pedro&apos;s log, follow-ups and notes from Earth saved in this browser, then reloads the scripted demo.</span></div></div>
           <p className="actions pt3"><button type="button" className="btn-primary" onClick={close}>Done</button></p>
         </div>
       </div>

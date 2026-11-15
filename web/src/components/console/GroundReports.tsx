@@ -140,6 +140,12 @@ export function GroundReports() {
                     </span>
                   </span>
                   <span className="gr-row__pic"><CrewPortrait person={x.c} className="gr-row__img" bare /></span>
+                  {/* status badge on every card: Act red, Watch amber, Stable green */}
+                  {(() => {
+                    const lv = x.worst === "act" ? "act" : x.worst === "watch" ? "watch" : "normal"; // the level shows even without a check-in (the pill says that)
+                    const [mark, word] = BADGE_TXT[lv];
+                    return <span className="gr-row__badge" style={{ ...BADGE.base, ...BADGE[lv] }}><span aria-hidden="true">{mark}</span>{word}</span>;
+                  })()}
                   {/* wearable at a glance, inside the card (plain text: the card itself is the button) */}
                   <span className="gr-row__vit" aria-hidden="true">
                     {x.vs.map((v) => (
@@ -438,6 +444,19 @@ function ThreadsModal({ startWith, onClose }: { startWith: string; onClose: () =
     </dialog>
   );
 }
+
+/* warning-level badge on an astronaut card (inline so it shows even when the dev stylesheet is stale) */
+const BADGE = {
+  base: { position: "absolute", top: 10, right: 10, zIndex: 4, display: "inline-flex", alignItems: "center", gap: 6, padding: "3px 10px", borderRadius: 999,
+    fontSize: 12, fontWeight: 700, letterSpacing: ".01em", boxShadow: "0 2px 8px rgb(0 0 0 / .45)" } as const,
+  act: { background: "#B3261E", color: "#fff" } as const,
+  watch: { background: "var(--c-watch)", color: "#1A1405" } as const,
+  normal: { background: "var(--c-normal)", color: "#0B1A0B" } as const,
+  none: { background: "rgb(255 255 255 / .18)", color: "#fff", boxShadow: "none" } as const,
+};
+const BADGE_TXT: Record<"act" | "watch" | "normal" | "none", [string, string]> = {
+  act: ["■", "Act · needs attention"], watch: ["▲", "Watch"], normal: ["●", "Stable"], none: ["○", "No check-in"],
+};
 
 /* threads modal layout + sol calendar (inline so it renders even when the dev stylesheet is stale) */
 const TM = {
