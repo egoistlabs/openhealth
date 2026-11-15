@@ -50,9 +50,15 @@ export function CheckinScreen({ step }: { step?: string }) {
   const init = () => {
     const d = day(s.me, P);
     const idx = step ? Math.max(0, STEPS.indexOf((step === "timing" ? "sleep" : step) as Step)) : 0;
+    /* today's check-in already submitted on this device: bring its body-map pins back, so "Review or correct"
+       shows them and a resubmission keeps them (submit replaces today's saved events). Re-runs when the
+       saved check-ins load from storage, because that bumps s.rev (see below). */
+    const todayEvents = (s.extra[s.me] || []).filter((e) => e.sol === P);
+    const savedPain = todayEvents.filter((e) => e.code === "PN-01").flatMap((e) => e.pain ?? []);
+    const submittedHere = todayEvents.some((e) => e.code === "CI-01");
     return {
       step: idx,
-      vals: { pain: [], noPain: false, onset: d?.onset ?? 0, wake: d?.wake ?? 420, mood: s.draft.mood ?? d?.mood ?? null, load: s.draft.load ?? d?.load ?? null, team: s.draft.team ?? d?.team ?? null, meals: d?.meals ?? null, rt: d?.rt ?? null, slow: d?.slow ?? null } as Vals,
+      vals: { pain: savedPain, noPain: submittedHere && !savedPain.length, onset: d?.onset ?? 0, wake: d?.wake ?? 420, mood: s.draft.mood ?? d?.mood ?? null, load: s.draft.load ?? d?.load ?? null, team: s.draft.team ?? d?.team ?? null, meals: d?.meals ?? null, rt: d?.rt ?? null, slow: d?.slow ?? null } as Vals,
       skipped: {} as Record<string, boolean>,
       pick: 0,
     };

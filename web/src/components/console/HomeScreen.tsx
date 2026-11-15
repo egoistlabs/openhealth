@@ -249,7 +249,9 @@ function Vitals({ id, sol }: { id: string; sol: number }) {
       </div>
       <div style={V.grid}>
         {vs.map((v) => (
-          <div key={v.key} style={{ ...V.tile, borderTopColor: VITAL_COLOUR[v.state], ...(v.state === "act" ? V.tileAct : null) }} tabIndex={0}
+          <div key={v.key} style={{ ...V.tile, ...(v.state === "act" ? V.tileAct : null),
+            /* top edge in the status colour; an Urgent tile is outlined in red all round */
+            borderColor: v.state === "act" ? "var(--c-act)" : `${VITAL_COLOUR[v.state]} var(--c-hair) var(--c-hair)` }} tabIndex={0}
             data-tip={`${v.label}: ${VITAL_WORD[v.state]}.\n${v.tip}\n\nHealthy range: ${v.range}\nYour normal: ${fmtVital(v, v.normal)}. Tonight: ${fmtVital(v, v.value)} (${fmtVitalDelta(v)}).\n\nQuick fact: ${v.fact}`}
             aria-label={`${v.label} ${fmtVital(v, v.value)}, ${fmtVitalDelta(v)} from your normal of ${fmtVital(v, v.normal)}, ${VITAL_WORD[v.state]}`}>
             <div style={{ minWidth: 0 }}>
@@ -307,8 +309,10 @@ const V = {
   delay: { fontSize: 11, color: "var(--c-text-2)", outline: "none" },
   src: { marginLeft: "auto", fontSize: 10, color: "var(--c-text-3)" },
   grid: { display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(128px, 1fr))", gap: 8 },
-  tile: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, padding: "5px 10px", border: "1px solid var(--c-hair)", borderTopWidth: 2, borderRadius: 6, background: "var(--c-surface)", outline: "none" },
-  tileAct: { background: "color-mix(in srgb, var(--c-act) 10%, var(--c-surface))", borderColor: "var(--c-act)" },
+  /* longhand border only (no `border` shorthand): the colour is set per tile as one borderColor value, so React
+     never has to remove a longhand that conflicts with a shorthand when the astronaut or status changes */
+  tile: { display: "flex", alignItems: "center", justifyContent: "space-between", gap: 6, padding: "5px 10px", borderStyle: "solid", borderWidth: "2px 1px 1px", borderRadius: 6, background: "var(--c-surface)", outline: "none" },
+  tileAct: { background: "color-mix(in srgb, var(--c-act) 10%, var(--c-surface))" },
   label: { fontSize: 10, letterSpacing: ".08em", textTransform: "uppercase", color: "var(--c-text-3)", whiteSpace: "nowrap" },
   num: { fontFamily: "var(--f-display, inherit)", fontSize: 26, fontWeight: 300, lineHeight: 1.1, color: "var(--c-text)", whiteSpace: "nowrap" },
   delta: { fontFamily: "var(--f-mono)", fontSize: 11, whiteSpace: "nowrap" },

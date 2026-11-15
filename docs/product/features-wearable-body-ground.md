@@ -105,6 +105,38 @@ flowchart TD
 
 ---
 
+### How to read a vitals tile
+
+Worked example from the demo: **Daniela Reyes, Sol 142, Heart rate 66 · Urgent · +9 vs 57**.
+
+| Part of the tile | Meaning |
+|---|---|
+| **66** | Last night's reading |
+| **57** | Her own normal: the middle value of her previous 14 nights |
+| **+9** | How far last night was from her normal |
+| **Ring** | Where last night sits against her normal. Half full means exactly normal; nearly full or nearly empty means far off |
+| **Urgent** | The change is more than 2 of her usual night-to-night spreads in the worse direction (1–2 spreads → Watch, under 1 → Stable) |
+
+**The point for judges:** 66 bpm is inside the 60–100 range for a healthy adult at rest ([MedlinePlus](https://medlineplus.gov/ency/article/002341.htm)). It is **Urgent for Daniela** because it is 9 beats above *her* normal. Her skin temperature is also 1.4 °C above her normal and her breathing is up: the early-infection story in the demo data. One person's normal can be another person's warning sign, so Pedro compares each astronaut only with themselves.
+
+### How a wearable measures each vital
+
+Only what a source we checked says. Our prototype simulates the readings (see above).
+
+| Vital | How it is measured | Source |
+|---|---|---|
+| Heart rate | Photoplethysmography (PPG): the device "sends tiny beams of light into your skin and uses sensors to detect changes in blood volume" | [Cleveland Clinic, Heart rate monitors](https://my.clevelandclinic.org/health/diagnostics/23429-heart-rate-monitor) |
+| HRV | "A slight change in the amount of time between your heartbeats". Wrist trackers "usually aren't sensitive enough to detect HRV accurately"; an EKG can | [Cleveland Clinic, HRV](https://my.clevelandclinic.org/health/symptoms/21773-heart-rate-variability-hrv) |
+| Blood oxygen (SpO₂) | "A special type of light that passes through your skin and into your blood"; a sensor "measures the amount of light" | [MedlinePlus, Pulse oximetry](https://medlineplus.gov/lab-tests/pulse-oximetry/) |
+| Skin temperature | Measured by the worn device. The CSA's Bio-Monitor lists skin temperature | [CSA, Bio-Monitor](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp) |
+| Breathing rate | Measured by the worn device. The Bio-Monitor lists breathing rate and volume | [CSA, Bio-Monitor](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp) |
+
+**Getting the data in:** nobody types it. The device records overnight and syncs to the hab computer, where Pedro runs offline, so the astronaut sees the readings at once. Earth gets them in the next relay pass, up to 20 minutes later on Mars.
+
+**Demo line:** "These are simulated overnight readings, modelled on the CSA's Bio-Monitor on the ISS. Each is judged only against the astronaut's own last 14 nights, so Daniela's 66 bpm is normal for most people but urgent for her."
+
+---
+
 ## 3. 3D body map
 
 ### Why we need it
@@ -488,6 +520,7 @@ Every link in this document, printed in full so it still works on paper.
 - Cleveland Clinic: <https://my.clevelandclinic.org/health/symptoms/21773-heart-rate-variability-hrv>
 - MedlinePlus: <https://medlineplus.gov/lab-tests/pulse-oximetry/>
 - CSA Bio-Monitor: <https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp>
+- Cleveland Clinic, Heart rate monitors: <https://my.clevelandclinic.org/health/diagnostics/23429-heart-rate-monitor>
 - source: <https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html>
 - ARCHeR: <https://www.nasa.gov/reference/archer/>
 - Artemis II Standard Measures: <https://www.nasa.gov/reference/artemis-ii-standard-measures/>

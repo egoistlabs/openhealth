@@ -114,7 +114,14 @@ export function GroundScreen() {
             <div className="srow"><span>Shared measures outside normal</span><span className="srow__v"><Num>{agg.shared_measures_outside_normal}</Num> of <Num>{agg.shared_measures}</Num></span></div>
             <div className="srow"><span>Shared meals</span><span className="srow__v">{mNow == null ? "—" : <><Num>{mNow}</Num> · <Num>{mPrev}</Num> last wk</>}</span></div>
           </div>
-          <div className="adh gdash__adh" aria-label="Check-ins per sol, last 14 sols">
+          {/* title sits right above the bars (both pushed to the bottom of the column together) */}
+          <h3 className="gdash__h" style={{ marginTop: "auto", marginBottom: 2, paddingTop: 12 }}>
+            Daily check-ins <span className="small t2">last 14 sols</span>
+          </h3>
+          <p className="small t2" style={{ margin: 0 }}>
+            Bar height: how many of the <Num>{CREW.length}</Num> crew checked in that sol. A full bar is everyone. Hover a bar for the count.
+          </p>
+          <div className="adh gdash__adh" aria-label="Check-ins per sol, last 14 sols" style={{ marginTop: 6 }}>
             {adh.rows.map((r) => (
               <span key={r.sol} className="adh__c" data-tip={`Sol ${r.sol}: ${r.done} of ${CREW.length} checked in`} tabIndex={0}>
                 <i style={{ height: `${(r.done / CREW.length) * 100}%` }} />
