@@ -77,7 +77,7 @@ Pedro is an AI health companion on one laptop, with no internet. It takes what e
 - **Earth sees what it needs, late, never live.** A flight surgeon console shows vitals, escalations and check-in reports per person, with a modelled downlink delay. Advice from Earth and the astronaut's replies are held for the light delay (1 minute in the demo, 3 to 22 minutes in the simulated mission). Journals and the astronaut's own words to Pedro never leave the hab.
 - **It doesn't guess.** Code does the maths and checks every reply. The AI model writes the words and helps spot emergencies, but code makes every safety decision.
 - **It keeps working if the AI fails.** Statuses, flags and emergency messages are all code, so they still work with the model switched off.
-- **It's still early, and we know where it falls short.** It raises too many false alarms: in the daily flags, a healthy astronaut gets one about every two weeks, and the emergency check escalates some look-alikes too. In the emergency check, one main reason is that the same small model that writes the replies also labels each message, so it isn't trusted to clear a keyword match. It also sometimes treats serious distress as an emergency. Both are measured below, and both are our next steps.
+- **It's still early, and we know where it falls short.** It raises too many false alarms, for two separate reasons. The daily flags go off for a healthy astronaut about once every two weeks, because the flag rule is set too sensitive. The emergency check escalates harmless messages like "I don't have chest pain", because one small model both writes the replies and judges each message, and that model isn't reliable enough to overrule the keyword list. Both are measured below, and both are our next steps.
 
 
 ### What it does: a two-minute daily check-in, compared with your own normal
@@ -196,14 +196,16 @@ Four ways to watch a crew, on medium declines the person doesn't notice at all. 
 
 ![Emergency test output](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/test-emergency-suite.png)
 
-**Why so many false alarms? A small experiment.** The app asks the AI for its safety label only when no keyword matched, and the AI may add a flag but never clear one. So we asked it about every message anyway:
+**Why does the emergency check raise false alarms? A small experiment.** The daily flags' false alarms have a different cause, the flag rule's settings (see the detection test).
 
-- **It would get most look-alikes right.** The keyword list escalated 7 of the look-alikes, and the AI said "no emergency" for 5 of those 7, including "I don't have chest pain, just tired". If it were allowed to overrule the keywords, false alarms would drop from 8 to 3.
-- **But it isn't safe to let it overrule.** On the real emergencies the keyword list catches, it would have cleared "I'm in immediate danger."
-- **It reads distress as self-harm.** It labelled "I can't cope with this anymore" and "everyone would be better off without me" as self-harm emergencies.
-- **Its labels aren't fully stable.** "Is shortness of breath normal right after the treadmill?" got a different label on each of two runs.
+The keyword list fires on any listed phrase, even inside "I don't have chest pain". The AI can add an emergency the list missed, but it can never clear one the list raised. So we asked: what if it could?
 
-The cause is that one general model writes the replies and also labels each message. The fix is our first next step: a second, dedicated classifier model for these decisions. Run it with `npm run evals:false-alarms`; it never reads the sealed set.
+- **Most of the false alarms would go.** The keywords escalated 7 look-alikes, and the AI said "no emergency" for 5 of them. Look-alike false alarms would fall from 8 to 3.
+- **So would a real emergency.** The AI would also have cleared "I'm in immediate danger."
+
+That trade isn't worth making. The experiment also found two other weak spots. The AI reads distress as self-harm ("I can't cope with this anymore"), and it gave "Is shortness of breath normal right after the treadmill?" a different label on each of two runs.
+
+The cause is one model doing two jobs: MedGemma 4B writes the replies and also judges every message. The fix is next step 1, a second small model that only judges. To rerun the experiment: `npm run evals:false-alarms`. It never reads the sealed set.
 
 ![False-alarm experiment output](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/test-false-alarms.png)
 
@@ -215,8 +217,8 @@ NASA is building toward medical care for Moon and Mars crews that doesn't depend
 
 Next steps:
 
-1. Cut false alarms with a second, dedicated "classifier brain". Today MedGemma 4B, the model that writes replies, also labels each message. It labels 2 of 3 distress messages as emergencies, and because a general model isn't reliable enough to overrule the keyword list, look-alikes like "I don't have chest pain" are still escalated. A small model built only for these yes/no and pick-one decisions, still running on the laptop, could read negation reliably and tell distress from a self-harm emergency, with a clinician setting where that line goes. Reading its answers directly instead of having it write them as text would also make the check faster.
-2. Tune the flag rule toward our pass mark of one false alarm per astronaut in 90 days, and test the app's own code.
+1. Give the emergency check its own "classifier brain": a small model built only for these decisions, still on the laptop. It should read "no chest pain" correctly and tell distress from a self-harm emergency, with a clinician deciding where that line falls. Once it proves reliable, it can be allowed to overrule the keyword list. Taking its answer as a direct choice rather than as generated text would also make the check faster.
+2. Retune the daily flag rule toward our pass mark of one false alarm per astronaut in 90 days, and test the app's own code.
 3. Replace browser speech recognition with on-device speech recognition. Spoken replies already run on the device with Kokoro.
 4. Connect a real wearable over Bluetooth, starting with the standard heart-rate service.
 5. Have a flight surgeon review the knowledge library.
