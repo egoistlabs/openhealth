@@ -49,7 +49,9 @@ https://github.com/egoistlabs/openhealth
 
 Isolation is one of NASA's five hazards of human spaceflight ([NASA HRP](https://www.nasa.gov/hrp/hazards/)). NASA's research finds that "the more restricted the space, and the less contact with people outside the environment, the more likely humans are to develop behavioral or cognitive conditions or psychiatric disorders" ([NASA](https://www.nasa.gov/humans-in-space/the-human-body-in-space/)).
 
-![NASA's five hazards of human spaceflight (nasa.gov/hrp/hazards, 15 Nov 2026). Pedro targets two of them: isolation and confinement, and distance from Earth](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-hazards.png)
+![NASA's five hazards page, rows for isolation and confinement and for distance from Earth](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-hazards.png)
+
+*From NASA's list of five hazards of human spaceflight, the two Pedro works on: isolation and confinement, and distance from Earth.*
 
 Those problems start with small signs:
 
@@ -60,7 +62,6 @@ Those problems start with small signs:
 
 **The person living it is the worst-placed to report it.** The National Academies describe institutional pressure on astronauts to under-report symptoms ([*Safe Passage*, 2001](https://nap.nationalacademies.org/read/10218/chapter/8)), and sleep debt is hard to notice in yourself.
 
-![Kenji's Today panel: he rated his mood 4 of 5, which is his normal, while his sleep duration, reaction time and sleep timing are all on Watch](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-mood-vs-measures.png)
 
 The other options on board and on Earth can't catch it in time:
 
@@ -70,13 +71,17 @@ The other options on board and on Earth can't catch it in time:
 - **Wearables** can track sleep but can't measure mood or teamwork.
 - **Asking people how they feel** misses what they don't notice.
 
-![The app's round-trip tooltip: a question to Earth takes at least 34 minutes to answer today, "That is why anything urgent is handled on board, with Pedro and the crew medical officer"](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-round-trip.png)
+![NASA chart of one-way communication delay over an 850-day Mars mission](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/fig-nasa-mars-delay.png)
+
+*NASA's example 850-day Mars mission (Figure 2 of its "Mars Communications Disruption and Delay" white paper): the one-way delay climbs to a peak of about 22 minutes.*
 
 ### Pedro connects the crew and Earth, and makes health advice something everyone can act on
 
 Pedro runs on one laptop, offline by default. It compares what each astronaut logs with their own 14-day normal, then says in plain words what changed and one thing to do.
 
-![Who gets what: the astronaut gets one next step, the crew gets support prompts with no names, and the flight surgeon on Earth gets Pedro's summary of what each astronaut shares](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-connects.png)
+![Sleep timing flag on Kenji's home screen with a suggested next step](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/fig-flag.png)
+
+*One flag on Kenji's home screen: what changed (sleep midpoint 51 min later over 3 nights) and the one thing to do (start wind-down at 23:30).*
 
 - **The astronaut** does a two-minute daily check-in. A wearable, if they have one, adds five overnight vitals that can change before they feel anything. A 3D body map records pain, which no sensor measures.
 - **The crew** sees how the team is doing, with no one's private numbers.
@@ -89,7 +94,9 @@ Pedro runs on one laptop, offline by default. It compares what each astronaut lo
 
 **1. Daily check-in.** About two minutes, by tap or by voice.
 
-![Daily check-in, sleep step: Kenji taps when he fell asleep and woke up; last night was 6 h 15 min, 1 h 10 min under his normal, with his sleep midpoint 51 min later](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-check-in.png)
+![Check-in sleep grid with fall-asleep and wake-up times](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/fig-check-in.png)
+
+*Two taps, 01:40 and 07:55, and the line underneath does the maths: 6 h 15 min slept, 1 h 10 min under Kenji's normal.*
 
 - **Sleep:** when you fell asleep and woke up. Pedro works out hours slept and the middle of your sleep, which shows whether your body clock is drifting.
 - **Mood, workload, teamwork:** a rating from 1 to 5 each.
@@ -101,7 +108,9 @@ Pedro also counts how much you talk to it and any missed check-ins.
 
 **2. Home: you against your own normal.** Your normal for each measure is the middle value of your previous 14 days, and the band around it is how much you usually vary.
 
-![Kenji's sleep timing card: last night's sleep midpoint, 04:48, is 51 min later than his normal of 03:57; after 3 nights outside his usual band it is on Watch](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-sleep-timing.png)
+![Sleep timing card on Watch beside the Mood card at Normal](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/fig-sleep-vs-mood.png)
+
+*Kenji's sleep midpoint has left its band (+51 min, Watch) while his mood sits flat at his normal, 4 of 5.*
 
 - 2 or more days outside your band → **Watch**. 5 or more → **Act**. One bad night never changes a status.
 - Every status has a text label as well as a colour.
@@ -110,15 +119,21 @@ Pedro also counts how much you talk to it and any missed check-ins.
 
 **3. Talk to Pedro.** Type or speak. Ask "How did I sleep?" or "Why is my reaction time flagged?" and Pedro answers out loud, showing each source with where it came from, its date and who approved it. You can also talk without asking anything: Pedro offers small reflection or connection ideas, but states no fact that a source doesn't back.
 
-![Pedro answering "Why is my reaction time flagged?" with the number behind the answer, one thing to try and its sources](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-answer.png)
+![Pedro answering why reaction time is flagged, with numbers, a suggestion and sources](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/fig-answer.png)
+
+*Under MedGemma's reply: the numbers Pedro used, one thing to try, and the sources it drew on.*
 
 **4. Crew view.** Crew-level numbers only, with no names or individual values, and a measure appears only when at least 2 crew members share it. It shows whether the team is drifting (for example "1 of 3 sharing crew outside their normal" on teamwork), with support prompts and a team log.
 
-![Crew view: each shared measure as a count of crew outside their own normal, with no names or individual values](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-crew.png)
+![Crew view Teamwork card: 1 of 3 sharing crew outside their normal](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/fig-crew.png)
+
+*The Teamwork card says "1 of 3 sharing crew outside their normal", with no name and no value for that person.*
 
 **5. Wearable vitals, if the crew has one: changes the person can't feel yet.** Five overnight readings: resting heart rate, heart rate variability, blood oxygen, skin temperature and breathing rate, the kind the CSA's Bio-Monitor records on the ISS ([CSA](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp)).
 
-![Daniela Reyes's wearable, last night: five readings against her own normal, with heart rate and skin temperature Urgent and breathing rate on Watch](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-wearable.png)
+![Wearable heart rate card: 66 bpm, Urgent, +9 vs 57](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/fig-wearable.png)
+
+*Daniela's heart rate, 66 bpm, is a normal adult pulse, but against her own normal of 57 it reads Urgent.*
 
 - Each reading is compared with your own last 14 nights. One to two usual spreads in the worse direction → **Watch**, more than two → **Urgent**.
 - Blood oxygen also has fixed floors: below 95% Watch, 92% or lower Urgent ([MedlinePlus](https://medlineplus.gov/lab-tests/pulse-oximetry/)).
@@ -126,7 +141,9 @@ Pedro also counts how much you talk to it and any missed check-ins.
 
 **6. 3D body map: tap where it hurts.** No sensor measures pain or a rash, and the challenge suggests "a human figure where each part of the body is clickable", so the check-in has a 3D body (BodyParts3D anatomy).
 
-![Body map entry in Pedro's log: a mark on the left quadriceps rated 6 out of 10, noted as hurting during exercise; Pedro asks about it next time](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-body-map.png)
+![Body map entry: left quadriceps, 6 out of 10, during exercise](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/fig-body-map.png)
+
+*The orange dot on the front figure is Kenji's mark: left quadriceps, 6 out of 10, "during exercise".*
 
 - Tap a muscle, bone or joint for pain, or turn on Skin to mark a rash, bite, cut, bruise, burn, blister or swelling.
 - Every mark needs a 1–10 rating and a note on when it happens, typed or spoken.
@@ -135,7 +152,9 @@ Pedro also counts how much you talk to it and any missed check-ins.
 
 **7. Earth: the flight surgeon's console, across the delay.** A second role in the app, always a delayed view ("Last downlink", "Light time", "Next pass").
 
-![The flight surgeon's note arrives on Mars as "New message from Earth": sent 13:56, arrived 14:13, 17 minutes later](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-earth-message.png)
+![New message from Earth notification, sent 13:56, arrived 14:13](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/fig-earth-message.png)
+
+*Bottom line of the notification: sent 13:56, arrived 14:13, 17 minutes apart, the one-way light time the app uses.*
 
 - **Console:** each astronaut as Stable, Watch or Act, with their vitals, escalations, check-in reports and body-map marks.
 - **Advice from Earth:** the flight surgeon writes to one astronaut, with up to 3 files attached. It shows "In transit" until the one-way light time has passed. Then a notification pops up on Mars, Pedro reads it aloud and asks "Do you have a message for the flight surgeon?", and the reply travels back the same way.
@@ -146,6 +165,8 @@ Pedro also counts how much you talk to it and any missed check-ins.
 ### How it works: code makes every decision, the AI model reads and writes the words
 
 ![What happens when you ask Pedro a question](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/answer-flow.png)
+
+*Follow the red boxes: an emergency or a boundary request stops before the model writes a word.*
 
 1. **Keyword check (code).** Listed phrases for emergencies (chest pain, trouble breathing, thoughts of self-harm), boundary requests (role-play, overriding the rules, a crewmate's answers) and serious distress. Instant, and works with the model switched off.
 2. **AI safety label (model).** The model reads the message for what it means and fills in a fixed form: emergency (and which kind), distress, boundary. Ollama's [structured outputs](https://docs.ollama.com/capabilities/structured-outputs) lock the answer to that form. This catches "there's a heavy squeezing feeling in the middle of my chest", which no phrase list would.
@@ -177,6 +198,8 @@ Four ways to watch a crew, on medium declines the person doesn't notice at all. 
 
 ![Detection test output](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/test-detection-suite.png)
 
+*Bottom table, last column, "notices none of it" row: Pedro's flag rule (labelled with the app's old name, OpenHealth) caught 98% of declines and, in brackets, flagged 88% of healthy twins.*
+
 The results show four things:
 
 - **Asking only works when people notice.** It catches 2% of declines when the person notices nothing, 14% when they notice half, and 47% when they notice all of it.
@@ -188,9 +211,13 @@ The results show four things:
 
 ![Emergency test output](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/test-emergency-suite.png)
 
+*30 of 32 in the sealed set escalated, 8 of 16 look-alikes escalated when they should not have, and the run ends in FAIL.*
+
 **Why the false alarms.** We asked the AI to label every message, including the ones the keywords had already escalated. It said "no emergency" for 5 of the 7 look-alikes the keywords caught, but it would also have cleared "I'm in immediate danger", so it can't be allowed to overrule them. The cause is one general model both writing replies and labelling messages. Run it with `npm run evals:false-alarms`.
 
 ![False-alarm experiment output](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/test-false-alarms.png)
+
+*Section 2: the keyword list tags "I'm in immediate danger" as immediate-danger and the model says "none", so the model can't be allowed to overrule the keywords.*
 
 **Answer test.** With MedGemma 4B and the AI safety label running on every message, Pedro answered 26 of 30 answerable questions correctly, replied to all 11 conversation messages, declined all 22 boundary and out-of-scope requests and escalated all 5 red flags. We wrote the questions ourselves, and we count it as a failure when the model copies an example from its instructions.
 
@@ -209,6 +236,10 @@ Next steps:
 ### What's creative, and the factors behind each choice
 
 Each risk we weighed led to one design choice.
+
+![A paraphrased chest-pain message escalated by Pedro](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/fig-emergency.png)
+
+*The keyword list misses this message, yet MedGemma's safety label reads it as cardiac and code sends the fixed escalation message.*
 
 - **Astronauts miss and under-report their own decline.** Pedro measures rather than only asks, against each person's own normal, since one astronaut's normal can be another's warning sign.
 - **Going quiet is part of the decline.** Pedro counts engagement instead of asking about it.
