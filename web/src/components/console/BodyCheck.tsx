@@ -6,37 +6,59 @@ import { Num } from "@/components/ui";
 import { saveBodyLog } from "@/lib/console/store";
 import { clearFollowUp, setFollowUp, useFollowUps, type FollowUp } from "@/lib/console/body/followups";
 import { useConsole } from "./ConsoleProvider";
-import { BodyMap, PainBodyStill, isSkinMark, needsDetails, sevColour, type PainMark } from "./BodyMap";
+import { BodyMap, PainBodyStill, isSkinMark, needsDetails, sevColour, skinKindFrom, type PainMark } from "./BodyMap";
 
-/* Body map, opened from Pedro (it used to be step 2 of the daily check-in). Tap where it hurts or the skin
-   problem is, rate it, add a note, then Save: today's pins are logged (PN-01) and kept on this device.
-   Spots flagged "follow up" on Home are asked about here. onDone gets Pedro's line, or null when closed. */
-export function BodyCheck({ onDone }: { onDone: (said: string | null, pain: PainMark[]) => void }) {
+/* What Pedro says when the board opens (also the line logged in the conversation) */
+export const BOARD_INTRO = "Let's mark it on the body map. Drag to turn the body, then tap where it hurts. The buttons along the bottom jump to an area, like Shoulder or Knee.";
+
+/* Body map as Pedro's whiteboard: it pops in on the right of the companion screen while Pedro moves to the
+   left and talks the astronaut through it (onGuide). Tap where it hurts or the skin problem is, rate it,
+   add a note, then Save: today's pins are logged (PN-01) and kept on this device. Spots flagged "follow up"
+   are asked about at the top. onDone gets Pedro's closing line, or null when closed without saving. */
+export function BodyBoard({ onDone, onGuide, hearRef }: {
+  onDone: (said: string | null, pain: PainMark[]) => void; onGuide: (text: string) => void;
+  /** set by the board: the companion screen hands it what the astronaut says (held mic or the chat box) */
+  hearRef: React.MutableRefObject<((text: string) => void) | null>;
+}) {
   const c = useConsole();
   const { s, set, clockMin } = c;
-  const ref = useRef<HTMLDialogElement>(null);
   const todayPins = (s.extra[s.me] || []).filter((e) => e.code === "PN-01" && e.sol === P).flatMap((e) => e.pain ?? []);
   const [pain, setPain] = useState<PainMark[]>(todayPins);
   const [noPain, setNoPain] = useState(false);
   const followUps = useFollowUps(s.me).filter((f) => f.sol <= P);
   const history: PainMark[] = (s.extra[s.me] || []).filter((e) => e.code === "PN-01" && e.sol >= P - 14 && e.sol < P).flatMap((e) => e.pain ?? []);
-  /* as the Home modals: open once on mount, no close() in cleanup (dev double effects would close it).
-     The 3D viewer measures its box when it starts, and a dialog that is not open yet has no size, so the
-     model would render into 0×0 and stay blank: mount the body map only once the dialog is showing. */
+  /* the 3D viewer measures its box when it starts: wait for the pop-in to lay out first */
   const [shown, setShown] = useState(false);
+  useEffect(() => { const id = requestAnimationFrame(() => setShown(true)); return () => cancelAnimationFrame(id); }, []);
+
+  const missing = pain.filter(needsDetails);
+  const canSave = noPain || (pain.length > 0 && !missing.length);
+
+  /* Pedro's next hint once every marked spot has its details */
+  const ready = pain.length > 0 && !missing.length;
+  const wasReady = useRef(ready);
   useEffect(() => {
-    const d = ref.current;
-    if (d && !d.open) d.showModal();
-    const id = requestAnimationFrame(() => setShown(true));
-    return () => cancelAnimationFrame(id);
-  }, []);
+    if (ready && !wasReady.current) onGuide("Thanks, that's what I need. Mark any other spot, or press Save to my log.");
+    wasReady.current = ready;
+  }, [ready, onGuide]);
+
+  /* the spot open in the panel: what is said goes into its note */
+  const [focus, setFocus] = useState<{ key: string; label: string } | null>(null);
+  const focusPart = (f: { key: string; label: string } | null) => {
+    setFocus(f);
+    if (!f) return;
+    const part = f.label.toLowerCase();
+    onGuide(f.key.includes(":openhealth-skin-")
+      ? `Your ${part}. Pick what it looks like, rate it from 1 to 10, then hold the mic or type below and tell me when it started.`
+      : `Your ${part}. Rate it from 1 to 10, then hold the mic or type below and tell me when it hurts and what it feels like.`);
+  };
 
   const stillThere = (f: FollowUp) => {
     if (!pain.some((p) => p.id === f.id)) setPain([...pain, { id: f.id, view: "front", x: 0, y: 0, region: f.region, level: f.level, kind: f.kind }]);
     setNoPain(false);
+    onGuide(`How is your ${f.region.toLowerCase()} compared with Sol ${f.sol}? Rate it again and tell me how it has changed.`);
   };
-  const missing = pain.filter(needsDetails);
-  const canSave = noPain || (pain.length > 0 && !missing.length);
+  const goneNow = (f: FollowUp) => { clearFollowUp(s.me, f.id); onGuide(`Good to hear your ${f.region.toLowerCase()} has cleared up.`); };
 
   const save = () => {
     for (const f of followUps) if (pain.some((p) => p.id === f.id)) clearFollowUp(s.me, f.id);
@@ -54,47 +76,75 @@ export function BodyCheck({ onDone }: { onDone: (said: string | null, pain: Pain
       : "Noted: nothing sore today.", pain);
   };
 
+  /* voice or typed words while the board is open: save, cancel, no pain, or a note for the open spot,
+     with a rating ("six out of ten") and, for skin, the kind ("itchy red rash") picked out of it */
+  const WORDS = ["", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten"];
+  const hear = (text: string) => {
+    const said = text.trim();
+    if (!said) return;
+    if (/^(save|done|that'?s (all|it)|finish(ed)?)\b/i.test(said)) {
+      if (canSave) save(); else onGuide(missing.length ? `I still need the details for your ${missing[0].region.toLowerCase()}.` : "Tap a spot first, or say no pain today.");
+      return;
+    }
+    if (/^(cancel|close|never ?mind|stop)\b/i.test(said)) { onDone(null, []); return; }
+    if (/^(no pain|nothing (hurts|is sore)|i'?m fine)\b/i.test(said)) {
+      setPain([]); setNoPain(true);
+      onGuide("Good, nothing sore today. Say save, or press Save to my log, and I'll note it.");
+      return;
+    }
+    const mark = focus ? pain.find((p) => p.id === focus.key) : undefined;
+    if (!mark) { onGuide("Tap the spot that hurts on the body first, then tell me about it."); return; }
+    const kind = isSkinMark(mark) && !mark.kind ? skinKindFrom(said) : undefined;
+    const m = said.match(/\b(10|[1-9]|one|two|three|four|five|six|seven|eight|nine|ten)\s*(?:\/|out of|over)\s*(?:10|ten)\b/i);
+    const level = m ? (Number(m[1]) || WORDS.indexOf(m[1].toLowerCase())) : undefined;
+    const note = mark.note?.trim() ? `${mark.note.trim()}. ${said}` : said;
+    setPain(pain.map((p) => (p.id === mark.id ? { ...p, note, ...(kind ? { kind } : null), ...(level ? { level } : null) } : p)));
+    setNoPain(false);
+    const extra = [kind ? `marked as ${kind.toLowerCase()}` : "", level ? `${level} out of 10` : ""].filter(Boolean).join(", ");
+    const still = isSkinMark(mark) && !mark.kind && !kind ? " Pick what it looks like in the panel too." : "";
+    onGuide(`Added to your ${mark.region.toLowerCase()}${extra ? `, ${extra}` : ""}. Check the note in the panel.${still}`);
+  };
+  /* the latest handler for the companion screen (assigned after render, so it sees the current marks) */
+  useEffect(() => { hearRef.current = hear; return () => { hearRef.current = null; }; });
+
   return (
-    <dialog ref={ref} className="mmodal" aria-labelledby="bcheck-t" onClose={() => onDone(null, [])}>
-      <div className="mmodal__in">
-        <header className="mmodal__h">
-          <div className="mmodal__ttl">
-            <h2 className="mmodal__t" id="bcheck-t">Anything sore or aching today?</h2>
-            <p className="small t2">Sol <Num>{P}</Num> · body map</p>
-          </div>
-          <span style={{ flex: 1 }} />
-          <button type="button" className="mmodal__x" onClick={() => onDone(null, [])} aria-label="Close">×</button>
-        </header>
-        <p className="ci__hint">Drag to turn the body and tap the spot: on the skin for a rash, bite or cut, or switch Skin off to tap the muscle or bone that hurts. Rate it 1 to 10 in the panel. An amber glow means it was marked on earlier sols.</p>
-        {followUps.length ? (
-          <section className="fu" aria-label="Follow-ups">
-            <p className="small"><b>Follow-ups.</b> <span className="t2">You asked to check on these. Are they still there?</span></p>
-            {followUps.map((f) => {
-              const again = pain.some((p) => p.id === f.id);
-              return (
-                <div key={f.id} className="fu__row">
-                  <span className="fu__dot" style={{ background: sevColour(f.level) }} />
-                  <span className="fu__t"><b>{f.region}</b>{f.kind ? ` · ${f.kind.toLowerCase()}` : ""} · <Num>{f.level}/10</Num> on Sol <Num>{f.sol}</Num>
-                    {f.note?.trim() ? <span className="t2"> · “{f.note.trim()}”</span> : null}</span>
-                  {again ? <span className="small t2">Marked again: rate it and add how it changed</span> : <span className="fu__act">
-                    <button type="button" className="opt" onClick={() => stillThere(f)}>Still there</button>
-                    <button type="button" className="opt" onClick={() => clearFollowUp(s.me, f.id)}>Gone now</button>
-                  </span>}
-                </div>
-              );
-            })}
-          </section>
-        ) : null}
-        {shown ? <BodyMap value={pain} history={history} noPain={noPain}
-          onChange={(p) => { setPain(p); setNoPain(false); }}
-          onNoPain={() => { setPain([]); setNoPain(true); }} /> : <div style={{ minHeight: 480 }} aria-hidden="true" />}
-        {missing.length ? <p className="ci__hint" role="status" style={{ color: "#F2701D" }}>Add the details for {missing.map((p) => p.region).join(", ")} before you save.</p> : null}
-        <div className="actions" style={{ justifyContent: "flex-end" }}>
+    <section className="board" aria-labelledby="board-t">
+      <header className="board__h">
+        <div>
+          <h2 className="board__t" id="board-t">Anything sore or aching today?</h2>
+          <p className="small t2">Sol <Num>{P}</Num> · an amber glow means it was marked on earlier sols</p>
+        </div>
+        {/* Save sits up here so it never ends up below the fold */}
+        <div className="board__act">
           <button type="button" className="ta ta--quiet" onClick={() => onDone(null, [])}>Cancel</button>
           <button type="button" className="btn-primary" disabled={!canSave} onClick={save}>Save to my log</button>
         </div>
-      </div>
-    </dialog>
+      </header>
+      {followUps.length ? (
+        <section className="fu" aria-label="Follow-ups">
+          <p className="small"><b>Follow-ups.</b> <span className="t2">You asked to check on these. Are they still there?</span></p>
+          {followUps.map((f) => {
+            const again = pain.some((p) => p.id === f.id);
+            return (
+              <div key={f.id} className="fu__row">
+                <span className="fu__dot" style={{ background: sevColour(f.level) }} />
+                <span className="fu__t"><b>{f.region}</b>{f.kind ? ` · ${f.kind.toLowerCase()}` : ""} · <Num>{f.level}/10</Num> on Sol <Num>{f.sol}</Num>
+                  {f.note?.trim() ? <span className="t2"> · “{f.note.trim()}”</span> : null}</span>
+                {again ? <span className="small t2">Marked again: rate it and add how it changed</span> : <span className="fu__act">
+                  <button type="button" className="opt" onClick={() => stillThere(f)}>Still there</button>
+                  <button type="button" className="opt" onClick={() => goneNow(f)}>Gone now</button>
+                </span>}
+              </div>
+            );
+          })}
+        </section>
+      ) : null}
+      {shown ? <BodyMap compact value={pain} history={history} noPain={noPain} onFocusChange={focusPart}
+        onChange={(p) => { setPain(p); setNoPain(false); }}
+        onNoPain={() => { setPain([]); setNoPain(true); onGuide("Good, nothing sore today. Press Save to my log and I'll note it."); }} />
+        : <div style={{ minHeight: 420 }} aria-hidden="true" />}
+      {missing.length ? <p className="ci__hint" role="status" style={{ color: "#F2701D" }}>Add the details for {missing.map((p) => p.region).join(", ")} before you save.</p> : null}
+    </section>
   );
 }
 

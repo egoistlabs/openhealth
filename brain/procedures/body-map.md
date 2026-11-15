@@ -5,7 +5,7 @@ keywords: [body map, pain, sore, ache, hurts, muscle, joint, skin, rash, bite, c
 source: Project design, daily check-in body map (web/src/components/console/BodyMap.tsx); NASA HRP, Risks of Human Spaceflight, Risk of Reduced Cardiorespiratory and Musculoskeletal Fitness (nasa.gov/hrp/risks)
 authorised_by: Pending clinical review
 added: 2026-11-15
-status: active
+status: replaced
 replaces:
 ---
 

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useCompanionChat } from "@/hooks/companion/mutations/use-companion-chat";
 import {
   COMPANION_NAME, JOURNAL, MEASURES, P, avg, day, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, overall, series,
@@ -13,7 +13,7 @@ import { holdEmotion, replyEmotion, restEmotion } from "@/lib/console/emotion";
 import { Num, StatusMark, Toggle } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
 import { READ_EARTH } from "./EarthToast";
-import { BodyCheck, BodyEntry, BodyLogRow } from "./BodyCheck";
+import { BOARD_INTRO, BodyBoard, BodyEntry, BodyLogRow } from "./BodyCheck";
 import type { PainMark } from "./BodyMap";
 import { READ_WEARABLE, fmtVital, fmtVitalDelta, vitals, wearableSummary, type Vital, type VitalKey } from "@/lib/console/wearable";
 import { FlagList } from "./FlagCard";
@@ -27,6 +27,9 @@ import { HoldButton, VoiceState, type VState } from "./Voice";
 
 /* Starter questions (D7). Replace with Paul's starter-question list when it lands. */
 const CHIPS: Array<[string, string]> = [["How did I sleep?", "sleep"], ["Anything I should watch?", "watch"], ["Sum up my week", "summary"]];
+
+/* what sends Pedro to the body map: pain, an injury, or a skin problem in what the astronaut says */
+const PAIN_RE = /\b(hurts?|hurting|pains?|painful|sore(ness)?|aches?|aching|achy|injur(y|ies|ed)|sprain(s|ed)?|strain(s|ed)?|bruise[sd]?|rash(es)?|itch(es|y|ing)?|blisters?|swollen|swelling|cramps?|cuts?|scrapes?|burns?|bites?|stings?|bumps?|lumps?|body ?map)\b/i;
 
 const reducedMotion = () => window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -48,8 +51,14 @@ function CompanionStage() {
   const [text, setText] = useState("");
   const [jSel, setJSel] = useState(0);
   const [jSummary, setJSummary] = useState(false);
-  /* the body map, moved here from the daily check-in */
+  /* the body map as Pedro's whiteboard: Pedro moves left, the board pops in on the right */
   const [bodyOpen, setBodyOpen] = useState(false);
+  /* Pedro's latest hint on the board, shown under him once he has finished saying it */
+  const [guideRow, setGuideRow] = useState<ConvoRow | null>(null);
+  /* true while the board closes: it shrinks away and Pedro glides back to the centre */
+  const [boardLeaving, setBoardLeaving] = useState(false);
+  /* while the board is open, what the astronaut says goes to it (BodyBoard sets this) */
+  const boardHear = useRef<((text: string) => void) | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const trRef = useRef<HTMLDivElement>(null);
   const typeTimer = useRef(0);
@@ -83,9 +92,9 @@ function CompanionStage() {
   const [trail, setTrail] = useState<string[]>([]);
   const seen = useRef(rows.length);
   useEffect(() => {
-    if (rows.length > seen.current && atPresent) set({ drawer: true, tab: "conversation" });
+    if (rows.length > seen.current && atPresent && !bodyOpen) set({ drawer: true, tab: "conversation" }); // the board needs the room
     seen.current = rows.length;
-  }, [rows.length, atPresent, set]);
+  }, [rows.length, atPresent, set, bodyOpen]);
   useEffect(() => () => { window.clearTimeout(typeTimer.current); Presence.setState("idle"); }, []);
 
   const chat = useCompanionChat({
@@ -122,13 +131,21 @@ function CompanionStage() {
     if (rows.length <= spoken.current) return;
     const fresh = rows.slice(spoken.current);
     spoken.current = rows.length;
+    /* An escalation: Pedro is the only way a message reaches Earth, so he passes it to the flight surgeon
+       himself. Ground sees it by name and time, never the astronaut's words (those stay on board). */
+    if (atPresent && fresh.some((r) => r.escalation && !r.restored)) {
+      addEarthNote({
+        crewId: s.me, sol: P, sentMin: c.clockMin, arriveMin: c.clockMin + DEMO_DELAY_MIN, from: "crew", author: `${COMPANION_NAME} (escalation)`,
+        text: `Escalation from ${COMPANION_NAME}: ${crewById(s.me).full} raised something that may need medical attention at ${hm(c.clockMin)}. Please contact them now. Their own words stay on board.`,
+      }, P);
+    }
     const reply = [...fresh].reverse().find((r) => r.who === "companion" && r.text && !r.restored);
     if (!reply || reply.stopped || !vega.current) return;
     /* the answer first, so its opening sentence stands on its own; the suggested action last */
     const aloud = reply.action ? `${reply.text} Worth trying: ${reply.action}` : reply.text!;
     said.current = { row: reply, text: aloud, base: 0, cursor: 0, upto: 0 };
     vega.current.speak(aloud, { emotion: replyEmotion(reply, worst), silent: !s.voice });
-  }, [rows, worst, s.voice]);
+  }, [rows, worst, s.voice, atPresent, s.me, c.clockMin]);
 
   /* what the app can say without the model or the numbers */
   const localReply = (q: string) => {
@@ -161,7 +178,7 @@ function CompanionStage() {
     set({ chatted: true, drawer: true, tab: "conversation" });
     c.addLines([{ who: "you", text: q }]);
     let t: string;
-    if (/^s*(no|nope|nothing|not now|no thanks?|no message|that'?s all|all good)/i.test(q)) t = "Okay, nothing sent to Earth.";
+    if (/^s*(no|nope|nothing|not now|no thanks?|no message|that'?s all|all good)\b/i.test(q)) t = "Okay, nothing sent to Earth.";
     else {
       const delay = DEMO_DELAY_MIN; // demo: replies reach Earth within a minute (real light delay ~lightDelayMin(P))
       const ok = addEarthNote({ crewId: s.me, sol: P, sentMin: c.clockMin, arriveMin: c.clockMin + delay, author: crewById(s.me).full, text: q.slice(0, NOTE_MAX), from: "crew" }, P);
@@ -173,6 +190,8 @@ function CompanionStage() {
 
   const userSaid = (q: string, intent?: string) => {
     if (busy) return;
+    /* the body map is open: spoken or typed words describe the spot (or save / cancel), not a chat turn */
+    if (bodyOpen && boardHear.current && intent !== "body") { boardHear.current(q); return; }
     if (replying && !intent) { sendReply(q); return; } // a button press (intent) leaves reply mode instead
     if (replying) setReplying(false);
     setTrail([]);
@@ -212,6 +231,36 @@ function CompanionStage() {
       }, reducedMotion() ? 80 : 600);
       return;
     }
+    /* Pain or an injury: Pedro moves aside and opens the body map like a whiteboard, then guides.
+       The Body map button opens it straight away; words said or typed are screened first (/api/ai/screen),
+       so a red flag such as "my chest hurts" or "I want to hurt myself" still escalates. */
+    if (intent === "body") { openBoard(); return; }
+    if (PAIN_RE.test(q)) {
+      setBusy(true);
+      Presence.setState("working");
+      void (async () => {
+        let r: { redFlag: { matched: boolean; categories: string[]; escalationMessage: string }; support: { matched: boolean } } | null = null;
+        try {
+          const res = await fetch("/api/ai/screen", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: q }) });
+          if (res.ok) r = await res.json();
+        } catch { /* handled below */ }
+        Presence.setState("idle"); setBusy(false);
+        /* screening unavailable, or a support need: the normal chat turn screens it on the server */
+        if (!r || r.support.matched) { chat.send(q); return; }
+        if (r.redFlag.matched) {
+          /* a keyword red flag: escalate only. Flagged by the model alone (e.g. a rash read as urgent): the
+             escalation stands and is said, and the body map still opens so it can be marked */
+          const keyword = r.redFlag.categories.some((cat) => !cat.startsWith("model:"));
+          const text = keyword ? r.redFlag.escalationMessage : `${r.redFlag.escalationMessage} Meanwhile, you can mark it on the body map.`;
+          if (keyword) { set({ drawer: true, tab: "conversation" }); c.addLines([{ who: "companion", text, escalation: true }]); }
+          else openBoard({ who: "companion", text, escalation: true });
+          c.say(text);
+          return;
+        }
+        openBoard();
+      })();
+      return;
+    }
     if (intent === "summary" || /summar|recap|my week/i.test(q)) {
       setBusy(true);
       Presence.setState("working");
@@ -225,6 +274,24 @@ function CompanionStage() {
     }
     chat.send(q);
   };
+
+  /* open the board: Pedro's first line goes in the log (and is spoken); the log closes to make room */
+  function openBoard(first: Omit<ConvoRow, "sol" | "min"> = { who: "companion", text: BOARD_INTRO }) {
+    setBodyOpen(true);
+    setGuideRow(null);
+    set({ chatted: true, drawer: false });
+    c.addLines([first]);
+  }
+  /* a hint while the board is open: spoken with live captions, not logged */
+  const guide = useCallback((text: string) => {
+    const row: ConvoRow = { who: "companion", text, sol: P, min: c.clockMin };
+    setGuideRow(row);
+    c.say(text);
+    if (!vega.current) return;
+    vega.current.stop();
+    said.current = { row, text, base: 0, cursor: 0, upto: 0 };
+    vega.current.speak(text, { silent: !s.voice });
+  }, [c, s.voice]);
 
   /* a question typed in the Pedro launcher on another screen, or "Open message from Earth" on the toast:
      send it once on arrival (the guard resets once it is cleared, so a later one on this screen works too) */
@@ -241,6 +308,7 @@ function CompanionStage() {
   /* voice on the companion: a rating heard in speech goes into today's check-in draft (C3) */
   const onPhrase = (p: VoicePhrase) => {
     setV(null);
+    if (bodyOpen && boardHear.current) { boardHear.current(p.text); return; } // a note for the open spot
     if (p.parse && p.parse.key !== "meals" && p.parse.key !== "sleep") {
       const key = p.parse.key, n = p.parse.v!;
       set((prev) => ({ chatted: true, drawer: true, tab: "conversation", draft: { ...prev.draft, [key]: n } }));
@@ -272,7 +340,7 @@ function CompanionStage() {
       ? { ...reveal.row, text: reveal.row.text!.slice(0, reveal.upto) }
       : speaking != null
         ? { who: "companion" as const, text: speaking, sol: P, min: 0 }
-        : lastReply;
+        : (bodyOpen && guideRow) || lastReply;
 
   /* notes from Earth that have reached the hab since the last check-in (re-reads when a note is added) */
   useAllEarthNotes();
@@ -283,7 +351,7 @@ function CompanionStage() {
     <div className={`cstage${s.drawer ? " has-drawer" : ""}`}>
       <h1 className="vh">Companion, {crewById(s.me).full}</h1>
       <div className="cmain">
-        <section className="stage" aria-label={COMPANION_NAME}>
+        <section className={`stage${bodyOpen ? " stage--board" : ""}${boardLeaving ? " stage--leaving" : ""}`} aria-label={COMPANION_NAME}>
           <div className="stage__tools">
             <Toggle on={s.voice} label="Voice" onClick={() => { set((p) => ({ voice: !p.voice })); setTypeMode(false); }} />
             {/* Pedro sums up what the flight surgeon sent since the last check-in; the badge counts notes that have arrived */}
@@ -298,20 +366,14 @@ function CompanionStage() {
               Wearable summary
             </button>
             {/* the body map (moved from the check-in): mark anything sore, then Pedro logs it */}
-            <button type="button" className="ta ta--quiet" disabled={busy || !atPresent} aria-haspopup="dialog" onClick={() => setBodyOpen(true)}>
+            <button type="button" className="ta ta--quiet" disabled={busy || !atPresent || bodyOpen} onClick={() => userSaid("Something hurts. Open the body map.", "body")}>
               Body map
             </button>
             <button type="button" className="ta ta--quiet" aria-expanded={s.drawer} aria-controls="drawer" onClick={() => set((p) => ({ drawer: !p.drawer }))}>{s.drawer ? "Hide log" : "Show log"}</button>
           </div>
-          {bodyOpen ? <BodyCheck onDone={(said, pain) => {
-            setBodyOpen(false);
-            if (!said) return;
-            set({ chatted: true, drawer: true, tab: "conversation" });
-            /* Pedro's line, then the body map itself in the log (picture, summary, follow-up buttons) */
-            c.addLines(pain.length ? [{ who: "companion", text: said }, { who: "body", pain }] : [{ who: "companion", text: said }]);
-            c.say(said);
-          }} /> : null}
-          {<>
+          {/* Pedro's column: centred on his own, on the left beside the board (same element, so the
+              avatar keeps running while it moves) */}
+          <div className="stage__pedro">
             <div className="vega-wrap">
               <VegaAvatar onSpeech={onSpeech} onReady={(api) => {
                 vega.current = api;
@@ -325,8 +387,35 @@ function CompanionStage() {
                 </span>
               ) : null}
             </div>
-            <Reply row={shown} live={reveal != null || speaking != null} progress={chat.progress} />
-          </>}
+            {/* on the board, Pedro's words become a speech bubble above him (a new bubble pops per line) */}
+            <div className="stage__say" key={bodyOpen ? (reveal?.row.text ?? shown?.text ?? "").slice(0, 48) : "say"}>
+              <Reply row={shown} live={reveal != null || speaking != null} progress={chat.progress} />
+            </div>
+          </div>
+          {bodyOpen ? (
+            <div className="stage__board">
+              <BodyBoard hearRef={boardHear} onGuide={guide} onDone={(said, pain) => {
+                if (boardLeaving) return;
+                vega.current?.stop();
+                /* 1. the board shrinks away and Pedro glides back to the centre */
+                setBoardLeaving(true);
+                const fast = reducedMotion();
+                window.setTimeout(() => {
+                  setBoardLeaving(false);
+                  setBodyOpen(false);
+                  setGuideRow(null);
+                  if (!said) return;
+                  /* 2. a beat at the centre, then the companion log opens with Pedro's summary and the body
+                     map entry (picture, summary, follow-up buttons), and he says it */
+                  window.setTimeout(() => {
+                    set({ chatted: true, drawer: true, tab: "conversation" });
+                    c.addLines(pain.length ? [{ who: "companion", text: said }, { who: "body", pain }] : [{ who: "companion", text: said }]);
+                    c.say(said);
+                  }, fast ? 0 : 450);
+                }, fast ? 0 : 520);
+              }} />
+            </div>
+          ) : null}
         </section>
 
         <div className="chat" id="chat">
@@ -354,7 +443,7 @@ function CompanionStage() {
             }}>
               <label className="vh" htmlFor="say">Message to Pedro</label>
               <input ref={inputRef} className="field field--chat" id="say" autoComplete="off" value={text} onChange={(e) => setText(e.target.value)}
-                placeholder={replying ? "Your message to the flight surgeon" : s.voice && !typeMode ? "Type a message, or hold the mic to talk" : "Type a message"} maxLength={2000} />
+                placeholder={bodyOpen ? "Tell Pedro about the spot you picked, or say save" : replying ? "Your message to the flight surgeon" : s.voice && !typeMode ? "Type a message, or hold the mic to talk" : "Type a message"} maxLength={2000} />
               {s.voice ? <>
                 <Wave />
                 <HoldButton ctx="companion" live enabled={s.voice && !busy} onPhrase={onPhrase} setV={setV}
@@ -372,7 +461,7 @@ function CompanionStage() {
       </div>
 
       <section className={`drawer${s.drawer ? " is-open" : ""}`} id="drawer" aria-label="Companion log" hidden={!s.drawer}>
-        {s.drawer ? <Drawer onBody={() => setBodyOpen(true)} working={working} trRef={trRef} jSel={jSel} setJSel={setJSel} jSummary={jSummary} setJSummary={setJSummary} /> : null}
+        {s.drawer ? <Drawer onBody={() => openBoard()} working={working} trRef={trRef} jSel={jSel} setJSel={setJSel} jSummary={jSummary} setJSummary={setJSummary} /> : null}
       </section>
     </div>
   );
@@ -442,7 +531,7 @@ function EscalationNotice() {
   return (
     <div role="alert" className="flex items-start gap-2 border-l-2 border-act bg-surface-2 px-3 py-2 text-left text-body">
       <StatusMark state="act" />
-      <span><b className="text-act-text">Tell the flight surgeon now.</b> This may need medical attention. The companion does not handle this; it is passed to the crew medical officer.</span>
+      <span><b className="text-act-text">Escalated to the Earth crew.</b> {COMPANION_NAME} sent your name and the time, not your words. It reaches Earth within {DEMO_DELAY_MIN} min in this demo (real delay about {lightDelayMin(P)} min).</span>
     </div>
   );
 }

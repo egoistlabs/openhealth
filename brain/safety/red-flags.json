@@ -1,17 +1,61 @@
 {
-  "escalation_message": "Please contact the mission medical officer or designated flight surgeon now and follow the mission's urgent support procedure. If you may be in immediate danger, tell a crewmate and contact mission support without delay.",
+  "escalation_message": "I've escalated this to the flight surgeon and the ground crew on Earth, and they will contact you. Tell your crewmates about your status now. If you may be in immediate danger, tell a crewmate straight away and get help on board without delay.",
   "categories": [
     {
       "id": "chest-pain",
-      "terms": ["chest pain", "chest hurts", "pain in my chest", "pressure in my chest"]
+      "terms": ["chest pain", "chest hurts", "pain in my chest", "pressure in my chest", "chest pressure", "chest tightness", "tightness in my chest", "chest feels tight", "chest is tight"]
     },
     {
       "id": "breathing",
-      "terms": ["can't breathe", "cannot breathe", "trouble breathing", "difficulty breathing", "shortness of breath"]
+      "terms": ["can't breathe", "cannot breathe", "trouble breathing", "difficulty breathing", "shortness of breath", "short of breath", "can't catch my breath", "blue lips", "lips are blue", "lips are turning blue", "lips look blue", "gray lips", "grey lips", "lips are gray", "lips are grey", "face is turning blue", "face is going gray", "face is going grey", "asthma attack", "wheezing won't stop", "wheezing that won't stop", "can't stop wheezing"]
+    },
+    {
+      "id": "heart-rhythm",
+      "terms": ["heart is racing", "heart racing", "heart is pounding", "heart pounding", "irregular heartbeat", "heartbeat is irregular", "heart is skipping", "heart keeps skipping", "palpitations"]
+    },
+    {
+      "id": "fainting",
+      "terms": ["fainted", "i fainted", "passed out", "blacked out", "lost consciousness", "losing consciousness", "unconscious"]
+    },
+    {
+      "id": "stomach",
+      "terms": ["vomiting blood", "throwing up blood", "threw up blood", "can't stop vomiting", "can't stop throwing up", "keep throwing up", "constant vomiting", "bloody diarrhea", "bloody diarrhoea", "severe diarrhea", "severe diarrhoea", "blood in my stool", "bloody stool", "black stool", "severe abdominal pain", "severe stomach pain"]
+    },
+    {
+      "id": "dehydration",
+      "terms": ["severely dehydrated", "very dehydrated", "haven't peed", "haven't urinated", "can't pee", "no urination", "extreme weakness", "extremely weak"]
+    },
+    {
+      "id": "stroke",
+      "terms": ["face is drooping", "face drooping", "face is droopy", "slurred speech", "speech is slurred", "slurring my words", "arm is weak", "can't lift my arm", "sudden vision loss", "lost my vision", "can't see out of"]
+    },
+    {
+      "id": "head-nerves",
+      "terms": ["seizure", "convulsing", "convulsions", "worst headache", "severe headache", "hit my head", "head injury", "stiff neck", "sudden confusion", "disoriented", "dizzy and confused", "confused and dizzy", "can't stand up", "can't stay standing"]
+    },
+    {
+      "id": "allergic",
+      "terms": ["anaphylaxis", "anaphylactic", "throat is swelling", "throat is closing", "throat feels tight", "lips are swelling", "face is swelling", "swollen lips", "tongue is swelling", "hives and trouble breathing"]
+    },
+    {
+      "id": "poisoning",
+      "terms": ["poisoned", "poisoning", "overdose", "overdosed", "took too many pills", "swallowed chemicals", "chemical exposure", "fuel exposure", "breathed in fumes", "inhaled fumes", "breathing in fumes", "carbon monoxide"]
+    },
+    {
+      "id": "injury",
+      "terms": ["bleeding won't stop", "won't stop bleeding", "can't stop the bleeding", "heavy bleeding", "bleeding heavily", "broken bone", "broke my arm", "broke my leg", "broke my wrist", "broke my ankle", "bone is sticking out", "deep wound", "deep cut", "burned myself", "burnt myself", "got burned", "got burnt", "bad burn", "electric shock", "electrocuted", "got shocked", "eye injury", "injured my eye", "hurt my eye", "chemical in my eye", "heat stroke", "heatstroke", "heat exhaustion"]
+    },
+    {
+      "id": "diabetic",
+      "terms": ["diabetic emergency", "blood sugar is very low", "blood sugar is very high", "blood sugar is too low", "blood sugar is too high", "low blood sugar", "high blood sugar", "hypoglycemia", "hypoglycaemia", "hyperglycemia", "hyperglycaemia"]
+    },
+    {
+      "id": "severe-pain",
+      "terms": ["severe pain", "unbearable pain", "worst pain", "excruciating", "pain is a 10", "10 out of 10 pain", "pain is 10 out of 10"]
     },
     {
       "id": "self-harm",
-      "terms": ["suicide", "kill myself", "end my life", "hurt myself", "self-harm", "self harm"]
+      "terms": ["suicide", "kill myself", "end my life", "hurt myself", "hurting myself", "harm myself", "self-harm", "self harm", "want to die"]
     },
     {
       "id": "immediate-danger",

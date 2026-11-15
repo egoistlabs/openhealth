@@ -92,8 +92,10 @@ const PAST = "#F5B82E";
 const LAYERS: Array<[string, StructureType[]]> = [["Muscles", ["muscle"]], ["Bones", ["bone"]], ["Joints & ligaments", ["joint", "ligament", "tendon"]]];
 const UNDER_SKIN = LAYERS.flatMap(([, types]) => types);
 
-export function BodyMap({ value, onChange, history, noPain, onNoPain, onFocusChange }: {
+export function BodyMap({ value, onChange, history, noPain, onNoPain, onFocusChange, compact }: {
   value: PainMark[]; onChange: (v: PainMark[]) => void; history: PainMark[]; noPain: boolean; onNoPain: () => void;
+  /** shorter viewer and panel, for Pedro's board on the companion screen (it shares the screen with Pedro and the chat bar) */
+  compact?: boolean;
   /** the part open in the panel (key and label), so the check-in can take a spoken note for it */
   onFocusChange?: (focus: { key: string; label: string } | null) => void;
 }) {
@@ -209,7 +211,7 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain, onFocusCha
   if (focus && focusPart) {
     const past = pastCount(focus), tip = JAW.test(focusPart.id) ? JAW_TIP : TIPS[focusPart.region];
     panel = (
-      <div style={S.pIn}>
+      <div style={compact ? { ...S.pIn, maxHeight: S.panelCompact.maxHeight } : S.pIn}>
         <div style={S.pHead}>
           <div>
             <p style={S.pKicker}>{regionName(focusPart.region)}{focusPart.type !== "area" && focusPart.type !== "skin" ? ` · ${focusPart.type}` : ""}</p>
@@ -257,7 +259,7 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain, onFocusCha
     );
   } else if (group) {
     panel = (
-      <div style={S.pIn}>
+      <div style={compact ? { ...S.pIn, maxHeight: S.panelCompact.maxHeight } : S.pIn}>
         <div style={S.pHead}>
           <h3 style={S.pTitle}>{regionName(group)}</h3>
           <button type="button" className="ta ta--quiet" onClick={() => openRegion(null)} aria-label="Close region">×</button>
@@ -280,7 +282,7 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain, onFocusCha
     );
   } else {
     panel = (
-      <div style={S.pIn}>
+      <div style={compact ? { ...S.pIn, maxHeight: S.panelCompact.maxHeight } : S.pIn}>
         {value.length ? <>
           <h3 style={S.pTitle}>Where it hurts today</h3>
           <div style={S.gList}>
@@ -330,7 +332,7 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain, onFocusCha
               style={{ ...S.tool, ...(skinOn ? S.toolOn : null) }}>Skin</button>
             <button type="button" onClick={resetView} disabled={!ready} style={{ ...S.tool, marginLeft: "auto" }}>Reset view</button>
           </div>
-          <div style={S.stage} aria-busy={!ready}>
+          <div style={compact ? { ...S.stage, ...S.stageCompact } : S.stage} aria-busy={!ready}>
             <BodyModel key={viewerKey} onReady={onReady} onPick={onPick} onProgress={onProgress} onError={onError} />
             {!ready || failed ? (
               <div style={S.overlay} role="status">
@@ -341,7 +343,7 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain, onFocusCha
           </div>
           <p style={S.credit}>3D anatomy: <a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html" target="_blank" rel="noreferrer">BodyParts3D</a>, © The Database Center for Life Science (DBCLS), Japan, <a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html" target="_blank" rel="noreferrer">CC BY 4.0</a>. Face muscles are approximate shapes built on the BodyParts3D skull. Viewer: Somakine (MIT).</p>
         </div>
-        <div style={S.panel}>{panel}</div>
+        <div style={compact ? { ...S.panel, ...S.panelCompact } : S.panel}>{panel}</div>
       </div>
       <div style={S.chips}>
         <button type="button" aria-pressed={group === null} onClick={() => openRegion(null)} style={{ ...S.chip, ...(group === null ? S.chipOn : null) }}>Whole body</button>
@@ -489,6 +491,9 @@ const S = {
   stage: { position: "relative", height: "min(56vh, calc(100vh - 380px))", minHeight: 320, borderRadius: 10, background: "radial-gradient(ellipse at 50% 40%, rgb(59 99 128 / .35), rgb(11 13 18 / .6) 70%)", overflow: "hidden", cursor: "grab" },
   overlay: { position: "absolute", inset: 0, display: "grid", placeContent: "center", textAlign: "center", gap: 4, fontSize: 13, color: "var(--c-text-2)", pointerEvents: "none" },
   credit: { fontSize: 10, color: "var(--c-text-3)", lineHeight: 1.4 },
+  /* compact (Pedro's board): what is left under the header, tools, area buttons and chat bar */
+  stageCompact: { height: "max(240px, calc(100vh - 520px))", minHeight: 240 },
+  panelCompact: { maxHeight: "max(290px, calc(100vh - 470px))" },
   panel: { display: "flex", borderRadius: 14, border: "0.5px solid var(--c-hair-strong)", background: "rgb(143 163 189 / .05)", minHeight: 0 },
   pIn: { display: "flex", flexDirection: "column", gap: 8, padding: 16, width: "100%", minHeight: 0, overflowY: "auto", maxHeight: "min(62vh, calc(100vh - 320px))" },
   pHead: { display: "flex", alignItems: "flex-start", justifyContent: "space-between", gap: 8 },
