@@ -91,7 +91,9 @@ export type VoicePhrase = {
 export type ConvoRow = {
   sol: number;
   min: number;
-  who: "companion" | "you" | "parsed" | "sys" | "summary";
+  who: "companion" | "you" | "parsed" | "sys" | "summary" | "earth";
+  /** "earth" rows: the Advice from Earth notes (ids) shown in full in the log */
+  notes?: string[];
   text?: string;
   label?: string;
   value?: string;

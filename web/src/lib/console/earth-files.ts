@@ -56,7 +56,36 @@ export async function putFile(f: File): Promise<Attachment> {
   return { id, name: f.name, type, size: f.size };
 }
 
+/* the files attached to the sample notes in earth-notes.ts: plain guidance text, no doses, no diagnoses */
+const SAMPLE_FILES: Record<string, string> = {
+  "sim-file-shoulder": `SHOULDER CARE SHEET (sample, simulated mission)
+
+From: Flight surgeon, Earth
+For: Mattias Lindqvist, FE
+
+1. Skip overhead lifts and hatch work with the right arm until the crew medical officer has looked at the shoulder.
+2. Note on the body map in your daily check-in: how bad (1 to 10) and when it hurts.
+3. Gentle range of movement only, no forcing.
+4. Tell the crew medical officer straight away if the arm goes weak or numb, or the pain gets worse.
+
+This is general guidance for the demo, not a diagnosis.`,
+  "sim-file-fever": `FEVER WATCH CHECKLIST (sample, simulated mission)
+
+From: Flight surgeon, Earth
+For: Daniela Reyes, MS-2
+
+[ ] Check body temperature with the kit thermometer, morning and evening.
+[ ] Write the readings in your check-in note.
+[ ] Drink water through the day.
+[ ] Rest when the schedule allows.
+[ ] Talk to the crew medical officer today.
+[ ] Tell the crew medical officer straight away if you feel short of breath or much worse.
+
+This is general guidance for the demo, not a diagnosis.`,
+};
+
 export async function getFile(id: string): Promise<Blob | null> {
+  if (SAMPLE_FILES[id]) return new Blob([SAMPLE_FILES[id]], { type: "text/plain" });
   if (memory.has(id)) return memory.get(id)!;
   const d = await db();
   if (!d) return null;
@@ -68,3 +97,13 @@ export async function getFile(id: string): Promise<Blob | null> {
 }
 
 export const fmtSize = (n: number) => (n >= 1024 * 1024 ? `${(n / 1024 / 1024).toFixed(1)} MB` : `${Math.max(1, Math.round(n / 1024))} KB`);
+
+/* opens a stored attachment in a new tab (PDFs in the browser's own viewer) */
+export async function openAttachment(id: string) {
+  const tab = window.open("", "_blank"); // opened during the click, so pop-up blockers allow it
+  const blob = await getFile(id);
+  if (!blob) { tab?.close(); window.alert("This file is no longer stored on this device."); return; }
+  const url = URL.createObjectURL(blob);
+  if (tab) tab.location.href = url; else window.location.href = url;
+  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
+}

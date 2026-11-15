@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { CREW, MEASURES, MKEY, P, RANK, day, flagCopy, fmt, fmtDelta, hm, isOut, listJoin, mstatus, type MeasureKey, type State } from "@/lib/console/data";
+import { CREW, MEASURES, MKEY, P, RANK, day, flagCopy, solDate, fmt, fmtDelta, hm, isOut, listJoin, mstatus, type MeasureKey, type State } from "@/lib/console/data";
 import { vitals, type Vital } from "@/lib/console/wearable";
 import { Num, StatusMark, StatusWord } from "@/components/ui";
 import { useConsole } from "./ConsoleProvider";
@@ -11,7 +11,7 @@ import { VitalStrip } from "./GroundCrewCards";
 import { PainSummary, type PainMark } from "./BodyMap";
 import { CrewStatusModal } from "./GroundPerson";
 import { addEarthNote, NOTE_MAX, useAllEarthNotes, useEarthNotes, type EarthNote } from "@/lib/console/earth-notes";
-import { FILE_ACCEPT, FILES_PER_NOTE, fileProblem, fmtSize, getFile, putFile } from "@/lib/console/earth-files";
+import { FILE_ACCEPT, FILES_PER_NOTE, fileProblem, fmtSize, openAttachment, putFile } from "@/lib/console/earth-files";
 import { lightDelayMin } from "@/lib/console/ground";
 
 const SOLS = 7;
@@ -353,8 +353,13 @@ function ThreadsModal({ startWith, onClose }: { startWith: string; onClose: () =
   const ref = useRef<HTMLDialogElement>(null);
   const all = useAllEarthNotes();
   const [who, setWho] = useState<string>(startWith);
+  const [day, setDay] = useState<number | null>(null); // a sol picked on the calendar, or null for all sols
   useEffect(() => { const d = ref.current; if (d && !d.open) d.showModal(); }, []);
   const people = who === "all" ? CREW : CREW.filter((c) => c.id === who);
+  /* calendar: the last 28 sols, with how many notes each holds for the current astronaut filter */
+  const inFilter = all.filter((n) => who === "all" || n.crewId === who);
+  const calSols = Array.from({ length: 28 }, (_, i) => P - 27 + i).filter((t) => t > 0);
+  const perSol = (t: number) => inFilter.filter((n) => n.sol === t).length;
   const count = (id: string) => all.filter((n) => n.crewId === id).length;
   const files = (list: EarthNote[]) => list.reduce((k, n) => k + (n.attachments?.length ?? 0), 0);
   return (
@@ -377,9 +382,34 @@ function ThreadsModal({ startWith, onClose }: { startWith: string; onClose: () =
             </button>
           ))}
         </div>
+        <div style={TM.split}>
+        {/* sol calendar: pick a day to see only the threads from that sol */}
+        <nav aria-label="Pick a sol" style={TM.cal}>
+          <div style={TM.calHead}>
+            <b>Sol calendar</b>
+            <button type="button" className="ta small" aria-pressed={day == null} onClick={() => setDay(null)}
+              style={day == null ? { color: "var(--c-text)", fontWeight: 600 } : undefined}>All sols</button>
+          </div>
+          <div style={TM.grid}>
+            {calSols.map((t) => {
+              const n = perSol(t), on = day === t;
+              return (
+                <button key={t} type="button" aria-pressed={on} onClick={() => setDay(on ? null : t)}
+                  aria-label={`Sol ${t}${t === P ? ", today" : ""}: ${n} note${n === 1 ? "" : "s"}`} title={`Sol ${t} · Earth ${solDate(t)} · ${n} note${n === 1 ? "" : "s"}`}
+                  style={{ ...TM.cell, ...(n ? TM.cellHas : null), ...(t === P ? TM.cellToday : null), ...(on ? TM.cellOn : null) }}>
+                  <span className="num">{t}</span>
+                  <span style={{ ...TM.dot, visibility: n ? "visible" : "hidden" }}>{n > 1 ? n : ""}</span>
+                </button>
+              );
+            })}
+          </div>
+          <p className="small t2" style={{ margin: 0 }}>
+            {day == null ? "Sols with a dot have advice. Pick one to filter." : <>Sol <Num>{day}</Num> · Earth <Num>{solDate(day)}</Num>{day === P ? " · Today" : ""}</>}
+          </p>
+        </nav>
         <div className="eam__body">
           {people.map((c) => {
-            const mine = all.filter((n) => n.crewId === c.id);
+            const mine = all.filter((n) => n.crewId === c.id && (day == null || n.sol === day));
             const sols = [...new Set(mine.map((n) => n.sol))].sort((a, b) => b - a);
             return (
               <section key={c.id} className="eam__person" aria-label={`Thread with ${c.full}`}>
@@ -391,26 +421,32 @@ function ThreadsModal({ startWith, onClose }: { startWith: string; onClose: () =
                       {mine.filter((n) => n.sol === t).sort((a, b) => a.sentMin - b.sentMin).map((n) => <NoteItem key={n.id} n={n} />)}
                     </ul>
                   </div>
-                )) : <p className="small t2">No advice sent to {c.full.split(" ")[0]} yet.</p>}
+                )) : <p className="small t2">{day == null ? `No advice sent to ${c.full.split(" ")[0]} yet.` : `No advice to ${c.full.split(" ")[0]} on Sol ${day}.`}</p>}
               </section>
             );
           })}
+        </div>
         </div>
       </div>
     </dialog>
   );
 }
 
+/* threads modal layout + sol calendar (inline so it renders even when the dev stylesheet is stale) */
+const TM = {
+  split: { display: "grid", gridTemplateColumns: "minmax(200px, 240px) minmax(0, 1fr)", gap: 16, minHeight: 0, overflow: "hidden" } as const,
+  cal: { display: "grid", gap: 8, alignContent: "start", padding: 10, borderRadius: 8, border: "1px solid var(--c-hair-strong)", background: "var(--c-surface)" } as const,
+  calHead: { display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 8 } as const,
+  grid: { display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 3 } as const,
+  cell: { display: "grid", justifyItems: "center", gap: 1, padding: "4px 0 3px", borderRadius: 5, borderWidth: 1, borderStyle: "solid", borderColor: "transparent",
+    background: "transparent", color: "var(--c-text-3)", fontSize: 11, cursor: "pointer" } as const,
+  cellHas: { color: "var(--c-text)", background: "var(--c-surface-2)" } as const,
+  cellToday: { borderColor: "var(--c-hair-strong)" } as const,
+  cellOn: { borderColor: "var(--c-action)", background: "color-mix(in srgb, var(--c-action) 22%, var(--c-surface-2))", color: "var(--c-text)" } as const,
+  dot: { minWidth: 6, height: 6, borderRadius: 999, background: "var(--c-action)", fontSize: 8, lineHeight: "6px", color: "transparent" } as const,
+};
+
 /* file type tag for a chip, e.g. PDF, PNG */
 const extOf = (name: string) => (name.split(".").pop() || "file").slice(0, 4).toUpperCase();
-/* opens a stored attachment in a new tab (PDFs in the browser's own viewer) */
-async function openAttachment(id: string) {
-  const tab = window.open("", "_blank"); // opened during the click, so pop-up blockers allow it
-  const blob = await getFile(id);
-  if (!blob) { tab?.close(); window.alert("This file is no longer stored on this device."); return; }
-  const url = URL.createObjectURL(blob);
-  if (tab) tab.location.href = url; else window.location.href = url;
-  window.setTimeout(() => URL.revokeObjectURL(url), 60_000);
-}
 
 const vitalNote = (vs: Vital[]) => (vs.some((v) => v.state === "act") ? "Urgent vitals reach Earth by name, like Act statuses." : "Vitals compare with the person's own normal, the median of their previous 14 nights.");

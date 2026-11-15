@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useCompanionChat } from "@/hooks/companion/mutations/use-companion-chat";
 import {
-  COMPANION_NAME, JOURNAL, MEASURES, P, avg, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, overall, series,
+  COMPANION_NAME, JOURNAL, MEASURES, P, avg, day, companionNumbers, crewById, flagCopy, fmt, fmtBase, hasBaseline, hm, insights, isOut, overall, series,
   type ConvoRow, type VoicePhrase,
 } from "@/lib/console/data";
 import { Presence } from "@/lib/console/presence";
@@ -16,6 +16,8 @@ import { FlagList } from "./FlagCard";
 import { Wave, usePresenceState } from "./Orb";
 import { VegaAvatar, type SpeechEvents, type VegaApi } from "./VegaAvatar";
 import { ROUTE } from "./Shell";
+import { arrivedSince, notesByIds, useAllEarthNotes, type EarthNote } from "@/lib/console/earth-notes";
+import { fmtSize, openAttachment } from "@/lib/console/earth-files";
 import { HoldButton, VoiceState, type VState } from "./Voice";
 
 /* Starter questions (D7). Replace with Paul's starter-question list when it lands. */
@@ -153,6 +155,20 @@ function CompanionStage() {
     // open the log on the conversation so the astronaut sees their question and the answer land
     set({ chatted: true, settings: false, drawer: true, tab: "conversation" });
     c.addLines([{ who: "you", text: q }]);
+    /* Messages from Earth: what the flight surgeon sent that has reached Mars since the last check-in.
+       Pedro's summary is written by code from the notes (no model), and the log row shows each note in full. */
+    if (intent === "earth" || (/earth|ground|flight surgeon|mission control/i.test(q) && /message|note|advice|sent|send|said/i.test(q))) {
+      setBusy(true);
+      Presence.setState("working");
+      window.setTimeout(() => {
+        Presence.setState("idle"); setBusy(false);
+        const { text, notes } = earthSummary(s.me, c.clockMin);
+        c.addLines([{ who: "companion", text }]);
+        set({ drawer: true, tab: notes.length ? "earth" : "conversation" }); // the full messages live in the From Earth tab
+        c.say(text);
+      }, reducedMotion() ? 80 : 600);
+      return;
+    }
     if (intent === "summary" || /summar|recap|my week/i.test(q)) {
       setBusy(true);
       Presence.setState("working");
@@ -213,6 +229,11 @@ function CompanionStage() {
         ? { who: "companion" as const, text: speaking, sol: P, min: 0 }
         : lastReply;
 
+  /* notes from Earth that have reached the hab since the last check-in (re-reads when a note is added) */
+  useAllEarthNotes();
+  const lastCi = lastCheckin(s.me);
+  const earthNew = atPresent && lastCi ? arrivedSince(s.me, lastCi.sol, lastCi.min, P, c.clockMin).length : 0;
+
   return (
     <div className={`cstage${s.drawer ? " has-drawer" : ""}`}>
       <h1 className="vh">Companion, {crewById(s.me).full}</h1>
@@ -220,6 +241,13 @@ function CompanionStage() {
         <section className="stage" aria-label={COMPANION_NAME}>
           <div className="stage__tools">
             <Toggle on={s.voice} label="Voice" onClick={() => { set((p) => ({ voice: !p.voice })); setTypeMode(false); }} />
+            {/* Pedro sums up what the flight surgeon sent since the last check-in; the badge counts notes that have arrived */}
+            <button type="button" className="ta ta--quiet" disabled={busy || !atPresent} onClick={() => userSaid("What did Earth send me?", "earth")}
+              aria-label={`Messages from Earth${earthNew ? `, ${earthNew} new since your check-in` : ""}`}
+              style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+              Messages from Earth
+              {earthNew ? <span className="num" style={{ minWidth: 18, padding: "0 5px", borderRadius: 999, background: "var(--c-action)", color: "var(--c-on-action)", fontSize: 11, lineHeight: "18px", textAlign: "center" }}>{earthNew}</span> : null}
+            </button>
             <button type="button" className="ta ta--quiet" aria-expanded={s.drawer} aria-controls="drawer" onClick={() => set((p) => ({ drawer: !p.drawer }))}>{s.drawer ? "Hide log" : "Show log"}</button>
           </div>
           {<>
@@ -378,7 +406,12 @@ function Drawer({ working, trRef, jSel, setJSel, jSummary, setJSummary }: {
   const c = useConsole();
   const { s, set, atPresent } = c;
   const n = c.openFlags().length;
-  const tabs: Array<[ConsoleTab, string]> = [["conversation", "Conversation"], ["alerts", "Alerts"], ["insights", "Insights"], ["journal", "Journal"]];
+  const tabs: Array<[ConsoleTab, string]> = [["conversation", "Conversation"], ["alerts", "Alerts"], ["insights", "Insights"], ["journal", "Journal"], ["earth", "Earth"]];
+  /* From Earth: every note that has reached the hab by now (newest sol first), and how many arrived since the last check-in */
+  useAllEarthNotes();
+  const earthAll = arrivedSince(s.me, 0, -1, s.sol, c.clockMin);
+  const lastCi = lastCheckin(s.me);
+  const earthNew = atPresent && lastCi ? arrivedSince(s.me, lastCi.sol, lastCi.min, P, c.clockMin).length : 0;
   const empty = (t: string, a?: React.ReactNode) => <div className="empty"><span>{t}</span>{a}</div>;
 
   let pane: React.ReactNode;
@@ -392,6 +425,17 @@ function Drawer({ working, trRef, jSel, setJSel, jSummary, setJSummary }: {
       <div key={i} className="list-row"><span className="list-row__t">Sol {x.sol}</span>
         <span className={x.kind === "observation" ? "obs-row" : ""}>{x.kind === "observation" ? <><span className="label">Observation</span> </> : <><StatusMark state={x.state} /> </>}{x.text}</span><span /></div>
     )) : empty("Insights appear after a few check-ins.", atPresent ? <Link className="ta" href={ROUTE.checkin}>Start daily check-in</Link> : undefined);
+  } else if (s.tab === "earth") {
+    const sols = [...new Set(earthAll.map((x) => x.sol))].sort((a, b) => b - a);
+    pane = sols.length ? <>
+      <p className="small t2">Advice from the flight surgeon on Earth, as it reached the hab. Use Messages from Earth at the top for {COMPANION_NAME}&apos;s summary.</p>
+      {sols.map((t) => (
+        <div key={t} style={{ display: "grid", gap: 6 }}>
+          <div className="tr-sol">Sol <Num>{t}</Num>{t === P ? " · today" : ""}</div>
+          <EarthList notes={earthAll.filter((x) => x.sol === t).reverse()} />
+        </div>
+      ))}
+    </> : empty("Nothing from Earth yet.", <span className="small t2">Notes from the flight surgeon appear here once they reach the hab.</span>);
   } else if (s.tab === "journal") {
     const es = (JOURNAL[s.me] || []).filter((j) => j.sol <= s.sol).slice().reverse();
     if (!es.length) pane = empty("No entries yet.", <button type="button" className="ta" onClick={() => set({ tab: "conversation" })}>Talk to Pedro</button>);
@@ -433,10 +477,10 @@ function Drawer({ working, trRef, jSel, setJSel, jSummary, setJSummary }: {
           <button type="button" className="ta ta--quiet drawer__close" aria-expanded="true" aria-controls="drawer" onClick={() => set({ drawer: false })}>Hide log</button>
         </span>
       </div>
-      <div className="tabs" role="tablist" aria-label="Companion log">
+      <div className="tabs" role="tablist" aria-label="Companion log" style={{ flexWrap: "nowrap", overflowX: "auto", scrollbarWidth: "none", paddingLeft: 16, paddingRight: 16 }}>
         {tabs.map(([k, l]) => (
-          <button key={k} type="button" className="tab" role="tab" aria-selected={s.tab === k} onClick={() => set({ tab: k, drawer: true, settings: false })}>
-            {l}{k === "alerts" && n ? <span className="n num">{n}</span> : null}
+          <button key={k} type="button" className="tab" role="tab" aria-selected={s.tab === k} style={{ whiteSpace: "nowrap", flex: "none" }} title={k === "earth" ? "Messages from Earth" : undefined} onClick={() => set({ tab: k, drawer: true, settings: false })}>
+            {l}{k === "alerts" && n ? <span className="n num">{n}</span> : null}{k === "earth" && earthNew ? <span className="n num">{earthNew}</span> : null}
           </button>
         ))}
       </div>
@@ -446,7 +490,7 @@ function Drawer({ working, trRef, jSel, setJSel, jSummary, setJSummary }: {
     </div>
   </>;
 }
-type ConsoleTab = "conversation" | "alerts" | "insights" | "journal";
+type ConsoleTab = "conversation" | "alerts" | "insights" | "journal" | "earth";
 
 /* Pedro at work: the steps done so far (ticked) and the current one (animated), with elapsed time. */
 function WorkRow({ steps }: { steps: string[] }) {
@@ -482,6 +526,7 @@ function TrRow({ r }: { r: ConvoRow }) {
         {atPresent ? <Link className="ta ta--quiet" href={`${ROUTE.checkin}?step=${r.key}`}>Correct</Link> : null}</span>
     </div>
   );
+  if (r.who === "earth") return <div className="trow trow--companion"><span className="trow__t">{hm(r.min)}</span><span className="trow__s">From Earth</span><span className="trow__x"><EarthMessages ids={r.notes ?? []} /></span></div>;
   if (r.who === "summary") return <div className="trow trow--companion"><span className="trow__t">{hm(r.min)}</span><span className="trow__s">{COMPANION_NAME}</span><span className="trow__x"><WeekSummary /></span></div>;
   const who = { companion: COMPANION_NAME, you: "You", sys: "" }[r.who as "companion" | "you" | "sys"];
   return (
@@ -525,3 +570,61 @@ function WeekSummary() {
     </div>
   );
 }
+
+/* ---------- Messages from Earth (crew side) ---------- */
+/* The last check-in on this device or in the simulated data, as (sol, minute). */
+function lastCheckin(id: string): { sol: number; min: number } | null {
+  for (let t = P; t > 0 && t > P - 30; t--) { const d = day(id, t); if (d?.checkin) return { sol: t, min: d.checkin.min }; }
+  return null;
+}
+/* Pedro's short read of the notes, written by code: how many, what they ask, which files came with them. */
+function earthSummary(id: string, nowMin: number): { text: string; notes: EarthNote[] } {
+  const since = lastCheckin(id);
+  let notes = since ? arrivedSince(id, since.sol, since.min, P, nowMin) : [];
+  let scope = since ? `since your check-in${since.sol === P ? "" : ` on Sol ${since.sol}`} at ${hm(since.min)}` : "so far";
+  if (!notes.length) {
+    // nothing new since the check-in: fall back to everything that has reached Mars today
+    notes = arrivedSince(id, P, -1, P, nowMin);
+    if (notes.length) scope = "today, before your check-in";
+  }
+  if (!notes.length) return { text: "Nothing from Earth has reached the hab since your last check-in.", notes };
+  const files = notes.flatMap((n) => n.attachments ?? []);
+  const asks = notes.map((n) => n.text.split(/(?<=[.!?])s+/)[0]).filter(Boolean).slice(0, 3);
+  const text = `The flight surgeon sent you ${notes.length} note${notes.length === 1 ? "" : "s"} ${scope}${files.length ? `, with ${files.length} file${files.length === 1 ? "" : "s"}` : ""}.${asks.length ? ` In short: ${asks.join(" ")}` : ""} The full messages are in the From Earth tab.`;
+  return { text, notes };
+}
+/* the actual messages in the log: arrival time, full text, and files to open */
+function EarthMessages({ ids }: { ids: string[] }) {
+  const notes = notesByIds(ids);
+  if (!notes.length) return <span className="t2">These messages are no longer stored on this device.</span>;
+  return <EarthList notes={notes} />;
+}
+/* the notes themselves: sender, arrival, full text and files to open */
+function EarthList({ notes }: { notes: EarthNote[] }) {
+  return (
+    <ul style={EM.list}>
+      {notes.map((n) => (
+        <li key={n.id} style={EM.note}>
+          <span style={EM.meta}>{n.author} · arrived Sol <Num>{n.sol}</Num> <Num>{hm(n.arriveMin)}</Num></span>
+          {n.text ? <span style={EM.text}>{n.text}</span> : null}
+          {n.attachments?.map((a) => (
+            <button key={a.id} type="button" style={EM.file} onClick={() => openAttachment(a.id)} title={`Open ${a.name}`}>
+              <span style={EM.ext}>{(a.name.split(".").pop() || "file").slice(0, 4).toUpperCase()}</span>
+              <span style={EM.fn}>{a.name}</span><span className="num t2">{fmtSize(a.size)}</span>
+            </button>
+          ))}
+        </li>
+      ))}
+    </ul>
+  );
+}
+/* inline so the log entry looks right even when the dev stylesheet is stale */
+const EM = {
+  list: { display: "grid", gap: 6, margin: 0, padding: 0, listStyle: "none" } as const,
+  note: { display: "grid", gap: 4, padding: "6px 10px", borderRadius: 6, borderLeft: "3px solid var(--c-action)", background: "var(--c-surface-2)" } as const,
+  meta: { fontSize: 11, color: "var(--c-text-2)" } as const,
+  text: { whiteSpace: "pre-wrap", overflowWrap: "anywhere" } as const,
+  file: { display: "flex", alignItems: "center", gap: 8, padding: "3px 8px", borderRadius: 6, borderWidth: 1, borderStyle: "solid", borderColor: "var(--c-hair-strong)", background: "var(--c-bg)", fontSize: 12, textAlign: "left", cursor: "pointer" } as const,
+  ext: { padding: "1px 5px", borderRadius: 3, background: "color-mix(in srgb, var(--c-action) 25%, transparent)", font: "600 10px/1.4 var(--f-mono)" } as const,
+  fn: { flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } as const,
+};

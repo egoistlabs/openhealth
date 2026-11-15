@@ -39,7 +39,7 @@ export type ConsoleState = {
   open: Partial<Record<MeasureKey, boolean>>;
   why: Record<string, boolean>;
   drawer: boolean;
-  tab: "conversation" | "alerts" | "insights" | "journal";
+  tab: "conversation" | "alerts" | "insights" | "journal" | "earth";
   settings: boolean;
   chatted: boolean;
   /* bumped when today's check-in is written, so derived numbers recompute */
