@@ -8,7 +8,7 @@
 - [ ] Each teammate adds any SI tools they used that aren't listed yet in FIELD 6, and says which of their commits used SI without a `Co-Authored-By` line.
 - [ ] Confirm where Pedro's portrait (`web/public/companion/base.png`) came from. If an SI tool made it, it needs a **visible watermark** under the rules (see FIELD 6), and its source and licence go in FIELD 8.
 - [ ] The images below use GitHub links, so they only work once `docs/product/submission/` is pushed to `main`. Otherwise, upload the PNGs from this folder straight onto the Project page (JPG/PNG up to 10 MB).
-- [ ] If the images don't load from GitHub, upload `nasa-five-hazards.png` with the other PNGs.
+- [ ] If the images don't load from GitHub, upload `shot-hazards.png` with the other PNGs.
 - [x] Retake the four app screenshots: the current ones still show the old OpenHealth name. Add new ones for the body map, the Ground dashboard and Pedro reports, the "New message from Earth" notification, the Advice from Earth threads, and the top bar with the distance and light time.
 - [ ] Rerun `npm run evals` after the brain update (7 new files, 22 new questions) and put the new score in FIELD 5 "Answer test".
 - [x] The 98% is reported as "as designed" everywhere, matching FIELD 5: the detection test scores the design-spec flag rule, not the app's own code.
@@ -49,7 +49,7 @@ https://github.com/egoistlabs/openhealth
 
 Isolation is one of NASA's five hazards of human spaceflight ([NASA HRP](https://www.nasa.gov/hrp/hazards/)). NASA's research finds that "the more restricted the space, and the less contact with people outside the environment, the more likely humans are to develop behavioral or cognitive conditions or psychiatric disorders" ([NASA](https://www.nasa.gov/humans-in-space/the-human-body-in-space/)).
 
-![NASA's "5 Hazards of Human Spaceflight" page, listing isolation and confinement as one of the five hazards (screenshot of nasa.gov/hrp/hazards, 15 Nov 2026)](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/nasa-five-hazards.png)
+![NASA's five hazards of human spaceflight (nasa.gov/hrp/hazards, 15 Nov 2026). Pedro targets two of them: isolation and confinement, and distance from Earth](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-hazards.png)
 
 Those problems start with small signs:
 
@@ -60,7 +60,7 @@ Those problems start with small signs:
 
 **The person living it is the worst-placed to report it.** The National Academies describe institutional pressure on astronauts to under-report symptoms ([*Safe Passage*, 2001](https://nap.nationalacademies.org/read/10218/chapter/8)), and sleep debt is hard to notice in yourself.
 
-![Kenji's Today panel: he rated his mood 4 of 5, which is his normal, while his sleep duration, reaction time and sleep timing are all on Watch](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-mood-vs-measures.png)
+![Kenji's Today panel: he rated his mood 4 of 5, which is his normal, while his sleep duration, reaction time and sleep timing are all on Watch](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-mood-vs-measures.png)
 
 The other options on board and on Earth can't catch it in time:
 
@@ -70,11 +70,13 @@ The other options on board and on Earth can't catch it in time:
 - **Wearables** can track sleep but can't measure mood or teamwork.
 - **Asking people how they feel** misses what they don't notice.
 
+![The app's round-trip tooltip: a question to Earth takes at least 34 minutes to answer today, "That is why anything urgent is handled on board, with Pedro and the crew medical officer"](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-round-trip.png)
+
 ### Pedro connects the crew and Earth, and makes health advice something everyone can act on
 
 Pedro runs on one laptop, offline by default. It compares what each astronaut logs with their own 14-day normal, then says in plain words what changed and one thing to do.
 
-![A note from the flight surgeon arrives on Kenji's home screen as "New message from Earth": sent 13:56, arrived 14:13, after the 17-minute light delay](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-earth-toast.png)
+![Who gets what: the astronaut gets one next step, the crew gets support prompts with no names, and the flight surgeon on Earth gets Pedro's summary of what each astronaut shares](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-connects.png)
 
 - **The astronaut** does a two-minute daily check-in. A wearable, if they have one, adds five overnight vitals that can change before they feel anything. A 3D body map records pain, which no sensor measures.
 - **The crew** sees how the team is doing, with no one's private numbers.
@@ -87,7 +89,7 @@ Pedro runs on one laptop, offline by default. It compares what each astronaut lo
 
 **1. Daily check-in.** About two minutes, by tap or by voice.
 
-![Daily check-in, sleep step: Pedro asks Kenji Sato when he fell asleep and woke up; last night shows 6 h 15 min of sleep, 1 h 10 min shorter than his normal, with his sleep midpoint 51 min later](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-check-in.png)
+![Daily check-in, sleep step: Kenji taps when he fell asleep and woke up; last night was 6 h 15 min, 1 h 10 min under his normal, with his sleep midpoint 51 min later](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-check-in.png)
 
 - **Sleep:** when you fell asleep and woke up. Pedro works out hours slept and the middle of your sleep, which shows whether your body clock is drifting.
 - **Mood, workload, teamwork:** a rating from 1 to 5 each.
@@ -99,49 +101,47 @@ Pedro also counts how much you talk to it and any missed check-ins.
 
 **2. Home: you against your own normal.** Your normal for each measure is the middle value of your previous 14 days, and the band around it is how much you usually vary.
 
+![Kenji's sleep timing card: last night's sleep midpoint, 04:48, is 51 min later than his normal of 03:57; after 3 nights outside his usual band it is on Watch](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-sleep-timing.png)
+
 - 2 or more days outside your band → **Watch**. 5 or more → **Act**. One bad night never changes a status.
 - Every status has a text label as well as a colour.
 - Every flag says what changed and gives one action, for example "Sleep midpoint shifted 51 min later over 3 nights" → "Start wind-down at 23:30 tonight".
 - A measure reaches Earth only if you choose to share it. A measure at Act reaches Earth by name either way, without values if you don't share it.
 
-![Home screen for Kenji Sato: his seven measures against his own normal, three on Watch, with the sleep timing flag open and its one action, "Start wind-down at 23:30 tonight"](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-home.png)
-
 **3. Talk to Pedro.** Type or speak. Ask "How did I sleep?" or "Why is my reaction time flagged?" and Pedro answers out loud, showing each source with where it came from, its date and who approved it. You can also talk without asking anything: Pedro offers small reflection or connection ideas, but states no fact that a source doesn't back.
 
-![Pedro answering "Why is my reaction time flagged?" with the number behind the answer, one action to try, and its two sources, each showing where it came from, the date added and its approval status](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-companion.png)
+![Pedro answering "Why is my reaction time flagged?" with the number behind the answer, one thing to try and its sources](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-answer.png)
 
 **4. Crew view.** Crew-level numbers only, with no names or individual values, and a measure appears only when at least 2 crew members share it. It shows whether the team is drifting (for example "1 of 3 sharing crew outside their normal" on teamwork), with support prompts and a team log.
 
-![Crew view: each shared measure as a count of crew outside their own normal, with no names or individual values](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-crew.png)
+![Crew view: each shared measure as a count of crew outside their own normal, with no names or individual values](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-crew.png)
 
 **5. Wearable vitals, if the crew has one: changes the person can't feel yet.** Five overnight readings: resting heart rate, heart rate variability, blood oxygen, skin temperature and breathing rate, the kind the CSA's Bio-Monitor records on the ISS ([CSA](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp)).
+
+![Daniela Reyes's wearable, last night: five readings against her own normal, with heart rate and skin temperature Urgent and breathing rate on Watch](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-wearable.png)
 
 - Each reading is compared with your own last 14 nights. One to two usual spreads in the worse direction → **Watch**, more than two → **Urgent**.
 - Blood oxygen also has fixed floors: below 95% Watch, 92% or lower Urgent ([MedlinePlus](https://medlineplus.gov/lab-tests/pulse-oximetry/)).
 - The readings are simulated for now, tied to each person's simulated day: short sleep and heavy workload push heart rate up and HRV down. A real device would connect over Bluetooth Low Energy, starting with the standard heart-rate service.
 
-![Pedro's wearable summary for Daniela Reyes: last night's five readings against her normal, heart rate and skin temperature marked Urgent and breathing rate on Watch, with her last 14 nights below](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-wearable.png)
-
 **6. 3D body map: tap where it hurts.** No sensor measures pain or a rash, and the challenge suggests "a human figure where each part of the body is clickable", so the check-in has a 3D body (BodyParts3D anatomy).
+
+![Body map entry in Pedro's log: a mark on the left quadriceps rated 6 out of 10, noted as hurting during exercise; Pedro asks about it next time](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-body-map.png)
 
 - Tap a muscle, bone or joint for pain, or turn on Skin to mark a rash, bite, cut, bruise, burn, blister or swelling.
 - Every mark needs a 1–10 rating and a note on when it happens, typed or spoken.
 - Past marks glow, so a pain that keeps coming back is easy to see, and the marks reach the flight surgeon.
 - It records where and how much. It doesn't diagnose.
 
-![Body map entry in Pedro's log: a mark on the left quadriceps rated 6 out of 10, noted as hurting during exercise](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-body-map.png)
-
 **7. Earth: the flight surgeon's console, across the delay.** A second role in the app, always a delayed view ("Last downlink", "Light time", "Next pass").
+
+![The flight surgeon's note arrives on Mars as "New message from Earth": sent 13:56, arrived 14:13, 17 minutes later](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/shot-earth-message.png)
 
 - **Console:** each astronaut as Stable, Watch or Act, with their vitals, escalations, check-in reports and body-map marks.
 - **Advice from Earth:** the flight surgeon writes to one astronaut, with up to 3 files attached. It shows "In transit" until the one-way light time has passed. Then a notification pops up on Mars, Pedro reads it aloud and asks "Do you have a message for the flight surgeon?", and the reply travels back the same way.
 - **The delay on every screen:** the top bar shows the distance and light time, for example "Distance from Earth 297 million km · One-way light time 17 min · Round-trip 34 min".
 - **Simulated for now:** both sides run in one browser, and in the demo messages arrive within 1 minute so a judge can watch a full exchange. A real mission would carry them over NASA's Delay/Disruption Tolerant Networking ([NASA DTN](https://www.nasa.gov/communicating-with-missions/delay-disruption-tolerant-networking/)).
 - **What Earth never gets:** journals, or the astronaut's own words to Pedro.
-
-![Pedro reading the flight surgeon's advice to Daniela Reyes, with the distance from Earth (297 million km) and the one-way light time (17 min) in the top bar](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-earth-message.png)
-
-![Ground: the flight surgeon's dashboard with each astronaut's wearable readings, open escalations and crew-level charts](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-ground.png)
 
 ### How it works: code makes every decision, the AI model reads and writes the words
 
@@ -198,8 +198,6 @@ The results show four things:
 
 NASA is building toward medical care for Moon and Mars crews that doesn't depend on Earth ([Wilderness Environ Med 2025](https://pubmed.ncbi.nlm.nih.gov/39865932/)). Pedro covers one part of that care: it turns what each astronaut logs and wears into plain advice they can act on right away, and keeps the crew and the flight surgeon on Earth in the loop despite the delay.
 
-![Pedro reports, the flight surgeon's view on Earth: Pedro's summary of Adaeze Okafor's check-in, her shared measures, her body-map mark (left calf, 4/10) and the Advice from Earth box with quick-advice buttons such as "8 h sleep"](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-ground-reports.png)
-
 Next steps:
 
 1. Cut false alarms in the emergency check with a second, dedicated classifier model on the laptop, with a clinician setting where distress ends and a self-harm emergency begins.
@@ -211,8 +209,6 @@ Next steps:
 ### What's creative, and the factors behind each choice
 
 Each risk we weighed led to one design choice.
-
-![The top bar's round-trip tooltip: a question to Earth takes at least 34 minutes to answer today, "That is why anything urgent is handled on board, with Pedro and the crew medical officer"](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-round-trip.png)
 
 - **Astronauts miss and under-report their own decline.** Pedro measures rather than only asks, against each person's own normal, since one astronaut's normal can be another's warning sign.
 - **Going quiet is part of the decline.** Pedro counts engagement instead of asking about it.
