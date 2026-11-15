@@ -339,7 +339,7 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain, onFocusCha
               </div>
             ) : null}
           </div>
-          <p style={S.credit}>3D anatomy: <a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html" target="_blank" rel="noreferrer">BodyParts3D</a>, © The Database Center for Life Science, <a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html" target="_blank" rel="noreferrer">CC BY 4.0</a>. Face muscles are approximate shapes built on the BodyParts3D skull. Viewer: Somakine (MIT).</p>
+          <p style={S.credit}>3D anatomy: <a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html" target="_blank" rel="noreferrer">BodyParts3D</a>, © The Database Center for Life Science (DBCLS), Japan, <a href="https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html" target="_blank" rel="noreferrer">CC BY 4.0</a>. Face muscles are approximate shapes built on the BodyParts3D skull. Viewer: Somakine (MIT).</p>
         </div>
         <div style={S.panel}>{panel}</div>
       </div>

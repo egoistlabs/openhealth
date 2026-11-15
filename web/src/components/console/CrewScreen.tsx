@@ -129,7 +129,7 @@ export function CrewScreen() {
         <aside className="sec__margin">
           <div>
             <h2 className="sec-t sec-t--rule">How team status works</h2>
-            <p className="t2 small">Normal when sharing crew sit within their own normal. Watch when one or more are outside it. Act when someone has been outside it for 5+ days or half the group is on watch.</p>
+            <p className="t2 small">Normal when sharing crew sit within their own normal. Watch when one or more are outside it. Act when anyone sharing has been outside it for 5+ days in a row.</p>
           </div>
           {/* same hover-to-read / click-to-pin timeline as Flags on Home */}
           <ChangelogTimeline fill className="crew__tl" title="Team log" subtitle={`Sol ${Math.max(1, s.sol - 2)}–${s.sol} · newest first`} categories={LOG_CATS} visibleEntries={8}

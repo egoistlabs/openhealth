@@ -27,26 +27,28 @@ export type Vital = {
 };
 
 const DEF: Array<{ key: VitalKey; label: string; unit: string; bad: Vital["bad"]; digits: number; base: [number, number]; noise: number; minBand: number; tip: string; range: string; fact: string }> = [
+  /* Every range and fact below is quoted from a source we checked (brain/measures/*.md cite the same pages):
+     MedlinePlus vital signs and pulse oximetry, Cleveland Clinic on HRV, NASA HRP risks, CSA Bio-Monitor. */
   { key: "rhr", label: "Resting heart rate", unit: "bpm", bad: "high", digits: 0, base: [52, 64], noise: 1.6, minBand: 3,
-    tip: "Lowest steady heart rate overnight. It rises with short sleep, stress, illness or dehydration.",
-    range: "60 to 100 bpm for most adults; fit people often sit at 40 to 60.",
-    fact: "In low gravity the heart does less work against gravity and can lose some fitness on long missions, so exercise keeps it strong. A resting rate several beats above your normal for a few nights is worth noting." },
+    tip: "Lowest steady heart rate overnight. A rate that stays above your own normal can follow short sleep, stress or a heavy workload.",
+    range: "60 to 100 beats per minute for an average healthy adult at rest (MedlinePlus). It varies with age, fitness and health, so your own normal matters most.",
+    fact: "NASA: weightlessness alters blood circulation and how the heart and blood vessels function. The CSA's Bio-Monitor tracks the heart on the ISS." },
   { key: "hrv", label: "Heart rate variability", unit: "ms", bad: "low", digits: 0, base: [45, 75], noise: 4, minBand: 7,
-    tip: "How much the gap between heartbeats varies overnight (RMSSD). Higher usually means well rested; lower than your normal often means stress, poor sleep or illness.",
-    range: "Very personal: roughly 20 to 100 ms in healthy adults, and it falls with age. Compare only with your own normal.",
-    fact: "HRV is one of the earliest signs of strain: it often drops a day or two before you feel run down." },
+    tip: "How much the time between heartbeats changes, read overnight. It is compared only with your own past nights.",
+    range: "No single healthy number: an HRV that is normal for one person may not be for someone else (Cleveland Clinic). Compare only with your own normal.",
+    fact: "Wrist trackers are less precise than a medical recording, so a run of low nights means more than one." },
   { key: "spo2", label: "Blood oxygen", unit: "%", bad: "low", digits: 0, base: [97, 98.6], noise: 0.4, minBand: 1,
     tip: "How much of your blood's oxygen capacity is in use (oxygen saturation), measured overnight.",
-    range: "95 to 100% is normal. Below 95% is worth a check; below 90% is low and needs attention, especially with a headache or breathlessness.",
-    fact: "Habitat air pressure and oxygen level set how much oxygen you breathe in, so a crew-wide dip can point to the air supply, not to people." },
+    range: "95 to 100% is normal. At 92% or lower, contact the medical officer; at 88% or lower, get immediate attention (MedlinePlus).",
+    fact: "A pulse oximeter reading can be 2 to 4% higher or lower than the true level, so one reading is a guide, not a diagnosis." },
   { key: "temp", label: "Skin temperature", unit: "°C", bad: "both", digits: 1, base: [33.2, 33.8], noise: 0.12, minBand: 0.3,
-    tip: "Wrist skin temperature overnight. Skin runs cooler than the inside of your body, so the change from your normal matters more than the number.",
-    range: "Wrist skin is usually about 32 to 35 °C (body core is about 37 °C). Nights more than about 0.5 °C above your normal are worth noting.",
-    fact: "A rise in night-time skin temperature can show up before a fever does. In a closed habitat, catching an infection early protects the whole crew." },
+    tip: "Skin temperature under the wearable overnight. Skin reads cooler than the body and changes with the room, so only the change from your own normal is used.",
+    range: "No fixed healthy number for skin. Body temperature is about 36.5 to 37.3 °C (MedlinePlus); skin under a wearable reads lower.",
+    fact: "A skin reading cannot confirm or rule out a fever. On Watch, check body temperature with the medical kit thermometer." },
   { key: "resp", label: "Breathing rate", unit: "/min", bad: "high", digits: 1, base: [12.5, 15], noise: 0.35, minBand: 0.8,
     tip: "Breaths per minute while asleep.",
-    range: "12 to 20 breaths a minute at rest for adults, usually at the lower end during sleep.",
-    fact: "Carbon dioxide builds up more in a closed habitat than in Earth's air, which can make you breathe faster and cause headaches. A crew-wide rise points to the air, not to you." },
+    range: "12 to 18 breaths per minute for an average healthy adult at rest (MedlinePlus).",
+    fact: "The CSA's Bio-Monitor measures breathing rate and volume on the ISS." },
 ];
 
 /* small deterministic hash -> [0, 1) */
@@ -106,7 +108,8 @@ export function vitals(id: string, sol: number): Vital[] {
     const dev = (d.bad === "high" ? value - normal : d.bad === "low" ? normal - value : Math.abs(value - normal)) / band;
     let state: Vital["state"] = dev > 2 ? "act" : dev > 1 ? "watch" : "normal";
     /* blood oxygen also has fixed floors, whatever the person's normal */
-    if (d.key === "spo2") state = value < 92 ? "act" : value < 95 && state === "normal" ? "watch" : state;
+    /* MedlinePlus: normal is 95–100%; contact a provider at 92% or lower */
+    if (d.key === "spo2") state = value <= 92 ? "act" : value < 95 && state === "normal" ? "watch" : state;
     return { key: d.key, label: d.label, unit: d.unit, value, normal, band, state, bad: d.bad, digits: d.digits, tip: d.tip, range: d.range, fact: d.fact };
   });
 }

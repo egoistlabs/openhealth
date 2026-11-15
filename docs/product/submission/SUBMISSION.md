@@ -8,7 +8,8 @@
 - [ ] Each teammate adds any SI tools they used that aren't listed yet in FIELD 6, and says which of their commits used SI without a `Co-Authored-By` line.
 - [ ] Confirm where Pedro's portrait (`web/public/companion/base.png`) came from. If an SI tool made it, it needs a **visible watermark** under the rules (see FIELD 6), and its source and licence go in FIELD 8.
 - [ ] The images below use GitHub links, so they only work once `docs/product/submission/` is pushed to `main`. Otherwise, upload the PNGs from this folder straight onto the Project page (JPG/PNG up to 10 MB).
-- [ ] Retake the four app screenshots: the current ones still show the old OpenHealth name.
+- [ ] Retake the four app screenshots: the current ones still show the old OpenHealth name. Add new ones for the body map, the Ground dashboard and Pedro reports.
+- [ ] Rerun `npm run evals` after the brain update (7 new files, 22 new questions) and put the new score in FIELD 5 "Answer test".
 - [ ] Decide how the summary reports the 98%: the detection test scores the design-spec version of the flag rule, not the app's own code (see FIELD 5, "Does it work"). Either point the test at the app's rule and rerun it, or reword the summary.
 - [ ] Open every link in a private browser window.
 - [ ] Tick both boxes (Terms and Conditions, Confirm All Work is Original), then click **Submit for Judging**. You can resubmit until Sun 15 Nov, 11:59 p.m. local time.
@@ -25,7 +26,7 @@ Pedro
 
 *This field is plain text only: it shows as one paragraph with no formatting or links. Paste the paragraph below exactly as it is. The sources are in FIELD 5 and FIELD 7.*
 
-I'm Pedro, an AI companion with medical knowledge. I live on the ship's laptop, because there's no internet on the way to Mars. NASA's research finds that the more cut off people are, the more likely they are to develop behavioral, cognitive or psychiatric problems. Those problems start small: astronauts sleep worse, react slower and stop talking to each other, and they're usually the last to notice. The small signs matter. Six hours of sleep a night for two weeks can hurt performance as badly as going up to two nights without sleep, and people in that state don't feel it. Astronauts in orbit average about six hours. Earth can't watch over them: a message takes up to 20 minutes each way. So every day, each astronaut does a two-minute check-in with me covering exactly those early signs: sleep, mood, teamwork and a quick reaction game like the one NASA uses on the space station to spot fatigue. I compare their answers with their own normal. When something drifts, like sleep shifting 51 minutes later over three nights, I tell them what changed in plain words and suggest one thing to do. I answer only from a built-in library of NASA research, I show my sources, and when I don't know, I say so. In our team's simulation, just asking crew how they felt caught 2% of the declines they hadn't noticed in themselves. I caught 98%, though I still raise too many false alarms, which the team is fixing next.
+I'm Pedro, an AI companion with medical knowledge. I live on the ship's laptop, because there's no internet on the way to Mars. NASA's research finds that the more cut off people are, the more likely they are to develop behavioral, cognitive or psychiatric problems. Those problems start small: astronauts sleep worse, react slower and stop talking to each other, and they're usually the last to notice. The small signs matter. Six hours of sleep a night for two weeks can hurt performance as badly as going up to two nights without sleep, and people in that state don't feel it. Astronauts in orbit average about six hours. Earth can't watch over them: a message takes up to 20 minutes each way. So every day, each astronaut does a two-minute check-in with me covering exactly those early signs: sleep, mood, teamwork and a quick reaction game like the one NASA uses on the space station to spot fatigue. I compare their answers with their own normal. When something drifts, like sleep shifting 51 minutes later over three nights, I tell them what changed in plain words and suggest one thing to do. A crew wearable adds five overnight vitals, a 3D body map lets them show where it hurts, and Earth's flight surgeon gets a delayed view of what each astronaut shares. I answer only from a built-in library of NASA research, I show my sources, and when I don't know, I say so. In our team's simulation, just asking crew how they felt caught 2% of the declines they hadn't noticed in themselves. I caught 98%, though I still raise too many false alarms, which the team is fixing next.
 
 ---
 
@@ -69,7 +70,8 @@ https://github.com/egoistlabs/openhealth
 Pedro is an AI companion with medical knowledge, built for crews too far from Earth for anyone there to keep watch.
 
 - **It catches what people don't report.** In our simulation, just asking crew how they felt caught 2% of the declines they hadn't noticed in themselves. Pedro's flag rule caught 98%.
-- **Nothing extra to fly.** No wearable, no sensors and no consumables: one laptop, offline by default.
+- **Little extra to fly.** One laptop, offline by default. Vitals come from the crew wearable already on board (simulated in our prototype). No consumables.
+- **Earth sees what it needs, late, never live.** A flight surgeon console shows vitals, escalations and check-in reports per person, with a modelled downlink delay. Journals and the astronaut's own words never leave the hab.
 - **It doesn't guess.** Code does the maths and the safety checks and checks every reply. The AI model only writes the words.
 - **It keeps working if the AI fails.** Statuses, flags and emergency messages are all code, so they still work with the model switched off.
 - **We know where it falls short.** It raises too many false alarms, and its emergency phrase list is too narrow. Both are measured below, and both are our next steps.
@@ -94,7 +96,7 @@ Pedro also counts how much you talk to it and any missed check-ins.
 - 2 or more days outside your band → **Watch**. 5 or more → **Act**. One bad night never changes a status.
 - Every status has a text label as well as a colour.
 - Every flag says what changed and gives one action, for example "Sleep midpoint shifted 51 min later over 3 nights" → "Start wind-down at 23:30 tonight".
-- Nothing on this screen leaves it unless you choose to share.
+- Check-in measures reach Earth only if you choose to share them. A measure at Act reaches Earth by name either way, without values if you don't share it.
 
 ![Home screen: personal view against your own baseline](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-home.png)
 
@@ -105,6 +107,31 @@ Pedro also counts how much you talk to it and any missed check-ins.
 **4. Crew view.** Crew-level numbers only, with no names or individual values, and a measure appears only when at least 2 crew members share it. It shows whether the team is drifting (for example "1 of 3 sharing crew outside their normal" on teamwork), with support prompts and a team log.
 
 ![Crew view: crew-level numbers only](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-crew.png)
+
+**5. Wearable vitals: what the person can't feel coming.** Five overnight readings: resting heart rate, heart rate variability, blood oxygen, skin temperature and breathing rate. They are the kind the CSA's Bio-Monitor records on the ISS ([CSA](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp)).
+
+- **Nobody types them in.** The device records them and the data stays on board first. On the ISS, the Bio-Monitor's battery pack plugs into a base "which downloads the data to Earth through the Station's communications system".
+- **Each reading is judged against your own last 14 nights,** like the check-in measures. One to two usual spreads in the worse direction → **Watch**, more than two → **Urgent**.
+- **Blood oxygen also has fixed floors:** below 95% Watch, 92% or lower Urgent ([MedlinePlus](https://medlineplus.gov/lab-tests/pulse-oximetry/)).
+- **Our prototype simulates the readings** (no device connected), tied to each person's simulated day: short sleep and heavy workload push heart rate up and HRV down.
+
+**6. 3D body map: tap where it hurts.** The challenge suggests "a human figure where each part of the body is clickable". No sensor measures pain or a rash, so the check-in has a 3D body (BodyParts3D anatomy).
+
+- **Marks:** tap a muscle, bone or joint for pain, or turn on Skin to mark a rash, bite, cut, bruise, burn, blister or swelling.
+- **Every mark needs a 1–10 rating and a note on when it happens,** typed or spoken.
+- **Repeats are visible:** past marks glow, and a spot can be flagged so the next check-in asks "Is it still there?".
+- **It records where and how much. It doesn't diagnose.**
+
+**7. Ground: the flight surgeon's console.** A second role for Earth, always a delayed view ("Last downlink", "Light time", "Next pass").
+
+- **Dashboard:** the four crew with their vitals, open escalations, team status, the check-in record and the team log, on one screen.
+- **Escalations:** Act statuses, urgent vitals and Pedro's emergency notices, by name, with a 14-sol log.
+- **Pedro reports:** each astronaut's check-in submission per sol, Pedro's summary (written by code from the numbers) and their body-map marks with notes.
+- **Crew status:** one person in depth, including a comparison with healthy-adult ranges on Earth, shown only where a source gives one. It also has a printable PDF report.
+
+**What Earth gets:**
+- **By name:** shared measures, any Act status, vitals, body-map marks, a summary of conversations with Pedro, and the fact that an emergency notice was given.
+- **Never:** journals, or the astronaut's own words.
 
 ### How it works: code does the maths and safety checks, the AI model only writes the words
 
@@ -176,12 +203,16 @@ Each risk we weighed led to one design choice. The sections above describe how e
 - **A tired crew member won't read a wall of text.** Replies are short and read aloud.
 - **Medical content has to be checkable.** The knowledge library is plain, sourced files that a flight surgeon could edit without retraining anything.
 - **No open NASA dataset has per-day crew data for these measures.** The crew is simulated and calibrated to published studies (see Field 7).
+- **Pain and skin problems can't be sensed.** A 3D body map lets the person show where, how bad and when, and makes a pain that keeps coming back visible.
+- **Earth is up to 20 minutes away and only sees passes.** The Ground console is built as a delayed view, and the crew acts on board first.
+- **A number is only useful if it's cited.** The Earth comparison shows a healthy range only where MedlinePlus or the CDC gives one. Everything else is compared with the person's own normal.
 
 ### Tools, languages, hardware and software
 
 - **TypeScript, React 19, Next.js 16:** the app and its server.
 - **Tailwind CSS 4, Radix UI, lucide-react:** styling and interface parts.
 - **Three.js:** Pedro's animated avatar and lip-sync.
+- **BodyParts3D 4.0** (Database Center for Life Science, Japan, CC BY 4.0) shown with the **Somakine viewer** (open source, MIT): the 3D body map.
 - **Vercel AI SDK:** streaming the model's reply.
 - **Zod:** checking every message between browser and server.
 - **Ollama + MedGemma 4B:** the on-laptop AI model.
@@ -189,7 +220,7 @@ Each risk we weighed led to one design choice. The sections above describe how e
 - **Web Speech API:** voice input and spoken replies.
 - **Node.js:** test suites and the crew simulator.
 - **Mermaid:** the flow diagram above.
-- **Hardware:** one laptop, a MacBook M4 with 16 GB. No sensors.
+- **Hardware:** one laptop, a MacBook M4 with 16 GB. No sensors connected in the prototype: vitals are simulated.
 
 ---
 
@@ -236,6 +267,18 @@ We used NASA's Human Research Program (HRP) resources from the challenge page to
 - **[The 5 Hazards of Human Spaceflight](https://www.nasa.gov/hrp/hazards/)** (HRP). We chose two hazards that hit together: **isolation and confinement**, which causes the decline we measure, and **distance from Earth**, which is why the crew has to catch it on board, offline. Ten of the twelve knowledge files in `brain/reference/` cite it as their source.
 - **[NASA Human Research Roadmap: Risks](https://humanresearchroadmap.nasa.gov/risks/)**, specifically the *Risk of Adverse Cognitive or Behavioral Conditions and Psychiatric Disorders*, used for the behavioural-health files.
 - **[How does spaceflight affect astronauts? (NASA, "The Human Body in Space")](https://www.nasa.gov/humans-in-space/the-human-body-in-space/)**, which describes the ISS's short vigilance self-test for fatigue and the crew-journal research on isolation. These shaped our reaction game and our engagement measure. It is also the source for the message delay in our summary: on Mars there is "a communication delay of up to 20 minutes one-way".
+- **[Risks of Human Spaceflight](https://www.nasa.gov/hrp/risks/)** (HRP): the cardiovascular and fitness risks behind the wearable vitals and the body map ("Weightlessness alters blood circulation and how the heart and blood vessels function"; crews exercise "to counteract losses in bone density, muscle strength, and heart and blood vessel performance").
+- **[Hazard: Distance from Earth](https://www.nasa.gov/hrp/hazard-distance-from-earth/)** (HRP): "a communication delay of up to 20 minutes one way", which sets the Ground console's delay model.
+- **[Hazard: Isolation and Confinement](https://www.nasa.gov/hrp/hazard-isolation-and-confinement/)** (HRP): "Sleep loss, circadian desynchronization, and work overload compound this issue", the basis for the check-in measures.
+- **[Hazard: Gravity Fields](https://www.nasa.gov/hrp/hazard-gravity-fields/)** (HRP): weightlessness "can lead to dizziness, bone and muscle loss", one reason for the body map.
+- **[Hazard: Space Radiation](https://www.nasa.gov/hrp/hazard-space-radiation/)** (HRP): the hazard Pedro does **not** cover yet, named as our biggest gap.
+
+NASA studies on the same problem, which shaped what Pedro collects:
+
+- **[ARCHeR](https://www.nasa.gov/reference/archer/)** (Artemis): measures "astronauts' well-being, activity, sleep patterns, and interactions" using "actigraphy and behavioral performance surveys". Pedro pairs a daily survey with a worn sensor in the same way.
+- **[Artemis II Standard Measures](https://www.nasa.gov/reference/artemis-ii-standard-measures/)**: data "gathered before, during, and after a mission" on cardiovascular health and immune function. Pedro tracks each person over time against their own normal.
+- **[Immune Biomarkers](https://www.nasa.gov/reference/immune-biomarkers/)** (Artemis II): how "stress hormones, viruses, and cells may be affected by flight conditions". This is why vitals watch for an early illness pattern.
+- **[Tempus Pro](https://www.nasa.gov/reference/tempus-pro/)**: a device "collecting and integrating vital health data", and "as missions extend to Mars and beyond, communication delays will become more significant". This is why the Ground console is built as a delayed view.
 - **[HRP Evidence Report: Behavioral Medicine (BMed)](https://humanresearchroadmap.nasa.gov/Evidence/reports/BMed.pdf)**, background on sleep, circadian rhythm and behavioural health on missions.
 
 NASA-funded studies used to calibrate the simulated crew data and the reaction test:
@@ -251,6 +294,17 @@ NASA-funded studies used to calibrate the simulated crew data and the reaction t
 ## FIELD 8: Space Agency Partner Data and Other References
 
 **Space agency resources from the challenge page (background reading):** Canadian Space Agency, *Why Do We Conduct Science Experiments in Space?* and *Monitoring Radiation for Astronaut Health*.
+
+**Canadian Space Agency, [Bio-Monitor](https://www.asc-csa.gc.ca/eng/sciences/bio-monitor.asp):** what the ISS wearable measures and how its data reaches Earth. Our simulated vitals follow its list.
+
+**Healthy-adult reference ranges** (wearable tooltips, Pedro's brain files and the Ground Earth comparison):
+
+- **[MedlinePlus, Vital signs](https://medlineplus.gov/ency/article/002341.htm):** pulse 60–100 bpm, breathing 12–18 a minute, body temperature 36.5–37.3 °C.
+- **[MedlinePlus, Pulse oximetry](https://medlineplus.gov/lab-tests/pulse-oximetry/):** 95–100% normal; 92% or lower, contact a provider; 88% or lower, immediate attention.
+- **[CDC, About sleep](https://www.cdc.gov/sleep/about/index.html):** 7 or more hours for adults 18–60.
+- **[Cleveland Clinic, Heart rate variability](https://my.clevelandclinic.org/health/symptoms/21773-heart-rate-variability-hrv):** HRV is individual and best compared with the person's own past values.
+
+**3D anatomy (from Japan):** [BodyParts3D](https://dbarchive.biosciencedbc.jp/en/bodyparts3d/download.html), © The Database Center for Life Science (DBCLS), Japan, CC BY 4.0 ([licence](https://dbarchive.biosciencedbc.jp/en/bodyparts3d/lic.html)). Every muscle, bone and skin surface on the body map comes from this dataset. The face muscles are approximate shapes we built on the BodyParts3D skull. The model is shown with the open-source Somakine viewer (MIT). The app uses English labels only, and the 3D files are served from our own app with no outside connection.
 
 **Research and methods**
 

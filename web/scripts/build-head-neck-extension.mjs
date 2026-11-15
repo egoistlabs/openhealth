@@ -133,7 +133,7 @@ const both = (f, g) => (a, b) => Math.min(f(a, b), g(a, b));
 const sides = { left: 1, right: -1 };
 const FACE = [
   {
-    slug: "masseter", en: "Masseter", zh: "咬肌", paired: true, thick: 8, feather: 9, view: (s) => `lateral-${s}`,
+    slug: "masseter", en: "Masseter", paired: true, thick: 8, feather: 9, view: (s) => `lateral-${s}`,
     region: () => {
       const pts = [[L.yZygFront + 10, L.zArch - 2], [L.yCondyle - 12, L.zArch - 2], [L.yAngle + 2, L.zAngle + 6], [L.yAngle - 8, L.zAngle - 1], [L.yAngle - 40, L.zLowFront + 2]];
       const as = pts.map((p) => p[0]), bs = pts.map((p) => p[1]);
@@ -142,31 +142,31 @@ const FACE = [
     },
   },
   {
-    slug: "temporalis", en: "Temporalis", zh: "颞肌", paired: true, thick: 6, feather: 14, view: (s) => `lateral-${s}`,
+    slug: "temporalis", en: "Temporalis", paired: true, thick: 6, feather: 14, view: (s) => `lateral-${s}`,
     region: () => both(ellipse(-100, L.zArch - 6, 56, 86, 0, 1), (a, b) => Math.min(b - (L.zArch + 3), a - (L.yZygFront + 13))),
   },
   {
-    slug: "frontalis", en: "Frontalis", zh: "额肌", paired: true, thick: 3.5, feather: 12, view: () => "front",
+    slug: "frontalis", en: "Frontalis", paired: true, thick: 3.5, feather: 12, view: () => "front",
     region: (sx) => both(ellipse(sx * 26, L.zOrbTop + 6, 30, 0.85 * (L.zFrontTop - L.zOrbTop), 0, 1), (a, b) => Math.min(sx * a - 2, b - (L.zOrbTop + 6))),
   },
   {
-    slug: "orbicularis-oculi", en: "Orbicularis oculi", zh: "眼轮匝肌", paired: true, thick: 3.5, feather: 4, view: () => "front",
+    slug: "orbicularis-oculi", en: "Orbicularis oculi", paired: true, thick: 3.5, feather: 4, view: () => "front",
     region: (sx) => ellipse(sx * orb.xc, orb.zc, orb.rx, orb.rz, 0.62, 1.55),
   },
   {
-    slug: "zygomaticus-major", en: "Zygomaticus major", zh: "颧大肌", paired: true, thick: 4.5, feather: 4, view: () => "front",
+    slug: "zygomaticus-major", en: "Zygomaticus major", paired: true, thick: 4.5, feather: 4, view: () => "front",
     region: (sx) => band(sx * (L.xZygBody + 6), L.zZygBody - 2, sx * 25, L.zMouth - 2, 11),
   },
   {
-    slug: "orbicularis-oris", en: "Orbicularis oris", zh: "口轮匝肌", paired: false, thick: 9, feather: 5, view: () => "front",
+    slug: "orbicularis-oris", en: "Orbicularis oris", paired: false, thick: 9, feather: 5, view: () => "front",
     region: () => ellipse(0, L.zMouth - 5, 27, 16, 0.38, 1),
   },
   {
-    slug: "mentalis", en: "Mentalis", zh: "颏肌", paired: false, thick: 5, feather: 5, view: () => "front",
+    slug: "mentalis", en: "Mentalis", paired: false, thick: 5, feather: 5, view: () => "front",
     region: () => ellipse(0, L.zMandMin + 15, 13, 10, 0, 1),
   },
   {
-    slug: "occipitalis", en: "Occipitalis", zh: "枕肌", paired: true, thick: 3.5, feather: 8, view: () => "back",
+    slug: "occipitalis", en: "Occipitalis", paired: true, thick: 3.5, feather: 8, view: () => "back",
     region: (sx) => both(ellipse(sx * 31, L.zNuchal + 14, 26, 14, 0, 1), (a) => sx * a - 6),
   },
 ];
@@ -249,30 +249,30 @@ function sculpt(def, side) {
 
 /* ---------- real BodyParts3D muscles ---------- */
 const BP3D = [
-  ["digastric", "Digastric", "二腹肌", { right: ["FJ1556", "FJ1579"], left: ["FJ1555", "FJ1560", "FJ1578"] }, { right: "FMA46292", left: "FMA46293" }],
-  ["mylohyoid", "Mylohyoid", "下颌舌骨肌", { right: ["FJ1583"], left: ["FJ1562"] }, { right: "FMA46321", left: "FMA46322" }],
-  ["splenius-capitis", "Splenius capitis", "头夹肌", { right: ["FJ1545"], left: ["FJ1545M"] }, { right: "FMA22728", left: "FMA22729" }],
-  ["splenius-cervicis", "Splenius cervicis", "颈夹肌", { right: ["FJ1546"], left: ["FJ1546M"] }, { right: "FMA22726", left: "FMA22727" }],
-  ["semispinalis-capitis", "Semispinalis capitis", "头半棘肌", { right: ["FJ1538"], left: ["FJ1538M"] }, { right: "FMA22876", left: "FMA22877" }],
-  ["scalenus-anterior", "Scalenus anterior", "前斜角肌", { right: ["FJ1592"], left: ["FJ1570"] }, { right: "FMA13392", left: "FMA13393" }],
-  ["scalenus-medius", "Scalenus medius", "中斜角肌", { right: ["FJ1593"], left: ["FJ1571"] }, { right: "FMA13390", left: "FMA13391" }],
-  ["scalenus-posterior", "Scalenus posterior", "后斜角肌", { right: ["FJ1594"], left: ["FJ1572"] }, { right: "FMA13388", left: "FMA13389" }],
-  ["longus-capitis", "Longus capitis", "头长肌", { right: ["FJ1582"], left: ["FJ1561"] }, { right: "FMA46309", left: "FMA46310" }],
-  ["rectus-capitis-posterior-major", "Rectus capitis posterior major", "头后大直肌", { right: ["FJ1589"], left: ["FJ1567"] }, { right: "FMA32530", left: "FMA32531" }],
-  ["rectus-capitis-posterior-minor", "Rectus capitis posterior minor", "头后小直肌", { right: ["FJ1590"], left: ["FJ1568"] }, { right: "FMA32532", left: "FMA32533" }],
-  ["obliquus-capitis-superior", "Obliquus capitis superior", "头上斜肌", { right: ["FJ1585"], left: ["FJ1564"] }, { right: "FMA32534", left: "FMA32535" }],
-  ["obliquus-capitis-inferior", "Obliquus capitis inferior", "头下斜肌", { right: ["FJ1584"], left: ["FJ1563"] }, { right: "FMA32536", left: "FMA32537" }],
-  ["sternohyoid", "Sternohyoid", "胸骨舌骨肌", { right: ["FJ1596"], left: ["FJ1574"] }, { right: "FMA13346", left: "FMA13347" }],
-  ["omohyoid", "Omohyoid", "肩胛舌骨肌", { right: ["FJ1586"], left: ["FJ1565"] }, { right: "FMA13348", left: "FMA13349" }],
+  ["digastric", "Digastric", { right: ["FJ1556", "FJ1579"], left: ["FJ1555", "FJ1560", "FJ1578"] }, { right: "FMA46292", left: "FMA46293" }],
+  ["mylohyoid", "Mylohyoid", { right: ["FJ1583"], left: ["FJ1562"] }, { right: "FMA46321", left: "FMA46322" }],
+  ["splenius-capitis", "Splenius capitis", { right: ["FJ1545"], left: ["FJ1545M"] }, { right: "FMA22728", left: "FMA22729" }],
+  ["splenius-cervicis", "Splenius cervicis", { right: ["FJ1546"], left: ["FJ1546M"] }, { right: "FMA22726", left: "FMA22727" }],
+  ["semispinalis-capitis", "Semispinalis capitis", { right: ["FJ1538"], left: ["FJ1538M"] }, { right: "FMA22876", left: "FMA22877" }],
+  ["scalenus-anterior", "Scalenus anterior", { right: ["FJ1592"], left: ["FJ1570"] }, { right: "FMA13392", left: "FMA13393" }],
+  ["scalenus-medius", "Scalenus medius", { right: ["FJ1593"], left: ["FJ1571"] }, { right: "FMA13390", left: "FMA13391" }],
+  ["scalenus-posterior", "Scalenus posterior", { right: ["FJ1594"], left: ["FJ1572"] }, { right: "FMA13388", left: "FMA13389" }],
+  ["longus-capitis", "Longus capitis", { right: ["FJ1582"], left: ["FJ1561"] }, { right: "FMA46309", left: "FMA46310" }],
+  ["rectus-capitis-posterior-major", "Rectus capitis posterior major", { right: ["FJ1589"], left: ["FJ1567"] }, { right: "FMA32530", left: "FMA32531" }],
+  ["rectus-capitis-posterior-minor", "Rectus capitis posterior minor", { right: ["FJ1590"], left: ["FJ1568"] }, { right: "FMA32532", left: "FMA32533" }],
+  ["obliquus-capitis-superior", "Obliquus capitis superior", { right: ["FJ1585"], left: ["FJ1564"] }, { right: "FMA32534", left: "FMA32535" }],
+  ["obliquus-capitis-inferior", "Obliquus capitis inferior", { right: ["FJ1584"], left: ["FJ1563"] }, { right: "FMA32536", left: "FMA32537" }],
+  ["sternohyoid", "Sternohyoid", { right: ["FJ1596"], left: ["FJ1574"] }, { right: "FMA13346", left: "FMA13347" }],
+  ["omohyoid", "Omohyoid", { right: ["FJ1586"], left: ["FJ1565"] }, { right: "FMA13348", left: "FMA13349" }],
 ];
 
 /* ---------- assemble the GLB and the extension ---------- */
 const MUSCLE_MAT = { pbrMetallicRoughness: { baseColorFactor: [0.8631572134510892, 0.14702726648767014, 0.12213877222015301, 1], metallicFactor: 0, roughnessFactor: 0.7 }, doubleSided: true };
-const groups = [], structures = [], instances = [], representations = [], en = {}, zh = {};
+const groups = [], structures = [], instances = [], representations = [], en = {};
 const SRC_REAL = `${NS}-bodyparts3d-4`, SRC_APPROX = `${NS}-face-approximation`, LIC = `${NS}-CC-BY-4.0`;
 const ASSET = `somakine:asset:${NS}:head-neck`;
 let vertexCount = 0;
-const addStructure = (slug, enName, zhName, paired, real, externalIds, meshesBySide) => {
+const addStructure = (slug, enName, paired, real, externalIds, meshesBySide) => {
   const sid = `somakine:structure:${NS}-${slug}`, group = { name: `${NS}:${slug}`, extras: { entityId: `${NS}:${slug}`, regionId: "head-neck", type: "muscle", source: real ? "BodyParts3D 4.0" : "OpenHealth approximation over BodyParts3D 4.0 skull", selectable: true, context: false }, meshes: [] };
   const ids = [];
   for (const [side, meshes] of Object.entries(meshesBySide)) meshes.forEach((m, k) => {
@@ -286,22 +286,22 @@ const addStructure = (slug, enName, zhName, paired, real, externalIds, meshesByS
   groups.push(group);
   structures.push({ id: sid, type: "muscle", laterality: paired ? "paired" : "midline", regionIds: [REGION], externalIds, sourceIds: [real ? SRC_REAL : SRC_APPROX], reviewState: real ? "source-reviewed" : "unreviewed", groups: real ? ["head-neck"] : ["face", "approximate-shape"] });
   representations.push({ id: `somakine:representation:${NS}-${slug}`, structureId: sid, mode: "direct", instanceIds: ids, contextStructureIds: [], sourceIds: [real ? SRC_REAL : SRC_APPROX], reviewState: real ? "source-reviewed" : "unreviewed" });
-  en[sid] = enName; zh[sid] = zhName;
+  en[sid] = enName;
 };
 
 for (const def of FACE) {
   const bySide = def.paired
     ? { left: [{ tag: "approx", mesh: sculpt(def, "left") }], right: [{ tag: "approx", mesh: sculpt(def, "right") }] }
     : { none: [{ tag: "approx", mesh: sculpt(def, "none") }] };
-  addStructure(def.slug, def.en, def.zh, def.paired, false, {}, bySide);
+  addStructure(def.slug, def.en, def.paired, false, {}, bySide);
 }
-for (const [slug, enName, zhName, files, fma] of BP3D) {
+for (const [slug, enName, files, fma] of BP3D) {
   const bySide = {};
   for (const side of ["left", "right"]) bySide[side] = files[side].map((fj) => {
     const o = readObj(readFileSync(join(SRC, `${fj}.obj`), "utf8"));
     return { tag: `isa:${fj}`, mesh: { positions: o.positions, indices: o.indices, normals: vertexNormals(o.positions, o.indices) } };
   });
-  addStructure(slug, enName, zhName, true, true, { fmaLeft: fma.left, fmaRight: fma.right }, bySide);
+  addStructure(slug, enName, true, true, { fmaLeft: fma.left, fmaRight: fma.right }, bySide);
 }
 
 const root = head.json.nodes[head.json.scenes[0].nodes[0]];
@@ -351,12 +351,12 @@ function nearestBone(p) {
 
 /* area of a skin point: nearest bone, then front/back (out = direction from the bone to the skin; -Y is front) */
 const SKIN_AREAS = {
-  forehead: ["Forehead skin", "额部皮肤"], scalp: ["Scalp", "头皮"], temple: ["Temple and ear skin", "颞部和耳部皮肤"], face: ["Face skin", "面部皮肤"],
-  jaw: ["Jaw and chin skin", "下颌和颏部皮肤"], "neck-front": ["Front of neck skin", "颈前皮肤"], "neck-back": ["Back of neck skin", "颈后皮肤"],
-  chest: ["Chest skin", "胸部皮肤"], abdomen: ["Abdomen skin", "腹部皮肤"], "upper-back": ["Upper back skin", "上背部皮肤"], "lower-back": ["Lower back skin", "下背部皮肤"],
-  buttock: ["Buttock skin", "臀部皮肤"], hip: ["Hip skin", "髋部皮肤"], groin: ["Groin skin", "腹股沟皮肤"], shoulder: ["Shoulder skin", "肩部皮肤"],
-  "upper-arm": ["Upper arm skin", "上臂皮肤"], elbow: ["Elbow skin", "肘部皮肤"], forearm: ["Forearm skin", "前臂皮肤"], hand: ["Hand skin", "手部皮肤"],
-  thigh: ["Thigh skin", "大腿皮肤"], knee: ["Knee skin", "膝部皮肤"], shin: ["Shin skin", "胫前皮肤"], calf: ["Calf skin", "小腿后侧皮肤"], foot: ["Ankle and foot skin", "踝和足部皮肤"],
+  forehead: ["Forehead skin"], scalp: ["Scalp"], temple: ["Temple and ear skin"], face: ["Face skin"],
+  jaw: ["Jaw and chin skin"], "neck-front": ["Front of neck skin"], "neck-back": ["Back of neck skin"],
+  chest: ["Chest skin"], abdomen: ["Abdomen skin"], "upper-back": ["Upper back skin"], "lower-back": ["Lower back skin"],
+  buttock: ["Buttock skin"], hip: ["Hip skin"], groin: ["Groin skin"], shoulder: ["Shoulder skin"],
+  "upper-arm": ["Upper arm skin"], elbow: ["Elbow skin"], forearm: ["Forearm skin"], hand: ["Hand skin"],
+  thigh: ["Thigh skin"], knee: ["Knee skin"], shin: ["Shin skin"], calf: ["Calf skin"], foot: ["Ankle and foot skin"],
 };
 const Z_CHEST = 1130; // roughly the bottom of the sternum: chest/upper back above, abdomen/lower back below
 function skinArea(p) {
@@ -439,9 +439,9 @@ for (const area of Object.keys(SKIN_AREAS)) {
   skinGroups.push(group);
   structures.push({ id: sid, type: "skin", laterality: "paired", regionIds: [SKIN_REGION], externalIds: { fma: "FMA7163", bodyParts3D: "BP9115" }, sourceIds: [SRC_REAL], reviewState: "unreviewed", groups: ["skin-area"] });
   representations.push({ id: `somakine:representation:${NS}-${slug}`, structureId: sid, mode: "direct", instanceIds: ids, contextStructureIds: [], sourceIds: [SRC_REAL], reviewState: "unreviewed" });
-  en[sid] = SKIN_AREAS[area][0]; zh[sid] = SKIN_AREAS[area][1];
+  en[sid] = SKIN_AREAS[area][0];
 }
-en[SKIN_REGION] = "Skin"; zh[SKIN_REGION] = "皮肤";
+en[SKIN_REGION] = "Skin";
 const skinGlb = writeGlb({ sceneName: `${NS}-skin`, rootNode: { name: "BodyParts3D", rotation: root.rotation, scale: root.scale }, materials: [SKIN_MAT], groups: skinGroups });
 writeFileSync(OUT_SKIN, skinGlb);
 
@@ -467,7 +467,7 @@ const extension = {
     { id: SKIN_ASSET, kind: "gltf", uri: "skin.glb", mediaType: "model/gltf-binary", sha256: createHash("sha256").update(skinGlb).digest("hex"), bytes: skinGlb.length, geometry: { vertices: skinVerts, gpuBytes: skinVerts * 24 }, sourceIds: [SRC_REAL], licenseId: LIC }],
   meshInstances: instances,
   representations,
-  locales: [{ locale: "en", labels: en, aliases: {} }, { locale: "zh-CN", labels: zh, aliases: {} }],
+  locales: [{ locale: "en", labels: en, aliases: {} }],
   mappings: [],
 };
 mkdirSync(dirname(OUT_JSON), { recursive: true });

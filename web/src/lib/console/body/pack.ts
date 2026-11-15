@@ -9,7 +9,9 @@ import headNeck from "./head-neck-extension.json";
 
 const EXT_NS = "openhealth";
 
-export const BODY_PACK: DataPack = composeDataPacks(bodyParts3DMusculoskeletal, [headNeck as unknown as DataExtension]).dataset;
+const composed = composeDataPacks(bodyParts3DMusculoskeletal, [headNeck as unknown as DataExtension]).dataset;
+/* English labels only: the upstream pack also carries other locales, which the app never shows */
+export const BODY_PACK: DataPack = { ...composed, locales: composed.locales.filter((l) => l.locale === "en") };
 
 /** structures whose shape is our approximation rather than BodyParts3D geometry */
 export const isApproximate = (structureId: string) =>

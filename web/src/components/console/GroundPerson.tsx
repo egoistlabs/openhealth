@@ -66,19 +66,16 @@ function activityLog(id: string, sol: number, shared: MeasureKey[]) {
   return out.sort((a, b) => b.sol - a.sol || b.min - a.min);
 }
 
-/* Reference ranges for healthy adults at rest on Earth (general guidance, not a diagnosis):
-   resting heart rate 60–100 bpm (AHA; fit adults often 40–60), HRV (RMSSD) roughly 20–100 ms and very
-   personal, blood oxygen 95–100%, wrist skin temperature about 32–35 °C, breathing 12–20 a minute,
-   sleep 7–9 h for adults (AASM/CDC), simple visual reaction time about 200–300 ms. */
-type Ref = { key: string; label: string; unit: string; digits: number; lo: number; hi: number; min: number; max: number; note: string };
+/* Reference ranges for healthy adults on Earth, only where a source we checked gives one (not a diagnosis):
+   resting pulse 60–100 bpm and breathing 12–18 a minute (MedlinePlus, Vital signs), blood oxygen 95–100%
+   (MedlinePlus, Pulse oximetry), sleep 7 h or more for adults 18–60 (CDC). HRV, skin temperature and
+   reaction time have no single healthy number, so they are compared only with the person's own normal. */
+type Ref = { key: string; label: string; unit: string; digits: number; lo: number; hi: number; min: number; max: number; range: string; note: string };
 const EARTH: Ref[] = [
-  { key: "rhr", label: "Resting heart rate", unit: "bpm", digits: 0, lo: 60, hi: 100, min: 35, max: 110, note: "Fit adults and astronauts often sit at 40–60, below the range without concern." },
-  { key: "hrv", label: "Heart rate variability", unit: "ms", digits: 0, lo: 20, hi: 100, min: 0, max: 120, note: "Very personal and falls with age; their own normal matters more." },
-  { key: "spo2", label: "Blood oxygen", unit: "%", digits: 0, lo: 95, hi: 100, min: 86, max: 100, note: "Below 95% is worth a check; below 90% needs attention." },
-  { key: "temp", label: "Skin temperature", unit: "°C", digits: 1, lo: 32, hi: 35, min: 30, max: 37, note: "Wrist skin, not core (about 37 °C). A rise of 0.5 °C over their normal can come before a fever." },
-  { key: "resp", label: "Breathing rate", unit: "/min", digits: 1, lo: 12, hi: 20, min: 8, max: 26, note: "Higher CO₂ in a closed habitat can raise it for the whole crew." },
-  { key: "sleep", label: "Sleep", unit: "h", digits: 1, lo: 7, hi: 9, min: 4, max: 11, note: "Adults need 7–9 h. Spaceflight sleep averages about 6 h." },
-  { key: "rt", label: "Reaction time", unit: "ms", digits: 0, lo: 200, hi: 300, min: 150, max: 420, note: "Simple tap test. Slower than their own normal is the useful signal." },
+  { key: "rhr", label: "Resting heart rate", unit: "bpm", digits: 0, lo: 60, hi: 100, min: 35, max: 110, range: "60–100 bpm", note: "MedlinePlus, average healthy adult at rest. It varies with age, fitness and health." },
+  { key: "spo2", label: "Blood oxygen", unit: "%", digits: 0, lo: 95, hi: 100, min: 86, max: 100, range: "95–100%", note: "MedlinePlus. At 92% or lower contact the medical officer; at 88% or lower, immediate attention." },
+  { key: "resp", label: "Breathing rate", unit: "/min", digits: 1, lo: 12, hi: 18, min: 8, max: 26, range: "12–18 /min", note: "MedlinePlus, average healthy adult at rest." },
+  { key: "sleep", label: "Sleep", unit: "h", digits: 1, lo: 7, hi: 11, min: 4, max: 11, range: "7 h or more", note: "CDC, adults 18–60. Crews in orbit averaged about 6 h (Barger et al. 2014)." },
 ];
 function earthRows(id: string, sol: number, shared: MeasureKey[], vs: ReturnType<typeof vitals>) {
   const d = day(id, sol);
@@ -103,7 +100,7 @@ function EarthCompare({ id, sol, first, shared, vs }: { id: string; sol: number;
             const where = value == null ? null : value < r.lo ? "below" : value > r.hi ? "above" : "in";
             return (
               <div key={r.key} className="ec__row">
-                <div className="ec__l"><b>{r.label}</b><span className="small t2">Earth {r.lo}–{r.hi} {r.unit}</span></div>
+                <div className="ec__l"><b>{r.label}</b><span className="small t2">Earth {r.range}</span></div>
                 <div className="ec__bar" aria-hidden="true">
                   <span className="ec__band" style={{ left: pos(r, r.lo), width: `calc(${pos(r, r.hi)} - ${pos(r, r.lo)})` }} />
                   {normal != null ? <span className="ec__norm" style={{ left: pos(r, normal) }} title="Their own normal" /> : null}
@@ -120,7 +117,7 @@ function EarthCompare({ id, sol, first, shared, vs }: { id: string; sol: number;
             );
           })}
         </div>
-        <p className="small t2 mt2">Shaded: typical range for healthy adults at rest on Earth. Dot: {first}&apos;s latest value. Tick: {first}&apos;s own normal. Mood, workload and teamwork are self-ratings with no Earth norm, so they are only compared with their own normal above and below.</p>
+        <p className="small t2 mt2">Shaded: typical range for healthy adults at rest on Earth. Dot: {first}&apos;s latest value. Tick: {first}&apos;s own normal. Only measures with a published healthy range are shown. HRV, skin temperature, reaction time, mood, workload and teamwork have no single healthy number, so they are compared only with their own normal.</p>
       </div>
     </section>
   );
@@ -150,7 +147,7 @@ function printCrewReport({ c, sol, vs, talk, activity, esc, ci, missed7, shared 
   }).join("");
   const earthT = earthRows(c.id, sol, shared, vs).map(({ r, value, normal, hidden }) => {
     const where = value == null ? null : value < r.lo ? "Below" : value > r.hi ? "Above" : "Inside";
-    return row([esc_(r.label), `${r.lo}–${r.hi} ${esc_(r.unit)}`, hidden ? "Not shared" : value == null ? "—" : `<b>${value.toFixed(r.digits)} ${esc_(r.unit)}</b>`,
+    return row([esc_(r.label), esc_(r.range), hidden ? "Not shared" : value == null ? "—" : `<b>${value.toFixed(r.digits)} ${esc_(r.unit)}</b>`,
       normal == null ? "—" : `${normal.toFixed(r.digits)} ${esc_(r.unit)}`, where ? tag(where === "Inside" ? "normal" : "watch", where) : "—"]);
   }).join("");
   const talkL = talk.map((t) => `<li><b>Sol ${t.sol}${t.sol === P ? " (today)" : ""}</b> · ${t.said} message${t.said === 1 ? "" : "s"} from ${esc_(first)}, ${t.replies} from Pedro${t.escalation ? ` · ${tag("act", "Emergency notice")}` : ""}<ul>
@@ -187,7 +184,7 @@ function printCrewReport({ c, sol, vs, talk, activity, esc, ci, missed7, shared 
     <section><h2>Measures against their own normal</h2><table>${row(["Measure", "Latest", "Their normal", "Change", "Status"], true)}${measuresT}</table>
       <div class="note">Their normal is the median of their previous 14 sols. Watch is 2+ days outside it, Act 5+.</div></section>
     <section><h2>${esc_(first)} vs a typical adult on Earth</h2><table>${row(["Measure", "Earth range", esc_(first), "Their normal", "Where"], true)}${earthT}</table>
-      <div class="note">Typical ranges for healthy adults at rest on Earth. Reference only, not a diagnosis.</div></section>
+      <div class="note">Healthy-adult ranges from MedlinePlus (pulse, breathing, blood oxygen) and CDC (sleep). Reference only, not a diagnosis.</div></section>
     <div class="grid2">
       <section><h2>Conversations with Pedro · last 3 sols</h2>${talk.length ? `<ul>${talkL}</ul>` : "<p>No conversations.</p>"}
         <div class="note">A summary built from the conversation; ${esc_(first)}'s own words are not included.</div></section>

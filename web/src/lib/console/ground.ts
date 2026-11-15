@@ -11,10 +11,11 @@ import {
 const PASSES = [6 * 60 + 30, 12 * 60 + 30, 18 * 60 + 30, 23 * 60 + 30]; // LMST, simulated relay passes
 const SYNODIC_SOLS = 767;
 
-/** One-way light time Mars → Earth in minutes (3 to 22), simulated from the mission sol. */
+/** One-way light time Mars → Earth in minutes (3 to 20), simulated from the mission sol.
+ *  Capped at 20 to match NASA: "a communication delay of up to 20 minutes one way" (nasa.gov/hrp/hazard-distance-from-earth). */
 export function lightDelayMin(sol: number) {
   const phase = (2 * Math.PI * (sol + 100)) / SYNODIC_SOLS;
-  return Math.round(3 + 19 * (1 - Math.cos(phase)) / 2);
+  return Math.round(3 + 17 * (1 - Math.cos(phase)) / 2);
 }
 
 export type Downlink = { sol: number; min: number; next: number | null; delay: number };

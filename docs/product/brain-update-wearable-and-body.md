@@ -1,7 +1,7 @@
 # Brain update: wearable vitals, body map and skin
 
 **For:** whoever on the team updates Pedro's knowledge (the `brain/` folder at the repo root).
-**Status:** to do. Drafted 15 Nov 2026.
+**Status:** done 15 Nov 2026, with changes. Only facts we could cite went in: no muscle/joint or skin first-aid files, and no new red-flag terms. Vitals and body-map marks now **do** reach Ground. See `features-wearable-body-ground.md` (section 8 lists what was cut) for the current state. Kept for history.
 **Why:** the app gained new features this week, but Pedro's brain still only knows the original seven measures. If an astronaut asks about their heart rate, a rash or a sore muscle, Pedro has nothing to answer from.
 
 Read `brain/README.md` first. It explains the file template and the safety rules. This brief only adds to it.
