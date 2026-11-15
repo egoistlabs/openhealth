@@ -162,7 +162,7 @@ Keep this terminal window open while using the application.
 
 **Important:** If Ollama is already running as a background service, you do not need to execute `ollama serve` again.
 
-**Optional, for faster replies:** give Ollama two parallel slots. Each message gets two model calls, the AI safety label and then the reply. With one slot, each call pushes the other's prompt out of Ollama's cache, so every safety label is processed from scratch: a few extra seconds on an M-series Mac, about 35 seconds on a 2-core CPU. Pedro works either way.
+**Optional, for faster replies:** give Ollama two parallel slots. Each message gets two model calls, the AI safety label and then the reply. With one slot, each call pushes the other's prompt out of Ollama's cache, so every safety label is processed from scratch: a few extra seconds on an M-series Mac, about 35 seconds on a Ryzen 5 7535U laptop running the model on its CPU. Pedro works either way.
 
 `OLLAMA_NUM_PARALLEL` is a setting of the Ollama server, not of Pedro, so it goes on Ollama, not in `web/.env`. Set it before Ollama starts; whether Ollama or Next.js starts first doesn't matter.
 

@@ -188,7 +188,7 @@ export function classifierEnabled(): boolean {
 function timeoutMs(): number {
   const raw = Number(process.env.SAFETY_CLASSIFIER_TIMEOUT_MS);
   /* Generous on purpose: a timeout means the keywords decide alone. On a
-     2-core CPU a cold call (prompt not in Ollama's cache) takes about 35 s;
+     Ryzen 5 7535U laptop (CPU only) a cold call (prompt not in Ollama's cache) takes about 35 s;
      on an M-series GPU, a few seconds. */
   return Number.isFinite(raw) && raw > 0 ? raw : 60_000;
 }

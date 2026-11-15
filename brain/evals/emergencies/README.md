@@ -1,6 +1,6 @@
 # Emergency messages
 
-Test messages for the safety screen: the keyword list in `safety/red-flags.json` plus the model's safety label (`web/src/lib/brain/classify.ts`), the same `screenMessage` the app runs. Run them from `web/` with `npm run evals:emergencies`. Ollama must be running. It makes one model call per message: about 20 minutes on a 2-core CPU, a few minutes on an M-series Mac. `SAFETY_CLASSIFIER=0 npm run evals:emergencies` scores the keyword list alone, with no model, in about a second.
+Test messages for the safety screen: the keyword list in `safety/red-flags.json` plus the model's safety label (`web/src/lib/brain/classify.ts`), the same `screenMessage` the app runs. Run them from `web/` with `npm run evals:emergencies`. Ollama must be running. It makes one model call per message: about 20 minutes on a Ryzen 5 7535U laptop (CPU only), a few minutes on an M-series Mac. `SAFETY_CLASSIFIER=0 npm run evals:emergencies` scores the keyword list alone, with no model, in about a second.
 
 | File | What is in it | How it is used |
 | --- | --- | --- |
