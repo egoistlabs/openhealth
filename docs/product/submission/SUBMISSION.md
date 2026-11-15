@@ -60,6 +60,8 @@ Those problems start with small signs:
 
 **The person living it is the worst-placed to report it.** The National Academies describe institutional pressure on astronauts to under-report symptoms ([*Safe Passage*, 2001](https://nap.nationalacademies.org/read/10218/chapter/8)), and sleep debt is hard to notice in yourself.
 
+![Kenji's Today panel: he rated his mood 4 of 5, which is his normal, while his sleep duration, reaction time and sleep timing are all on Watch](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-mood-vs-measures.png)
+
 The other options on board and on Earth can't catch it in time:
 
 - **Earth** is 3 to 22 minutes away each way by message on a Mars mission, so a question and its answer take up to about 44 minutes ([NASA](https://www.nasa.gov/wp-content/uploads/2024/01/mars-communications-disruption-and-delay.pdf), [NASA/TM-20250003885](https://ntrs.nasa.gov/api/citations/20250003885/downloads/NASA%20TM20250003885.pdf)).
@@ -72,6 +74,8 @@ The other options on board and on Earth can't catch it in time:
 
 Pedro runs on one laptop, offline by default. It compares what each astronaut logs with their own 14-day normal, then says in plain words what changed and one thing to do.
 
+![A note from the flight surgeon arrives on Kenji's home screen as "New message from Earth": sent 13:56, arrived 14:13, after the 17-minute light delay](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-earth-toast.png)
+
 - **The astronaut** does a two-minute daily check-in. A wearable, if they have one, adds five overnight vitals that can change before they feel anything. A 3D body map records pain, which no sensor measures.
 - **The crew** sees how the team is doing, with no one's private numbers.
 - **The flight surgeon on Earth** sees what each astronaut shares, any measure at Act and every emergency notice, all after the light delay, and sends advice back through Pedro.
@@ -83,6 +87,8 @@ Pedro runs on one laptop, offline by default. It compares what each astronaut lo
 
 **1. Daily check-in.** About two minutes, by tap or by voice.
 
+![Daily check-in, sleep step: Pedro asks Kenji Sato when he fell asleep and woke up; last night shows 6 h 15 min of sleep, 1 h 10 min shorter than his normal, with his sleep midpoint 51 min later](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-check-in.png)
+
 - **Sleep:** when you fell asleep and woke up. Pedro works out hours slept and the middle of your sleep, which shows whether your body clock is drifting.
 - **Mood, workload, teamwork:** a rating from 1 to 5 each.
 - **Shared meals:** whether you ate with the crew today.
@@ -90,8 +96,6 @@ Pedro runs on one laptop, offline by default. It compares what each astronaut lo
 - **Review:** a look at your answers before you save them.
 
 Pedro also counts how much you talk to it and any missed check-ins.
-
-![Daily check-in, sleep step: Pedro asks Kenji Sato when he fell asleep and woke up; last night shows 6 h 15 min of sleep, 1 h 10 min shorter than his normal, with his sleep midpoint 51 min later](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-check-in.png)
 
 **2. Home: you against your own normal.** Your normal for each measure is the middle value of your previous 14 days, and the band around it is how much you usually vary.
 
@@ -171,14 +175,14 @@ Four ways to watch a crew, on medium declines the person doesn't notice at all. 
 - **Same fixed limits for everyone:** 80% caught, 70% of twins flagged.
 - **Pedro's flag rule (design spec):** 98% caught, 88% of twins flagged.
 
+![Detection test output](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/test-detection-suite.png)
+
 The results show four things:
 
 - **Asking only works when people notice.** It catches 2% of declines when the person notices nothing, 14% when they notice half, and 47% when they notice all of it.
 - **Measuring finds what asking misses.** Sleep times, reaction time and engagement keep moving while the person says they're fine.
 - **The rule raises too many false alarms.** A healthy astronaut gets 6.8 false Watch flags in 90 days, about one every two weeks, against our pass mark of 1. A stricter setting cuts that to 2.2 and still catches 77% of declines within 21 days.
 - **The test scores the flag rule from our design spec.** The app's rule differs (Watch after 2 days outside the band), and the test doesn't run the app's own code yet.
-
-![Detection test output](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/test-detection-suite.png)
 
 **Emergency test.** On a sealed set of 32 emergencies in a person's own words (heart attack, stroke, breathing, collapse, self-harm, harm to others), which we never read while writing the phrase list or the AI's instructions, the phrase list alone escalated 4. With the AI safety label added, 30 or 31 of 32 were escalated across five runs (94–97%, pass mark 90%). It still fails on false alarms: 8 of 16 look-alikes ("I don't have chest pain, just tired") were escalated, 7 of them by the phrase list, which the AI isn't allowed to overrule. It also escalated 2 of 3 distress messages ("I can't cope with this anymore") that should have had a support reply, and the emergencies it missed got a reply that named no one to contact.
 
@@ -194,6 +198,8 @@ The results show four things:
 
 NASA is building toward medical care for Moon and Mars crews that doesn't depend on Earth ([Wilderness Environ Med 2025](https://pubmed.ncbi.nlm.nih.gov/39865932/)). Pedro covers one part of that care: it turns what each astronaut logs and wears into plain advice they can act on right away, and keeps the crew and the flight surgeon on Earth in the loop despite the delay.
 
+![Pedro reports, the flight surgeon's view on Earth: Pedro's summary of Adaeze Okafor's check-in, her shared measures, her body-map mark (left calf, 4/10) and the Advice from Earth box with quick-advice buttons such as "8 h sleep"](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-ground-reports.png)
+
 Next steps:
 
 1. Cut false alarms in the emergency check with a second, dedicated classifier model on the laptop, with a clinician setting where distress ends and a self-harm emergency begins.
@@ -205,6 +211,8 @@ Next steps:
 ### What's creative, and the factors behind each choice
 
 Each risk we weighed led to one design choice.
+
+![The top bar's round-trip tooltip: a question to Earth takes at least 34 minutes to answer today, "That is why anything urgent is handled on board, with Pedro and the crew medical officer"](https://raw.githubusercontent.com/egoistlabs/openhealth/main/docs/product/submission/app-round-trip.png)
 
 - **Astronauts miss and under-report their own decline.** Pedro measures rather than only asks, against each person's own normal, since one astronaut's normal can be another's warning sign.
 - **Going quiet is part of the decline.** Pedro counts engagement instead of asking about it.
@@ -307,7 +315,7 @@ How SI output is marked inside the product:
 Labels on SI-generated content (as the rules require):
 
 - **Code and data:** commits made with Claude Code carry a `Co-Authored-By: Claude` line in the git history (Claude Fable 5.2 and Claude Opus 5.5). `[TODO: teammates whose commits used SI but carry no such line, say which parts here]` Knowledge files in `brain/` carry `source` and `authorised_by` fields. All crew data is simulated by our own code (`web/src/lib/sim/mission.ts`, `npm run sim:mission`) and labelled "Simulated data" on every screen.
-- **Images:** the four app screenshots are real captures of the running app. The three terminal images show real, unedited command output, rendered as an image with an SI tool. The flow diagram in Field 5 was drawn with an SI tool from Pedro's code, and the image itself says so. `[TODO: if Pedro's portrait was made with an SI image tool, name the tool here and add a visible "SI-generated" watermark to web/public/companion/base.png]`
+- **Images:** the app screenshots are real captures of the running app. The three terminal images show real, unedited command output, rendered as an image with an SI tool. The flow diagram in Field 5 was drawn with an SI tool from Pedro's code, and the image itself says so. `[TODO: if Pedro's portrait was made with an SI image tool, name the tool here and add a visible "SI-generated" watermark to web/public/companion/base.png]`
 - **Audio:** Pedro's spoken voice is computer-generated text-to-speech.
 - No SI-generated content uses NASA logos or branding.
 
