@@ -194,10 +194,18 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain, onFocusCha
     setViewerKey((k) => k + 1);
   };
   const toggleLayer = (name: string) => setLayers((l) => ({ ...l, [name]: !l[name] }));
-  /* area buttons zoom the model to that area and open its list; "Whole body" goes back to the full figure */
+  /* area buttons zoom the model to that area and open its list; "Whole body" goes back to the full figure.
+     The skin is one whole-body shell for now, with no per-area skin, so with Skin on a muscle-and-bone area
+     (Shoulder, Knee…) would zoom to parts hidden under the skin and show nothing. Opening one turns Skin off
+     so its muscles and bones show; "Whole body" turns Skin back on if it was on before. */
+  const skinBefore = useRef<boolean | null>(null);
+  /* a muscle-and-bone area is open (Shoulder, Wrist & hand…): the Skin button is off limits there */
+  const inPartArea = group !== null && !isSkinRegion(group);
   const openRegion = (id: RegionId | null) => {
     setGroup(id); setFocus(null);
-    if (id && isSkinRegion(id)) setSkinOn(true);
+    if (id && isSkinRegion(id)) { skinBefore.current = null; setSkinOn(true); }
+    else if (id) { if (skinOn && skinBefore.current === null) skinBefore.current = true; setSkinOn(false); }
+    else if (skinBefore.current !== null) { setSkinOn(skinBefore.current); skinBefore.current = null; }
     if (id) viewer.current?.focusRegion(id); else viewer.current?.showBody();
   };
 
@@ -328,7 +336,9 @@ export function BodyMap({ value, onChange, history, noPain, onNoPain, onFocusCha
               <button key={name} type="button" aria-pressed={layers[name]} onClick={() => toggleLayer(name)} disabled={!ready || skinOn} title={skinOn ? "Turn Skin off to see this layer" : undefined}
                 style={{ ...S.tool, ...(layers[name] ? S.toolOn : null) }}>{name}</button>
             ))}
-            <button type="button" aria-pressed={skinOn} onClick={() => setSkinOn((s) => !s)} disabled={!ready}
+            {/* the skin is one whole-body shell: inside a muscle-and-bone area it would hide everything */}
+            <button type="button" aria-pressed={skinOn} onClick={() => setSkinOn((s) => !s)} disabled={!ready || inPartArea}
+              title={inPartArea ? "Skin is for the whole body. Go back to Whole body, or pick the Skin area, to mark the skin" : undefined}
               style={{ ...S.tool, ...(skinOn ? S.toolOn : null) }}>Skin</button>
             <button type="button" onClick={resetView} disabled={!ready} style={{ ...S.tool, marginLeft: "auto" }}>Reset view</button>
           </div>
