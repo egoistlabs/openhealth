@@ -80,7 +80,9 @@ export function PedroGuide() {
   const { s, set, atPresent, checkedToday, flagsFor, openFlags, shared, clockMin } = useConsole();
   const path = usePathname();
   const router = useRouter();
-  const [menu, setMenu] = useState(false);
+  // open on load so the astronaut sees what Pedro can do; closes on outside click / Esc as usual
+  const [menu, setMenu] = useState(true);
+  const clicked = useRef(false);
   const [q, setQ] = useState("");
   const [tour, setTour] = useState<Step[] | null>(null);
   const [i, setI] = useState(0);
@@ -94,7 +96,8 @@ export function PedroGuide() {
     const key = (e: KeyboardEvent) => { if (e.key === "Escape") setMenu(false); };
     document.addEventListener("mousedown", down);
     document.addEventListener("keydown", key);
-    window.setTimeout(() => input.current?.focus(), 30);
+    // don't steal focus when it opens by itself on load; only when the astronaut opens it
+    if (clicked.current) window.setTimeout(() => input.current?.focus(), 30);
     return () => { document.removeEventListener("mousedown", down); document.removeEventListener("keydown", key); };
   }, [menu]);
 
@@ -148,7 +151,7 @@ export function PedroGuide() {
           </div>
         ) : null}
         <button type="button" className="orb" aria-label={`${COMPANION_NAME}: guide me or ask a question`} aria-expanded={menu} aria-haspopup="dialog"
-          onClick={() => { setTour(null); setMenu((m) => !m); }}>
+          onClick={() => { clicked.current = true; setTour(null); setMenu((m) => !m); }}>
           <PedroThumb />
         </button>
       </div>
